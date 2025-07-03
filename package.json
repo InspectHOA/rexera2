@@ -6,10 +6,7 @@
   "workspaces": [
     "frontend",
     "apis",
-    "database",
     "workflows",
-    "infrastructure",
-    "shared",
     "types",
     "agents"
   ],

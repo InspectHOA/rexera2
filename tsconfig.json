@@ -20,8 +20,6 @@
     "paths": {
       "@rexera/types": ["./types/src"],
       "@rexera/types/*": ["./types/src/*"],
-      "@rexera/database": ["./database/src"],
-      "@rexera/database/*": ["./database/src/*"],
       "@rexera/agents": ["./agents/src"],
       "@rexera/agents/*": ["./agents/src/*"],
       "@rexera/workflows": ["./workflows/src"],

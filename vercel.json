@@ -1,6 +1,10 @@
 {
   "version": 2,
   "name": "rexera2",
+  "framework": "nextjs",
+  "buildCommand": "npm install && cd types && npm run build && cd ../frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "npm install",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -10,23 +14,23 @@
   "routes": [
     {
       "src": "/api/agents/(.*)",
-      "dest": "apis/agents/$1"
+      "dest": "apis/src/agents/$1"
     },
     {
       "src": "/api/workflows/(.*)",
-      "dest": "apis/workflows/$1"
+      "dest": "apis/src/workflows/$1"
     },
     {
       "src": "/api/tasks/(.*)",
-      "dest": "apis/tasks/$1"
+      "dest": "apis/src/tasks/$1"
     },
     {
       "src": "/api/communications/(.*)",
-      "dest": "apis/communications/$1"
+      "dest": "apis/src/communications/$1"
     },
     {
       "src": "/api/webhooks/(.*)",
-      "dest": "apis/webhooks/$1"
+      "dest": "apis/src/webhooks/$1"
     },
     {
       "src": "/(.*)",
@@ -39,12 +43,10 @@
   "build": {
     "env": {
       "TURBO_TOKEN": "@turbo_token",
-      "TURBO_TEAM": "@turbo_team"
+      "TURBO_TEAM": "@turbo_team",
+      "NODE_ENV": "production"
     }
   },
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "npm install && npx turbo run build --filter=frontend^...",
   "functions": {
     "apis/src/**/*.ts": {
       "maxDuration": 60
