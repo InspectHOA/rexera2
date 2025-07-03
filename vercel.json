@@ -4,11 +4,6 @@
   "buildCommand": "npx turbo run build:frontend",
   "outputDirectory": "frontend/.next",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "https://wmgidablmqotriwlefhq.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtZ2lkYWJsbXFvdHJpd2xlZmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMzc5NjcsImV4cCI6MjA2NjcxMzk2N30.-a0ZOsgzuvApfxgsYIKQ0xduca5htQslPCNuUm7K2bw",
-    "NEXT_PUBLIC_APP_URL": "https://rexera2-frontend.vercel.app",
-    "NEXT_PUBLIC_N8N_WEBHOOK_URL": "https://n8n-webhook-placeholder.com/webhook"
-  }
+  "framework": "nextjs"
+ 
 }
