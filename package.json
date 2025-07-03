@@ -21,8 +21,8 @@
     "deploy:prod": "turbo run deploy:prod",
     "setup": "npm install && npm run setup:repos",
     "setup:repos": "turbo run setup",
-    "db:migrate": "cd database && npm run migrate",
-    "db:seed": "cd database && npm run seed",
+    "db:migrate": "cd supabase && npx supabase db push",
+    "db:seed": "cd supabase && npx supabase db seed",
     "workflows:deploy": "cd workflows && npm run deploy",
     "agents:test": "cd agents && npm run test",
     "e2e": "playwright test"
