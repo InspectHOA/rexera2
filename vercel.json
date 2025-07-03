@@ -1,45 +1,5 @@
 {
   "version": 2,
-  "name": "rexera2",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/agents/(.*)",
-      "dest": "apis/src/agents/$1"
-    },
-    {
-      "src": "/api/workflows/(.*)",
-      "dest": "apis/src/workflows/$1"
-    },
-    {
-      "src": "/api/tasks/(.*)",
-      "dest": "apis/src/tasks/$1"
-    },
-    {
-      "src": "/api/communications/(.*)",
-      "dest": "apis/src/communications/$1"
-    },
-    {
-      "src": "/api/webhooks/(.*)",
-      "dest": "apis/src/webhooks/$1"
-    },
-    {
-      "src": "/api/documents/(.*)",
-      "dest": "apis/src/documents/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
-    }
-  ],
-  "buildCommand": "npx turbo run build --filter=@rexera/frontend^...",
-  "installCommand": "npm install",
-  "outputDirectory": "frontend/.next",
   "functions": {
     "apis/src/**/*.ts": {
       "maxDuration": 60
@@ -53,24 +13,5 @@
     "apis/src/webhooks/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
-    }
-  ]
+  }
 }

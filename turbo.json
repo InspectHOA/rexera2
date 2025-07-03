@@ -1,6 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": [
+    "**/.env.*local",
+    "tsconfig.json",
+    "tailwind.config.js"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "VERCEL_URL",
+    "VERCEL_ENV"
+  ],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
@@ -9,12 +18,44 @@
     "build:frontend": {
       "dependsOn": ["build:types"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
+      "env": [
+        "NODE_ENV",
+        "NEXT_PUBLIC_*",
+        "SUPABASE_*",
+        "JWT_SECRET",
+        "NEXTAUTH_*"
+      ]
+    },
+    "frontend#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NODE_ENV",
+        "NEXT_PUBLIC_*",
+        "SUPABASE_*",
+        "JWT_SECRET",
+        "NEXTAUTH_*"
+      ]
     },
     "build:apis": {
       "dependsOn": ["build:types"],
       "outputs": ["dist/**"],
-      "env": ["NODE_ENV"]
+      "env": [
+        "NODE_ENV",
+        "SUPABASE_*",
+        "JWT_SECRET",
+        "AGENT_*"
+      ]
+    },
+    "apis#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "env": [
+        "NODE_ENV",
+        "SUPABASE_*",
+        "JWT_SECRET",
+        "AGENT_*"
+      ]
     },
     "build:agents": {
       "dependsOn": ["build:types"],
