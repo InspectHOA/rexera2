@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:types": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",

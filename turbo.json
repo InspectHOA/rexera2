@@ -7,7 +7,7 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "build:frontend": {
-      "dependsOn": ["^build", "build:types"],
+      "dependsOn": ["build:types"],
       "outputs": [".next/**", "!.next/cache/**"],
       "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
     },
