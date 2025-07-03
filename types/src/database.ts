@@ -412,6 +412,9 @@ export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at'>>;
 export type CommunicationUpdate = Partial<Omit<Communication, 'id' | 'created_at'>>;
 export type DocumentUpdate = Partial<Omit<Document, 'id' | 'created_at'>>;
 
+// Rename for consistency
+export type AgentPerformanceMetrics = AgentPerformanceMetric;
+
 // Database query filters
 export interface WorkflowFilters {
   workflow_type?: WorkflowType;

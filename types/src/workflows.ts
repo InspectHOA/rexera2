@@ -3,8 +3,8 @@
  * Types for workflow definitions, execution, and coordination
  */
 
-import { AgentType, AgentTaskRequest } from './agents';
-import { WorkflowType, TaskStatus, PriorityLevel } from './database';
+import { AgentType } from './agents';
+import { WorkflowType, PriorityLevel } from './database';
 
 // =====================================================
 // WORKFLOW DEFINITION TYPES

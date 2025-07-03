@@ -5,8 +5,9 @@
   "private": true,
   "workspaces": [
     "frontend",
+    "apis",
     "database",
-    "workflows", 
+    "workflows",
     "infrastructure",
     "shared",
     "types",
@@ -31,10 +32,11 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
-    "turbo": "^1.10.0",
-    "typescript": "^5.2.0",
     "eslint": "^8.52.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "supabase": "^2.30.4",
+    "turbo": "^1.10.0",
+    "typescript": "^5.2.0"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -45,5 +47,10 @@
     "url": "https://github.com/InspectHOA/rexera2-complete"
   },
   "author": "InspectHOA Team",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.3",
+    "dotenv": "^17.0.1",
+    "pg": "^8.16.3"
+  }
 }

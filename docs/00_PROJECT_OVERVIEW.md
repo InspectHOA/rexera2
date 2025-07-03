@@ -67,6 +67,7 @@ The platform employs a sophisticated dual-layer architecture:
 - **File Intelligence**: Advanced tagging, categorization, and OCR processing
 - **HIL Dashboard**: Live workflow monitoring with interrupt handling
 - **Client Portal**: Real-time visibility into workflow progress
+- **Modular Architecture**: Separate workspaces for frontend and APIs while maintaining unified deployment
 
 ## Implementation Phases
 

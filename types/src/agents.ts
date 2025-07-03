@@ -426,7 +426,7 @@ export type AnyAgent =
   | MaxAgent 
   | CoreyAgent;
 
-export interface AgentRegistry {
+export type AgentRegistry = {
   [K in AgentType]: AnyAgent;
 }
 

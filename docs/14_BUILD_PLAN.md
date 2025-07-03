@@ -13,13 +13,15 @@ This comprehensive build plan provides a step-by-step implementation checklist f
 
 ### 1.1 Repository Setup
 - [ ] **Create GitHub organization** - Set up InspectHOA organization access
-- [ ] **Create main repositories** following the 6-repo architecture:
-  - [ ] `rexera2-frontend` - Next.js application
-  - [ ] `rexera2-database` - Schema and migrations
-  - [ ] `rexera2-workflows` - n8n workflow definitions
-  - [ ] `rexera2-infrastructure` - DevOps configurations
-  - [ ] `rexera-types` - Shared TypeScript types
-  - [ ] `rexera-shared` - Shared utilities
+- [ ] **Create main repositories** following the 8-workspace monorepo architecture:
+  - [ ] `frontend` - Next.js application (UI components and pages)
+  - [ ] `apis` - API routes and server-side logic (deploys with frontend)
+  - [ ] `database` - Schema and migrations
+  - [ ] `workflows` - n8n workflow definitions
+  - [ ] `agents` - AI agent integration system
+  - [ ] `types` - Shared TypeScript types
+  - [ ] `infrastructure` - DevOps configurations
+  - [ ] `shared` - Shared utilities
 - [ ] **Configure branch protection** - Main branch requires PR reviews
 - [ ] **Set up issue templates** - Bug reports, feature requests, tasks
 - [ ] **Configure GitHub Actions** - Basic CI/CD pipeline skeleton
@@ -93,7 +95,7 @@ This comprehensive build plan provides a step-by-step implementation checklist f
 
 ### 2.3 Core API Implementation
 - [ ] **API foundation** following `03_API_SPECIFICATIONS.md`:
-  - [ ] Next.js API routes structure
+  - [ ] APIs workspace structure with Next.js API routes
   - [ ] Request/response types and validation
   - [ ] Error handling middleware
   - [ ] Rate limiting implementation
@@ -290,7 +292,7 @@ This comprehensive build plan provides a step-by-step implementation checklist f
 ### 6.1 Production Environment Setup
 - [ ] **Production database** - Supabase Pro with production data
 - [ ] **Production workflows** - n8n Cloud with production webhooks
-- [ ] **Production frontend** - Vercel Pro with custom domain
+- [ ] **Production frontend+APIs** - Unified Vercel Pro deployment with custom domain
 - [ ] **Environment variables** - Secure production configuration
 - [ ] **SSL certificates** - Valid certificates for all domains
 

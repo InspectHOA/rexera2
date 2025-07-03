@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@rexera/database';
+import type { Database } from '@/types';
 
 type SupabaseContext = {
   supabase: SupabaseClient<Database>;
@@ -12,7 +12,12 @@ type SupabaseContext = {
 const Context = createContext<SupabaseContext | undefined>(undefined);
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const [supabase] = useState(() => createClientComponentClient<Database>());
+  const [supabase] = useState(() =>
+    createBrowserClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
 
   return (
     <Context.Provider value={{ supabase }}>

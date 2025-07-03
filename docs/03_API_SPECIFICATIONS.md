@@ -56,7 +56,7 @@ graph TB
         MCP[MCP Server<br/>AI Agent Interface]
     end
     
-    subgraph "API Layer (Next.js on Vercel)"
+    subgraph "API Layer (APIs workspace on Vercel)"
         RESOURCES[Resources<br/>CRUD Operations]
         ACTIONS[Actions<br/>Coordinated Operations]
         VIEWS[Views<br/>Optimized Reads]

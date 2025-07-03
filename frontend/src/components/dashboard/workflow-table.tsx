@@ -1,76 +1,143 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useWorkflows } from '@/lib/hooks/useWorkflows';
 
 export function WorkflowTable() {
   const router = useRouter();
-  const workflows = [
-    {
-      id: '🚨 PAY-0891',
-      workflowId: 'PAY-0891',
-      type: 'Payoff Request',
-      client: 'First National',
-      property: '123 Oak St',
-      status: 'Urgent',
-      statusClass: 'status-urgent',
-      interrupts: { type: 'critical', count: 2, icons: '🔍📄' },
-      due: 'Dec 29',
-      eta: 'Dec 29',
-      dueColor: '#ef4444'
-    },
-    {
-      id: '⚠️ HOA-0440',
-      workflowId: 'HOA-0440',
-      type: 'HOA Documents',
-      client: 'Realty Plus',
-      property: '456 Paradise Ln',
-      status: 'In Progress',
-      statusClass: 'status-progress',
-      interrupts: { type: 'standard', count: 1, icons: '🌐' },
-      due: 'Dec 30',
-      eta: 'Dec 30',
-      dueColor: '#f59e0b'
-    },
-    {
-      id: '⏱️ MUN-0332',
-      workflowId: 'MUN-0332',
-      type: 'Lien Search',
-      client: 'City Bank',
-      property: '789 Pine Ave',
-      status: 'In Progress',
-      statusClass: 'status-progress',
-      interrupts: null,
-      due: 'Jan 2',
-      eta: 'Jan 1',
-      dueColor: '#0f172a'
-    },
-    {
-      id: '✅ HOA-0445',
-      workflowId: 'HOA-0445',
-      type: 'HOA Documents',
-      client: 'Prime Lending',
-      property: '321 Elm St',
-      status: 'Completed',
-      statusClass: 'status-completed',
-      interrupts: null,
-      due: 'Dec 28',
-      eta: '✓ Delivered',
-      dueColor: '#10b981'
-    },
-    {
-      id: '🔄 PAY-0889',
-      workflowId: 'PAY-0889',
-      type: 'Payoff Request',
-      client: 'Metro Credit',
-      property: '555 Maple Dr',
-      status: 'In Progress',
-      statusClass: 'status-progress',
-      interrupts: null,
-      due: 'Dec 31',
-      eta: 'Dec 30 3pm',
-      dueColor: '#0f172a'
+  const { workflows: workflowData, loading, error } = useWorkflows({ 
+    include: ['client', 'tasks'], 
+    limit: 20 
+  });
+
+  // Transform API data to match component format
+  const workflows = workflowData.map((workflow: any) => {
+    const interruptCount = workflow.tasks?.filter((t: any) => t.status === 'AWAITING_REVIEW')?.length || 0;
+    const hasInterrupts = interruptCount > 0;
+    
+    return {
+      id: workflow.id,
+      workflowId: workflow.id,
+      type: getDisplayWorkflowType(workflow.workflow_type),
+      client: workflow.client?.name || 'Unknown Client',
+      property: workflow.title || 'No property info',
+      status: getDisplayStatus(workflow.status),
+      statusClass: getStatusClass(workflow.status),
+      interrupts: hasInterrupts ? {
+        type: workflow.priority === 'URGENT' ? 'critical' : 'standard',
+        count: interruptCount,
+        icons: getInterruptIcons(workflow.tasks?.filter((t: any) => t.status === 'AWAITING_REVIEW') || [])
+      } : null,
+      due: formatDate(workflow.due_date),
+      eta: formatDate(workflow.due_date), // Could be enhanced with better ETA logic
+      dueColor: getDueColor(workflow.status, workflow.due_date)
+    };
+  });
+
+  function getDisplayWorkflowType(type: string) {
+    const typeMap: Record<string, string> = {
+      'PAYOFF': 'Payoff Request',
+      'HOA_ACQUISITION': 'HOA Documents', 
+      'MUNI_LIEN_SEARCH': 'Lien Search'
+    };
+    return typeMap[type] || type;
+  }
+
+  function getDisplayStatus(status: string) {
+    const statusMap: Record<string, string> = {
+      'PENDING': 'In Progress',
+      'IN_PROGRESS': 'In Progress', 
+      'AWAITING_REVIEW': 'Urgent',
+      'COMPLETED': 'Completed',
+      'BLOCKED': 'Urgent'
+    };
+    return statusMap[status] || status;
+  }
+
+  function getStatusClass(status: string) {
+    const classMap: Record<string, string> = {
+      'PENDING': 'status-progress',
+      'IN_PROGRESS': 'status-progress',
+      'AWAITING_REVIEW': 'status-urgent', 
+      'COMPLETED': 'status-completed',
+      'BLOCKED': 'status-urgent'
+    };
+    return classMap[status] || 'status-progress';
+  }
+
+  function getInterruptIcons(tasks: any[]) {
+    const agentIcons: Record<string, string> = {
+      'Nina': '🔍',
+      'Mia': '📧', 
+      'Florian': '🗣️',
+      'Rex': '🌐',
+      'Iris': '📄',
+      'Ria': '🤝',
+      'Kosha': '💰',
+      'Cassy': '✓',
+      'Max': '📞',
+      'Corey': '🏢'
+    };
+    
+    return tasks.slice(0, 3).map(task => {
+      const agentName = task.metadata?.agent_name || 'Unknown';
+      return agentIcons[agentName] || '⚠️';
+    }).join('');
+  }
+
+  function formatDate(dateStr: string | null) {
+    if (!dateStr) return 'TBD';
+    const date = new Date(dateStr);
+    const today = new Date();
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
     }
-  ];
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function getDueColor(status: string, dueDate: string | null) {
+    if (status === 'COMPLETED') return '#10b981';
+    if (!dueDate) return '#0f172a';
+    
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    
+    if (diffDays < 0) return '#ef4444'; // Overdue
+    if (diffDays <= 1) return '#f59e0b'; // Due soon
+    return '#0f172a'; // Normal
+  }
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '200px',
+        color: '#64748b' 
+      }}>
+        Loading workflows...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '200px',
+        color: '#ef4444' 
+      }}>
+        Error loading workflows: {error}
+      </div>
+    );
+  }
+
 
   const handleWorkflowClick = (workflowId: string) => {
     router.push(`/workflow/${workflowId}`);
@@ -230,7 +297,7 @@ export function WorkflowTable() {
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '12px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px', fontWeight: '600', fontSize: '11px', color: '#0f172a', fontFamily: 'Monaco, Menlo, monospace' }}>
+              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '11px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px', fontWeight: '600', color: '#0f172a', fontFamily: 'Monaco, Menlo, monospace' }}>
                 {workflow.id}
               </td>
               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '12px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>
@@ -375,7 +442,7 @@ export function WorkflowTable() {
               padding: '6px 12px',
               fontSize: '12px',
               fontWeight: '500',
-              border: 'none',
+              border: '1px solid #e2e8f0',
               cursor: 'not-allowed',
               textDecoration: 'none',
               display: 'inline-flex',
@@ -385,7 +452,6 @@ export function WorkflowTable() {
               whiteSpace: 'nowrap',
               gap: '6px',
               background: '#ffffff',
-              border: '1px solid #e2e8f0',
               color: '#475569',
               opacity: '0.5'
             }}
@@ -421,7 +487,7 @@ export function WorkflowTable() {
                 padding: '6px 12px',
                 fontSize: '12px',
                 fontWeight: '500',
-                border: 'none',
+                border: '1px solid #e2e8f0',
                 cursor: 'pointer',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -431,7 +497,6 @@ export function WorkflowTable() {
                 whiteSpace: 'nowrap',
                 gap: '6px',
                 background: '#ffffff',
-                border: '1px solid #e2e8f0',
                 color: '#475569'
               }}
             >
@@ -443,7 +508,7 @@ export function WorkflowTable() {
                 padding: '6px 12px',
                 fontSize: '12px',
                 fontWeight: '500',
-                border: 'none',
+                border: '1px solid #e2e8f0',
                 cursor: 'pointer',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -453,7 +518,6 @@ export function WorkflowTable() {
                 whiteSpace: 'nowrap',
                 gap: '6px',
                 background: '#ffffff',
-                border: '1px solid #e2e8f0',
                 color: '#475569'
               }}
             >
@@ -466,7 +530,7 @@ export function WorkflowTable() {
                 padding: '6px 12px',
                 fontSize: '12px',
                 fontWeight: '500',
-                border: 'none',
+                border: '1px solid #e2e8f0',
                 cursor: 'pointer',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -476,7 +540,6 @@ export function WorkflowTable() {
                 whiteSpace: 'nowrap',
                 gap: '6px',
                 background: '#ffffff',
-                border: '1px solid #e2e8f0',
                 color: '#475569'
               }}
             >
@@ -489,7 +552,7 @@ export function WorkflowTable() {
               padding: '6px 12px',
               fontSize: '12px',
               fontWeight: '500',
-              border: 'none',
+              border: '1px solid #e2e8f0',
               cursor: 'pointer',
               textDecoration: 'none',
               display: 'inline-flex',
@@ -499,7 +562,6 @@ export function WorkflowTable() {
               whiteSpace: 'nowrap',
               gap: '6px',
               background: '#ffffff',
-              border: '1px solid #e2e8f0',
               color: '#475569'
             }}
           >

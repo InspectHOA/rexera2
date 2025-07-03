@@ -20,7 +20,7 @@ graph TB
     
     subgraph "Frontend Layer (Vercel)"
         UI[Next.js 14 App]
-        API[API Routes]
+        API[API Routes (APIs workspace)]
         MW[Auth Middleware]
     end
     

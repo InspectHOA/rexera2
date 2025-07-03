@@ -186,6 +186,7 @@ vercel domains verify app.rexera.com
 #### 4.2 Environment Variables
 ```bash
 # Production environment (from design-docs/08_ENV_VARS.md)
+# These apply to the unified frontend+apis deployment
 vercel env add NEXT_PUBLIC_SUPABASE_URL production
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
 vercel env add SUPABASE_SERVICE_ROLE_KEY production
@@ -213,6 +214,8 @@ module.exports = {
   },
 }
 ```
+
+**Note**: The APIs workspace deploys as serverless functions alongside the frontend in a single Vercel application. API routes from the `apis/` workspace are automatically routed via the `vercel.json` configuration to maintain the unified deployment model while enabling modular development.
 
 ### Phase 5: Monitoring & Observability (Week 5)
 

@@ -1,0 +1,30 @@
+{
+  "name": "@rexera/apis",
+  "version": "1.0.0",
+  "description": "API endpoints for Rexera 2.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev --listen 3001",
+    "build": "tsc",
+    "start": "vercel dev",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .vercel",
+    "setup": "npm install"
+  },
+  "dependencies": {
+    "@rexera/database": "*",
+    "@rexera/types": "*",
+    "@supabase/supabase-js": "^2.38.0",
+    "@vercel/node": "^3.0.12",
+    "cors": "^2.8.5",
+    "jose": "^5.1.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.9.0",
+    "eslint": "^8.53.0",
+    "typescript": "^5.2.2"
+  }
+}

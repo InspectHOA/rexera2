@@ -13,16 +13,17 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import type { Route } from 'next';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Workflows', href: '/dashboard/workflows', icon: Workflow },
-  { name: 'Tasks', href: '/dashboard/tasks', icon: FileText },
-  { name: 'Agents', href: '/dashboard/agents', icon: Bot },
-  { name: 'Communications', href: '/dashboard/communications', icon: MessageSquare },
-  { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-  { name: 'Clients', href: '/dashboard/clients', icon: Users },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard' as const, icon: Home },
+  { name: 'Workflows', href: '/dashboard/workflows' as const, icon: Workflow },
+  { name: 'Tasks', href: '/dashboard/tasks' as const, icon: FileText },
+  { name: 'Agents', href: '/dashboard/agents' as const, icon: Bot },
+  { name: 'Communications', href: '/dashboard/communications' as const, icon: MessageSquare },
+  { name: 'Reports', href: '/dashboard/reports' as const, icon: BarChart3 },
+  { name: 'Clients', href: '/dashboard/clients' as const, icon: Users },
+  { name: 'Settings', href: '/dashboard/settings' as const, icon: Settings },
 ];
 
 export function DashboardSidebar() {
@@ -37,7 +38,7 @@ export function DashboardSidebar() {
             return (
               <Link
                 key={item.name}
-                href={item.href}
+                href={item.href as Route}
                 className={cn(
                   isActive
                     ? 'bg-primary-50 border-primary-500 text-primary-700'

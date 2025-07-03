@@ -15,6 +15,10 @@ export * from './agents';
 // Workflow types
 export * from './workflows';
 
+// Supabase types
+export * from './supabase';
+export type { Database } from './supabase';
+
 // Re-export commonly used types for convenience
 export type {
   // Core entities
@@ -31,25 +35,33 @@ export type {
   WorkflowType,
   WorkflowStatus,
   TaskStatus,
-  AgentType,
   PriorityLevel,
   
+  // Performance metrics
+  AgentPerformanceMetrics
+} from './database';
+
+export type {
+  // Agent types
+  AgentType,
+  AgentTaskRequest,
+  AgentTaskResponse
+} from './agents';
+
+export type {
   // API types
   ApiResponse,
   ApiError,
   WorkflowResponse,
-  TaskResponse,
-  
-  // Agent types
-  AgentTaskRequest,
-  AgentTaskResponse,
-  AgentPerformanceMetrics,
-  
+  TaskResponse
+} from './api';
+
+export type {
   // Workflow types
   WorkflowDefinition,
   WorkflowExecution,
   WorkflowTemplate
-} from './database';
+} from './workflows';
 
 export type {
   // API request/response types

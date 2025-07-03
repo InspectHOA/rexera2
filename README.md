@@ -22,7 +22,8 @@ Rexera 2.0 is a sophisticated AI-powered real estate workflow automation platfor
 
 ```
 rexera2/
-├── frontend/           # Next.js application
+├── frontend/           # Next.js application (UI components and pages)
+├── apis/              # API routes and server logic (deploys with frontend)
 ├── database/           # Schema, migrations, and seed data
 ├── workflows/          # n8n workflow definitions
 ├── infrastructure/     # DevOps configurations

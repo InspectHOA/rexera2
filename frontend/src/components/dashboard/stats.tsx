@@ -1,6 +1,9 @@
 'use client';
 
+import { useWorkflows } from '@/lib/hooks/useWorkflows';
+
 export function DashboardStats() {
+  const { stats, loading } = useWorkflows({ include: ['tasks'] });
   return (
     <div 
       className="stats-bar"
@@ -35,7 +38,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            247
+            {loading ? '...' : stats.total}
           </div>
           <div 
             className="stat-label"
@@ -60,7 +63,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            156
+            {loading ? '...' : stats.active}
           </div>
           <div 
             className="stat-label"
@@ -85,7 +88,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            12
+            {loading ? '...' : stats.interrupts}
           </div>
           <div 
             className="stat-label"
@@ -110,7 +113,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            7
+            {loading ? '...' : stats.completedToday}
           </div>
           <div 
             className="stat-label"

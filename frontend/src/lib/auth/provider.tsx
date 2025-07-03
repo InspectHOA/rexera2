@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
+import type { Route } from 'next';
 import { useSupabase } from '@/lib/supabase/provider';
 import type { UserProfile } from '@rexera/types';
 
@@ -40,7 +41,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error fetching user profile:', error);
         setProfile(null);
       } else {
-        setProfile(data);
+        // Convert null values to undefined to match UserProfile type
+        const profile: UserProfile = {
+          ...data,
+          full_name: data.full_name ?? undefined,
+          company_id: data.company_id ?? undefined,
+          created_at: data.created_at ?? new Date().toISOString(),
+          updated_at: data.updated_at ?? new Date().toISOString()
+        };
+        setProfile(profile);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -53,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
       setUser(null);
       setProfile(null);
-      router.push('/auth/login');
+      router.push('/auth/login' as Route);
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -76,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (event === 'SIGNED_OUT') {
           setProfile(null);
-          router.push('/auth/login');
+          router.push('/auth/login' as Route);
         }
         
         setLoading(false);

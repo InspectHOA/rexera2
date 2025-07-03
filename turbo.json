@@ -6,15 +6,73 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+    "build:frontend": {
+      "dependsOn": ["^build", "build:types"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
+    },
+    "build:apis": {
+      "dependsOn": ["build:types"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+    "build:agents": {
+      "dependsOn": ["build:types"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+    "build:database": {
+      "dependsOn": ["build:types"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "SUPABASE_*"]
+    },
+    "build:workflows": {
+      "dependsOn": ["build:types", "build:agents"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+    "build:types": {
+      "outputs": ["dist/**", "**/*.d.ts"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "dev:frontend": {
+      "dependsOn": ["build:types"],
+      "cache": false,
+      "persistent": true,
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*", "DATABASE_URL", "SUPABASE_*"]
+    },
+    "dev:agents": {
+      "dependsOn": ["build:types"],
+      "cache": false,
+      "persistent": true,
+      "env": ["NODE_ENV", "DATABASE_URL"]
+    },
+    "dev:apis": {
+      "dependsOn": ["build:types"],
+      "cache": false,
+      "persistent": true,
+      "env": ["NODE_ENV", "DATABASE_URL", "SUPABASE_*"]
     },
     "test": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"]
     },
+    "test:unit": {
+      "dependsOn": ["build:types"],
+      "outputs": ["coverage/**"]
+    },
+    "test:integration": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "SUPABASE_*"]
+    },
     "lint": {
+      "outputs": []
+    },
+    "lint:fix": {
       "outputs": []
     },
     "type-check": {
@@ -27,12 +85,38 @@
     "setup": {
       "cache": false
     },
+    "db:migrate": {
+      "dependsOn": ["build:database"],
+      "cache": false,
+      "env": ["DATABASE_URL", "SUPABASE_*"]
+    },
+    "db:seed": {
+      "dependsOn": ["db:migrate"],
+      "cache": false,
+      "env": ["DATABASE_URL", "SUPABASE_*"]
+    },
     "deploy:staging": {
       "dependsOn": ["build", "test"],
       "outputs": []
     },
     "deploy:prod": {
       "dependsOn": ["build", "test", "lint"],
+      "outputs": []
+    },
+    "deploy:frontend": {
+      "dependsOn": ["build:frontend", "test:unit", "lint"],
+      "outputs": []
+    },
+    "deploy:agents": {
+      "dependsOn": ["build:agents", "test:unit"],
+      "outputs": []
+    },
+    "deploy:database": {
+      "dependsOn": ["build:database", "test:unit"],
+      "outputs": []
+    },
+    "deploy:apis": {
+      "dependsOn": ["build:apis", "test:unit", "lint"],
       "outputs": []
     }
   }

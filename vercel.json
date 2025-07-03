@@ -9,6 +9,26 @@
   ],
   "routes": [
     {
+      "src": "/api/agents/(.*)",
+      "dest": "apis/agents/$1"
+    },
+    {
+      "src": "/api/workflows/(.*)",
+      "dest": "apis/workflows/$1"
+    },
+    {
+      "src": "/api/tasks/(.*)",
+      "dest": "apis/tasks/$1"
+    },
+    {
+      "src": "/api/communications/(.*)",
+      "dest": "apis/communications/$1"
+    },
+    {
+      "src": "/api/webhooks/(.*)",
+      "dest": "apis/webhooks/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "frontend/$1"
     }
@@ -22,15 +42,54 @@
       "TURBO_TEAM": "@turbo_team"
     }
   },
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "npm install && npx turbo run build --filter=frontend^...",
   "functions": {
-    "frontend/src/app/api/**/*.ts": {
+    "apis/src/**/*.ts": {
+      "maxDuration": 60
+    },
+    "apis/src/agents/**/*.ts": {
+      "maxDuration": 120
+    },
+    "apis/src/workflows/**/*.ts": {
+      "maxDuration": 180
+    },
+    "apis/src/webhooks/**/*.ts": {
       "maxDuration": 30
     }
   },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/health-check",
       "schedule": "0 */5 * * * *"
+    },
+    {
+      "path": "/api/agents/health",
+      "schedule": "0 */10 * * * *"
+    },
+    {
+      "path": "/api/workflows/cleanup",
+      "schedule": "0 0 * * *"
     }
   ]
 }

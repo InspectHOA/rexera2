@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
+BE VERY CAREFULY ABOUT ADDING UNNESSARY COMPLEXITY IN THE CODE. OPTIMIZE FOR DEVELOPER EASE.
 ## Development Commands
 
 ### Root Level Commands (using Turbo monorepo)
@@ -43,7 +43,9 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 
 ### Key Components
 
-**Frontend (frontend/)**: Next.js 14 application with TypeScript, Tailwind CSS, and shadcn/ui components. Features real-time dashboard updates via WebSocket connections.
+**Frontend (frontend/)**: Next.js 14 application with TypeScript, Tailwind CSS, and shadcn/ui components. Features real-time dashboard updates via WebSocket connections. UI-focused with no API routes.
+
+**APIs (apis/)**: Vercel Edge Functions providing all API endpoints for workflows, agents, tasks, and communications. Deployed as part of the same Vercel application but logically separated.
 
 **Database (database/)**: Supabase PostgreSQL setup with Row-Level Security, migrations, and generated TypeScript types. Contains comprehensive schema for workflows, tasks, agents, and business entities.
 
@@ -66,13 +68,16 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 ## Workspace Structure
 
 This is a Turbo monorepo with the following workspaces:
-- `frontend` - Next.js application
+- `frontend` - Next.js application (UI components and pages)
+- `apis` - API routes and server-side logic (deploys with frontend as single Vercel app)
 - `database` - Schema, migrations, and database utilities
 - `workflows` - n8n workflow definitions
 - `types` - Shared TypeScript types
 - `agents` - AI agent integration system
 
 Each workspace has its own package.json with specific scripts. Use `cd <workspace>` to run workspace-specific commands.
+
+**Note**: The `apis` workspace contains the API routes that are deployed as part of the same Vercel application as the frontend, maintaining the unified deployment model while providing better code organization.
 
 ## Authentication & Security
 
