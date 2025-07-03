@@ -103,13 +103,7 @@ CREATE TABLE workflows (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
-    due_date TIMESTAMPTZ,
-    
-    -- Ensure assigned_to is HIL user if not null
-    CONSTRAINT check_assigned_to_hil CHECK (
-        assigned_to IS NULL OR
-        EXISTS (SELECT 1 FROM user_profiles WHERE id = assigned_to AND user_type = 'hil_user')
-    )
+    due_date TIMESTAMPTZ
 );
 
 -- Tasks - Individual work items within workflows
@@ -237,7 +231,7 @@ CREATE TABLE email_metadata (
     communication_id UUID NOT NULL REFERENCES communications(id) ON DELETE CASCADE,
     message_id TEXT, -- RFC 2822 Message-ID header
     in_reply_to TEXT, -- RFC 2822 In-Reply-To header for threading
-    references TEXT[], -- RFC 2822 References header
+    email_references TEXT[], -- RFC 2822 References header (renamed to avoid keyword conflict)
     attachments JSONB DEFAULT '[]', -- Array of attachment objects
     headers JSONB DEFAULT '{}', -- Full email headers
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -686,21 +680,21 @@ CREATE TRIGGER update_threads_updated_at BEFORE UPDATE ON threads FOR EACH ROW E
 CREATE OR REPLACE FUNCTION calculate_business_hours(start_time TIMESTAMPTZ, end_time TIMESTAMPTZ)
 RETURNS INTERVAL AS $$
 DECLARE
-    current_time TIMESTAMPTZ := start_time;
+    iter_time TIMESTAMPTZ := start_time;
     business_hours INTERVAL := '0 hours';
     day_of_week INTEGER;
     hour_of_day INTEGER;
 BEGIN
-    WHILE current_time < end_time LOOP
-        day_of_week := EXTRACT(DOW FROM current_time); -- 0=Sunday, 1=Monday, ..., 6=Saturday
-        hour_of_day := EXTRACT(HOUR FROM current_time);
+    WHILE iter_time < end_time LOOP
+        day_of_week := EXTRACT(DOW FROM iter_time); -- 0=Sunday, 1=Monday, ..., 6=Saturday
+        hour_of_day := EXTRACT(HOUR FROM iter_time);
         
         -- Check if it's a business day (Monday-Friday) and business hours (9 AM - 5 PM)
         IF day_of_week BETWEEN 1 AND 5 AND hour_of_day BETWEEN 9 AND 16 THEN
             business_hours := business_hours + '1 hour';
         END IF;
         
-        current_time := current_time + '1 hour';
+        iter_time := iter_time + '1 hour';
     END LOOP;
     
     RETURN business_hours;
