@@ -56,20 +56,20 @@ INSERT INTO agents (id, name, type, description, capabilities, api_endpoint, con
 -- Insert default SLA definitions
 INSERT INTO sla_definitions (id, workflow_type, task_type, client_id, hours_to_complete, alert_hours_before, is_business_hours_only) VALUES
 -- Municipal Lien Search SLAs
-('s1000000-0000-0000-0000-000000000001', 'MUNI_LIEN_SEARCH', NULL, NULL, 24, ARRAY[4, 2], true),
-('s1000000-0000-0000-0000-000000000002', 'MUNI_LIEN_SEARCH', 'research', NULL, 8, ARRAY[2, 1], true),
-('s1000000-0000-0000-0000-000000000003', 'MUNI_LIEN_SEARCH', 'document_processing', NULL, 4, ARRAY[1], true),
+('a2000000-0000-0000-0000-000000000001', 'MUNI_LIEN_SEARCH', NULL, NULL, 24, ARRAY[4, 2], true),
+('a2000000-0000-0000-0000-000000000002', 'MUNI_LIEN_SEARCH', 'research', NULL, 8, ARRAY[2, 1], true),
+('a2000000-0000-0000-0000-000000000003', 'MUNI_LIEN_SEARCH', 'document_processing', NULL, 4, ARRAY[1], true),
 
 -- HOA Acquisition SLAs
-('s1000000-0000-0000-0000-000000000004', 'HOA_ACQUISITION', NULL, NULL, 48, ARRAY[12, 4], true),
-('s1000000-0000-0000-0000-000000000005', 'HOA_ACQUISITION', 'research', NULL, 16, ARRAY[4, 2], true),
-('s1000000-0000-0000-0000-000000000006', 'HOA_ACQUISITION', 'communication', NULL, 8, ARRAY[2, 1], true),
-('s1000000-0000-0000-0000-000000000007', 'HOA_ACQUISITION', 'document_processing', NULL, 12, ARRAY[3, 1], true),
+('a2000000-0000-0000-0000-000000000004', 'HOA_ACQUISITION', NULL, NULL, 48, ARRAY[12, 4], true),
+('a2000000-0000-0000-0000-000000000005', 'HOA_ACQUISITION', 'research', NULL, 16, ARRAY[4, 2], true),
+('a2000000-0000-0000-0000-000000000006', 'HOA_ACQUISITION', 'communication', NULL, 8, ARRAY[2, 1], true),
+('a2000000-0000-0000-0000-000000000007', 'HOA_ACQUISITION', 'document_processing', NULL, 12, ARRAY[3, 1], true),
 
 -- Payoff Request SLAs
-('s1000000-0000-0000-0000-000000000008', 'PAYOFF', NULL, NULL, 12, ARRAY[3, 1], true),
-('s1000000-0000-0000-0000-000000000009', 'PAYOFF', 'communication', NULL, 4, ARRAY[1], true),
-('s1000000-0000-0000-0000-000000000010', 'PAYOFF', 'document_processing', NULL, 2, ARRAY[1], true);
+('a2000000-0000-0000-0000-000000000008', 'PAYOFF', NULL, NULL, 12, ARRAY[3, 1], true),
+('a2000000-0000-0000-0000-000000000009', 'PAYOFF', 'communication', NULL, 4, ARRAY[1], true),
+('a2000000-0000-0000-0000-000000000010', 'PAYOFF', 'document_processing', NULL, 2, ARRAY[1], true);
 
 -- Insert sample counterparties
 INSERT INTO counterparties (id, name, type, email, phone, address, contact_info) VALUES

@@ -11,10 +11,7 @@ export default function DashboardLayout({
 }) {
   const { user, profile, loading } = useAuth();
 
-  // Skip auth check in development for easier testing
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  if (loading && !isDevelopment) {
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -22,7 +19,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user && !isDevelopment) {
+  if (!user) {
     redirect('/auth/login');
   }
 
