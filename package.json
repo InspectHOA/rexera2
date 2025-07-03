@@ -1,0 +1,49 @@
+{
+  "name": "rexera2-complete",
+  "version": "2.0.0",
+  "description": "AI-powered real estate workflow automation platform",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "database",
+    "workflows", 
+    "infrastructure",
+    "shared",
+    "types",
+    "agents"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "deploy:staging": "turbo run deploy:staging",
+    "deploy:prod": "turbo run deploy:prod",
+    "setup": "npm install && npm run setup:repos",
+    "setup:repos": "turbo run setup",
+    "db:migrate": "cd database && npm run migrate",
+    "db:seed": "cd database && npm run seed",
+    "workflows:deploy": "cd workflows && npm run deploy",
+    "agents:test": "cd agents && npm run test",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "turbo": "^1.10.0",
+    "typescript": "^5.2.0",
+    "eslint": "^8.52.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/InspectHOA/rexera2-complete"
+  },
+  "author": "InspectHOA Team",
+  "license": "UNLICENSED"
+}

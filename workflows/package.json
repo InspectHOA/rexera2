@@ -1,0 +1,32 @@
+{
+  "name": "@rexera/workflows",
+  "version": "1.0.0",
+  "description": "n8n workflow definitions for Rexera 2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "setup": "npm install",
+    "export": "node scripts/export-workflows.js",
+    "import": "node scripts/import-workflows.js",
+    "validate": "node scripts/validate-workflows.js"
+  },
+  "dependencies": {
+    "@rexera/types": "*",
+    "@rexera/database": "*",
+    "@rexera/agents": "*",
+    "n8n-workflow": "^1.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.0",
+    "@types/node": "^20.0.0"
+  },
+  "files": [
+    "dist",
+    "workflows"
+  ]
+}

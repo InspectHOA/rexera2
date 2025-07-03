@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "name": "rexera2",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "TURBO_TOKEN": "@turbo_token",
+      "TURBO_TEAM": "@turbo_team"
+    }
+  },
+  "functions": {
+    "frontend/src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/health-check",
+      "schedule": "0 */5 * * * *"
+    }
+  ]
+}

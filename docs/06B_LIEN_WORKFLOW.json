@@ -1,0 +1,273 @@
+{
+  "workflowDefinition": {
+    "name": "Municipal Lien Search Workflow",
+    "type": "MUNI_LIEN_SEARCH",
+    "version": "1.0.0",
+    "description": "Automates the search and retrieval of municipal liens, tax assessments, and utility liens for real estate transactions",
+    "estimatedDuration": "4 hours",
+    "priority": "HIGH",
+    "tags": ["liens", "municipal", "search", "tax", "utility", "real-estate"]
+  },
+  "inputSchema": {
+    "type": "object",
+    "required": ["address", "county", "parcelNumber", "buyer", "closingDate"],
+    "properties": {
+      "address": {
+        "type": "string",
+        "description": "Full property address for lien search"
+      },
+      "county": {
+        "type": "string",
+        "description": "County where the property is located"
+      },
+      "parcelNumber": {
+        "type": "string",
+        "description": "Property parcel identification number"
+      },
+      "buyer": {
+        "type": "string",
+        "description": "Name of the property buyer"
+      },
+      "closingDate": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Expected closing date for the transaction"
+      },
+      "searchTypes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["tax_liens", "utility_liens", "municipal_liens", "special_assessments", "code_violations"]
+        },
+        "default": ["tax_liens", "utility_liens", "municipal_liens"],
+        "description": "Types of liens to search for"
+      },
+      "urgency": {
+        "type": "string",
+        "enum": ["LOW", "NORMAL", "HIGH", "URGENT"],
+        "default": "NORMAL",
+        "description": "Priority level for the search"
+      },
+      "searchDepth": {
+        "type": "string",
+        "enum": ["BASIC", "COMPREHENSIVE", "EXHAUSTIVE"],
+        "default": "COMPREHENSIVE",
+        "description": "Depth of lien search to perform"
+      }
+    }
+  },
+  "taskSequence": [
+    {
+      "step": 1,
+      "taskType": "research_municipality",
+      "agent": "nina",
+      "description": "Research municipality and identify available search portals",
+      "slaMinutes": 30,
+      "dependencies": [],
+      "outputs": ["municipality_info", "portal_list", "search_requirements", "access_methods"]
+    },
+    {
+      "step": 2,
+      "taskType": "portal_access",
+      "agent": "rex",
+      "description": "Access municipal portals and perform automated searches",
+      "slaMinutes": 60,
+      "dependencies": [1],
+      "parallelExecution": true,
+      "outputs": ["search_results", "portal_responses", "document_links", "access_logs"]
+    },
+    {
+      "step": 3,
+      "taskType": "process_documents",
+      "agent": "iris",
+      "description": "Process and extract data from retrieved lien documents",
+      "slaMinutes": 45,
+      "dependencies": [2],
+      "outputs": ["extracted_data", "lien_details", "document_analysis", "structured_results"]
+    },
+    {
+      "step": 4,
+      "taskType": "quality_validation",
+      "agent": "cassy",
+      "description": "Validate search completeness and data accuracy",
+      "slaMinutes": 30,
+      "dependencies": [3],
+      "outputs": ["validation_report", "quality_score", "missing_searches", "recommendations"]
+    },
+    {
+      "step": 5,
+      "taskType": "generate_invoice",
+      "agent": "kosha",
+      "description": "Generate invoice for lien search services",
+      "slaMinutes": 15,
+      "dependencies": [4],
+      "outputs": ["invoice_id", "invoice_amount", "invoice_pdf", "cost_breakdown"]
+    },
+    {
+      "step": 6,
+      "taskType": "update_crm",
+      "agent": "ria",
+      "description": "Update CRM with lien search results",
+      "slaMinutes": 15,
+      "dependencies": [5],
+      "outputs": ["crm_updated", "record_id", "status_updated", "alert_flags"]
+    },
+    {
+      "step": 7,
+      "taskType": "notify_client",
+      "agent": "mia",
+      "description": "Send lien search results to client",
+      "slaMinutes": 15,
+      "dependencies": [6],
+      "outputs": ["notification_sent", "client_response", "delivery_confirmation", "follow_up_scheduled"]
+    }
+  ],
+  "parallelTasks": {
+    "portal_access": {
+      "description": "Multiple portals can be accessed simultaneously",
+      "maxConcurrency": 5,
+      "portals": [
+        {
+          "name": "county_tax_portal",
+          "priority": "HIGH",
+          "searchTypes": ["tax_liens", "special_assessments"]
+        },
+        {
+          "name": "municipal_portal",
+          "priority": "HIGH",
+          "searchTypes": ["municipal_liens", "code_violations"]
+        },
+        {
+          "name": "utility_portal",
+          "priority": "MEDIUM",
+          "searchTypes": ["utility_liens"]
+        },
+        {
+          "name": "court_records",
+          "priority": "LOW",
+          "searchTypes": ["judgment_liens"]
+        }
+      ]
+    }
+  },
+  "errorHandling": {
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoffStrategy": "exponential",
+      "retryableErrors": ["PORTAL_TIMEOUT", "NETWORK_ERROR", "TEMPORARY_UNAVAILABLE"]
+    },
+    "escalationRules": [
+      {
+        "condition": "portal_access_failure > 50%",
+        "action": "escalate_to_hil",
+        "notification": "slack_alert"
+      },
+      {
+        "condition": "sla_breach",
+        "action": "manager_notification",
+        "notification": "email_alert"
+      },
+      {
+        "condition": "critical_lien_found",
+        "action": "immediate_client_notification",
+        "notification": "phone_call"
+      }
+    ],
+    "fallbackStrategies": {
+      "portal_failure": "manual_search",
+      "rex_unavailable": "manual_portal_access",
+      "iris_failure": "manual_document_review"
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "searchResults": {
+        "type": "object",
+        "properties": {
+          "liensFound": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["tax_lien", "utility_lien", "municipal_lien", "special_assessment", "code_violation"]
+                },
+                "amount": {"type": "number"},
+                "status": {
+                  "type": "string",
+                  "enum": ["active", "satisfied", "pending", "disputed"]
+                },
+                "filingDate": {"type": "string", "format": "date"},
+                "authority": {"type": "string"},
+                "description": {"type": "string"},
+                "priority": {
+                  "type": "string",
+                  "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+                }
+              }
+            }
+          },
+          "totalLienAmount": {"type": "number"},
+          "searchCompletedAt": {"type": "string", "format": "date-time"},
+          "documentsRetrieved": {"type": "integer"},
+          "portalAccess": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "searchCoverage": {
+            "type": "object",
+            "properties": {
+              "taxLiens": {"type": "boolean"},
+              "utilityLiens": {"type": "boolean"},
+              "municipalLiens": {"type": "boolean"},
+              "specialAssessments": {"type": "boolean"},
+              "codeViolations": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "qualityChecks": [
+    {
+      "name": "search_completeness",
+      "description": "Verify all requested search types were completed",
+      "required": true
+    },
+    {
+      "name": "data_accuracy",
+      "description": "Validate extracted lien data against source documents",
+      "required": true
+    },
+    {
+      "name": "portal_coverage",
+      "description": "Confirm all relevant portals were accessed",
+      "required": true
+    },
+    {
+      "name": "critical_lien_flagging",
+      "description": "Ensure high-value liens are properly flagged",
+      "required": true
+    }
+  ],
+  "monitoring": {
+    "slaTracking": true,
+    "realTimeUpdates": true,
+    "clientNotifications": ["start", "critical_lien_found", "completion", "error"],
+    "metrics": ["completion_time", "lien_count", "total_amount", "portal_success_rate", "accuracy_score"],
+    "alerts": [
+      {
+        "condition": "lien_amount > 10000",
+        "action": "immediate_notification",
+        "recipients": ["client", "manager"]
+      },
+      {
+        "condition": "portal_failure_rate > 30%",
+        "action": "technical_alert",
+        "recipients": ["tech_team"]
+      }
+    ]
+  }
+}

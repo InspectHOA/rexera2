@@ -1,0 +1,375 @@
+{
+  "workflowDefinition": {
+    "name": "Payoff Request Workflow",
+    "type": "PAYOFF_REQUEST",
+    "version": "1.0.0",
+    "description": "Automates mortgage payoff statement requests with conditional lender communication and dynamic client interaction capabilities",
+    "estimatedDuration": "2 days",
+    "priority": "HIGH",
+    "tags": ["payoff", "mortgage", "lender", "statement", "real-estate"]
+  },
+  "inputSchema": {
+    "type": "object",
+    "required": ["address", "borrowerName", "lenderName", "loanNumber", "payoffDate"],
+    "properties": {
+      "address": {
+        "type": "string",
+        "description": "Property address for payoff request"
+      },
+      "borrowerName": {
+        "type": "string",
+        "description": "Name of the borrower on the mortgage"
+      },
+      "lenderName": {
+        "type": "string",
+        "description": "Name of the mortgage lender"
+      },
+      "loanNumber": {
+        "type": "string",
+        "description": "Mortgage loan number"
+      },
+      "payoffDate": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Requested payoff date"
+      },
+      "estimatedBalance": {
+        "type": "number",
+        "description": "Estimated remaining loan balance"
+      },
+      "buyer": {
+        "type": "string",
+        "description": "Name of the property buyer"
+      },
+      "seller": {
+        "type": "string",
+        "description": "Name of the property seller"
+      },
+      "urgency": {
+        "type": "string",
+        "enum": ["LOW", "NORMAL", "HIGH", "URGENT"],
+        "default": "NORMAL",
+        "description": "Priority level for the request"
+      },
+      "additionalRequirements": {
+        "type": "object",
+        "properties": {
+          "include_per_diem": {"type": "boolean", "default": false},
+          "include_wire_instructions": {"type": "boolean", "default": true},
+          "include_payoff_breakdown": {"type": "boolean", "default": true},
+          "rush_processing": {"type": "boolean", "default": false}
+        }
+      }
+    }
+  },
+  "taskSequence": [
+    {
+      "step": 1,
+      "taskType": "identify_lender_contact",
+      "agent": "nina",
+      "description": "Research lender contact information and communication preferences",
+      "slaMinutes": 1440,
+      "dependencies": [],
+      "outputs": ["lender_contact_info", "communication_preference", "ivr_availability", "portal_access"]
+    },
+    {
+      "step": 2,
+      "taskType": "send_payoff_request",
+      "agent": "conditional",
+      "description": "Send payoff request using optimal communication method",
+      "slaMinutes": 2880,
+      "dependencies": [1],
+      "conditionalExecution": {
+        "agents": {
+          "max": {
+            "condition": "lender_has_ivr_system AND communication_preference = 'ivr'",
+            "method": "IVR_SYSTEM",
+            "priority": 1
+          },
+          "florian": {
+            "condition": "requires_phone_contact OR communication_preference = 'phone'",
+            "method": "PHONE_CALL",
+            "priority": 2
+          },
+          "mia": {
+            "condition": "default",
+            "method": "EMAIL",
+            "priority": 3
+          }
+        }
+      },
+      "outputs": ["request_sent", "communication_method", "tracking_info", "expected_response_time"]
+    },
+    {
+      "step": 3,
+      "taskType": "await_statement",
+      "agent": "system",
+      "description": "Wait for payoff statement response from lender",
+      "slaMinutes": 10080,
+      "dependencies": [2],
+      "timeout": "7 days",
+      "webhookPath": "/webhooks/payoff/{workflowId}/response",
+      "outputs": ["statement_received", "document_url", "response_metadata"]
+    },
+    {
+      "step": 4,
+      "taskType": "extract_payoff_data",
+      "agent": "iris",
+      "description": "Extract and validate payoff statement data",
+      "slaMinutes": 4320,
+      "dependencies": [3],
+      "outputs": ["payoff_amount", "payoff_date", "per_diem", "wire_instructions", "good_through_date"]
+    },
+    {
+      "step": 5,
+      "taskType": "generate_invoice",
+      "agent": "kosha",
+      "description": "Generate invoice for payoff processing services",
+      "slaMinutes": 5760,
+      "dependencies": [4],
+      "outputs": ["invoice_id", "invoice_amount", "invoice_pdf", "cost_breakdown"]
+    },
+    {
+      "step": 6,
+      "taskType": "update_crm_record",
+      "agent": "ria",
+      "description": "Update CRM with payoff statement details",
+      "slaMinutes": 7200,
+      "dependencies": [5],
+      "outputs": ["crm_updated", "record_id", "status_updated", "payoff_details_stored"]
+    },
+    {
+      "step": 7,
+      "taskType": "notify_client",
+      "agent": "mia",
+      "description": "Send payoff statement and invoice to client",
+      "slaMinutes": 8640,
+      "dependencies": [6],
+      "outputs": ["notification_sent", "client_response", "delivery_confirmation"]
+    },
+    {
+      "step": 8,
+      "taskType": "close_workflow",
+      "agent": "system",
+      "description": "Finalize workflow and update all records",
+      "slaMinutes": 10080,
+      "dependencies": [7],
+      "outputs": ["workflow_completed", "final_status", "completion_summary"]
+    }
+  ],
+  "dynamicTasks": [
+    {
+      "taskType": "handle_client_update",
+      "agent": "ria",
+      "description": "Handle real-time client messages and requirement updates",
+      "trigger": "client_message_webhook",
+      "webhookPath": "/webhooks/payoff/{workflowId}/message",
+      "priority": "HIGH",
+      "slaMinutes": 30,
+      "outputs": ["requirements_updated", "workflow_modified", "client_acknowledged"]
+    },
+    {
+      "taskType": "escalate_urgent_request",
+      "agent": "hil",
+      "description": "Handle urgent escalations requiring human intervention",
+      "trigger": "urgent_flag OR sla_breach",
+      "priority": "URGENT",
+      "slaMinutes": 15,
+      "outputs": ["escalation_handled", "resolution_plan", "timeline_updated"]
+    }
+  ],
+  "conditionalLogic": {
+    "lender_communication": {
+      "description": "Select optimal communication method based on lender characteristics",
+      "rules": [
+        {
+          "condition": "lender_info.has_ivr_system = true AND communication_preference = 'ivr'",
+          "agent": "max",
+          "method": "IVR_SYSTEM",
+          "expectedResponseTime": "24-48 hours"
+        },
+        {
+          "condition": "lender_info.requires_phone_contact = true OR communication_preference = 'phone'",
+          "agent": "florian",
+          "method": "PHONE_CALL",
+          "expectedResponseTime": "48-72 hours"
+        },
+        {
+          "condition": "default",
+          "agent": "mia",
+          "method": "EMAIL",
+          "expectedResponseTime": "24-72 hours"
+        }
+      ]
+    },
+    "client_interaction": {
+      "description": "Handle dynamic client requirements during workflow execution",
+      "triggers": [
+        {
+          "event": "client_message",
+          "action": "inject_dynamic_task",
+          "agent": "ria"
+        },
+        {
+          "event": "requirement_change",
+          "action": "update_workflow_payload",
+          "agent": "ria"
+        },
+        {
+          "event": "urgent_request",
+          "action": "escalate_priority",
+          "agent": "hil"
+        }
+      ]
+    }
+  },
+  "errorHandling": {
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoffStrategy": "exponential",
+      "retryableErrors": ["LENDER_TIMEOUT", "NETWORK_ERROR", "TEMPORARY_FAILURE"]
+    },
+    "escalationRules": [
+      {
+        "condition": "lender_no_response > 5_days",
+        "action": "escalate_to_hil",
+        "notification": "slack_alert"
+      },
+      {
+        "condition": "payoff_amount_discrepancy > 5000",
+        "action": "manual_review",
+        "notification": "email_alert"
+      },
+      {
+        "condition": "sla_breach",
+        "action": "manager_notification",
+        "notification": "phone_call"
+      }
+    ],
+    "fallbackStrategies": {
+      "max_failure": "florian_phone_call",
+      "florian_failure": "mia_email",
+      "mia_failure": "manual_contact",
+      "iris_failure": "manual_document_review"
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "payoffDetails": {
+        "type": "object",
+        "properties": {
+          "payoffAmount": {"type": "number"},
+          "payoffDate": {"type": "string", "format": "date-time"},
+          "perDiem": {"type": "number"},
+          "wireInstructions": {
+            "type": "object",
+            "properties": {
+              "bankName": {"type": "string"},
+              "routingNumber": {"type": "string"},
+              "accountNumber": {"type": "string"},
+              "beneficiaryName": {"type": "string"}
+            }
+          },
+          "goodThroughDate": {"type": "string", "format": "date-time"},
+          "communicationMethod": {
+            "type": "string",
+            "enum": ["EMAIL", "PHONE_CALL", "IVR_SYSTEM"]
+          },
+          "lenderContact": {"type": "string"},
+          "statementUrl": {"type": "string"},
+          "processingTime": {"type": "string"},
+          "additionalFees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {"type": "string"},
+                "amount": {"type": "number"}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "qualityChecks": [
+    {
+      "name": "payoff_amount_validation",
+      "description": "Verify payoff amount is within expected range",
+      "required": true,
+      "tolerance": 5000
+    },
+    {
+      "name": "date_consistency",
+      "description": "Ensure payoff date matches request and is valid",
+      "required": true
+    },
+    {
+      "name": "wire_instructions_complete",
+      "description": "Validate all required wire instruction fields are present",
+      "required": true
+    },
+    {
+      "name": "document_authenticity",
+      "description": "Verify payoff statement is from legitimate lender",
+      "required": true
+    }
+  ],
+  "monitoring": {
+    "slaTracking": true,
+    "realTimeUpdates": true,
+    "clientNotifications": ["start", "lender_contacted", "statement_received", "completion", "error"],
+    "metrics": ["completion_time", "communication_success_rate", "accuracy_rate", "client_satisfaction"],
+    "alerts": [
+      {
+        "condition": "payoff_amount > estimated_balance * 1.2",
+        "action": "immediate_review",
+        "recipients": ["client", "manager"]
+      },
+      {
+        "condition": "lender_response_time > 5_days",
+        "action": "escalation_alert",
+        "recipients": ["hil_team"]
+      },
+      {
+        "condition": "client_message_received",
+        "action": "priority_boost",
+        "recipients": ["assigned_agent"]
+      }
+    ]
+  },
+  "clientInteraction": {
+    "webhookEndpoints": [
+      {
+        "path": "/webhooks/payoff/{workflowId}/message",
+        "method": "POST",
+        "description": "Receive client messages during workflow execution",
+        "handler": "ria"
+      },
+      {
+        "path": "/webhooks/payoff/{workflowId}/response",
+        "method": "POST",
+        "description": "Receive lender payoff statement responses",
+        "handler": "system"
+      }
+    ],
+    "messageTypes": [
+      {
+        "type": "requirement_update",
+        "examples": ["Can you also get the per diem rate?", "Need wire instructions included"],
+        "action": "update_workflow_payload"
+      },
+      {
+        "type": "urgency_change",
+        "examples": ["Make this urgent", "Rush processing needed"],
+        "action": "escalate_priority"
+      },
+      {
+        "type": "clarification_request",
+        "examples": ["What's the status?", "When will this be complete?"],
+        "action": "provide_status_update"
+      }
+    ]
+  }
+}
