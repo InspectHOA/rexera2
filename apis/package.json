@@ -13,7 +13,6 @@
     "setup": "npm install"
   },
   "dependencies": {
-    "@rexera/database": "*",
     "@rexera/types": "*",
     "@supabase/supabase-js": "^2.38.0",
     "@vercel/node": "^3.0.12",

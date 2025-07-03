@@ -21,11 +21,6 @@
       "outputs": ["dist/**"],
       "env": ["NODE_ENV"]
     },
-    "build:database": {
-      "dependsOn": ["build:types"],
-      "outputs": ["dist/**"],
-      "env": ["NODE_ENV", "DATABASE_URL", "SUPABASE_*"]
-    },
     "build:workflows": {
       "dependsOn": ["build:types", "build:agents"],
       "outputs": ["dist/**"],
@@ -86,7 +81,6 @@
       "cache": false
     },
     "db:migrate": {
-      "dependsOn": ["build:database"],
       "cache": false,
       "env": ["DATABASE_URL", "SUPABASE_*"]
     },
@@ -109,10 +103,6 @@
     },
     "deploy:agents": {
       "dependsOn": ["build:agents", "test:unit"],
-      "outputs": []
-    },
-    "deploy:database": {
-      "dependsOn": ["build:database", "test:unit"],
       "outputs": []
     },
     "deploy:apis": {
