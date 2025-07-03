@@ -13,7 +13,7 @@
     "setup": "npm install"
   },
   "dependencies": {
-    "@rexera/types": "*",
+    "@rexera/types": "file:../types",
     "@supabase/supabase-js": "^2.38.0",
     "@vercel/node": "^3.0.12",
     "cors": "^2.8.5",
