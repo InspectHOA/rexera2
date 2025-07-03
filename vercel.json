@@ -1,8 +1,8 @@
 {
   "version": 2,
   "name": "rexera2-frontend",
-  "buildCommand": "npm install --workspaces && npm run build --workspace=types && npm run build --workspace=frontend",
+  "buildCommand": "npm install && cd types && npm run build && cd ../frontend && npm run build",
   "outputDirectory": "frontend/.next",
-  "installCommand": "npm install --workspaces",
+  "installCommand": "npm install",
   "framework": "nextjs"
 }
