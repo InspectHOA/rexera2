@@ -1,17 +1,24 @@
 -- =====================================================
--- Rexera 2.0 Initial Seed Data
--- Essential data for system operation
+-- Rexera 2.0 Complete Seed Data
+-- Essential seed data for system operation
 -- =====================================================
 
--- Insert sample clients
+-- =====================================================
+-- 1. CLIENTS
+-- =====================================================
+
 INSERT INTO clients (id, name, domain) VALUES
 ('550e8400-e29b-41d4-a716-446655440000', 'First National Bank', 'firstnational.com'),
 ('550e8400-e29b-41d4-a716-446655440001', 'City Bank & Trust', 'citybank.com'),
 ('550e8400-e29b-41d4-a716-446655440002', 'Prime Lending Corp', 'primelending.com'),
 ('550e8400-e29b-41d4-a716-446655440003', 'Metro Credit Union', 'metrocredit.com'),
-('550e8400-e29b-41d4-a716-446655440004', 'Wells Fargo Bank', 'wellsfargo.com');
+('550e8400-e29b-41d4-a716-446655440004', 'Wells Fargo Bank', 'wellsfargo.com')
+ON CONFLICT (id) DO NOTHING;
 
--- Insert AI agents configuration
+-- =====================================================
+-- 2. AI AGENTS
+-- =====================================================
+
 INSERT INTO agents (id, name, type, description, capabilities, api_endpoint, configuration) VALUES
 ('a1000000-0000-0000-0000-000000000001', 'nina', 'research', 'Research & Data Discovery Agent', 
  ARRAY['contact_research', 'property_research', 'company_research', 'municipal_research', 'web_search', 'data_validation'],
@@ -51,9 +58,13 @@ INSERT INTO agents (id, name, type, description, capabilities, api_endpoint, con
 
 ('a1000000-0000-0000-0000-000000000010', 'corey', 'hoa_specialist', 'HOA Specialist Agent',
  ARRAY['hoa_document_analysis', 'bylaw_interpretation', 'fee_calculation', 'compliance_checking', 'hoa_contact_research', 'governing_document_review'],
- 'https://api.rexera-agents.com/corey', '{"model": "gpt-4", "timeout": 60000}');
+ 'https://api.rexera-agents.com/corey', '{"model": "gpt-4", "timeout": 60000}')
+ON CONFLICT (id) DO NOTHING;
 
--- Insert default SLA definitions
+-- =====================================================
+-- 3. SLA DEFINITIONS
+-- =====================================================
+
 INSERT INTO sla_definitions (id, workflow_type, task_type, client_id, hours_to_complete, alert_hours_before, is_business_hours_only) VALUES
 -- Municipal Lien Search SLAs
 ('a2000000-0000-0000-0000-000000000001', 'MUNI_LIEN_SEARCH', NULL, NULL, 24, ARRAY[4, 2], true),
@@ -69,9 +80,13 @@ INSERT INTO sla_definitions (id, workflow_type, task_type, client_id, hours_to_c
 -- Payoff Request SLAs
 ('a2000000-0000-0000-0000-000000000008', 'PAYOFF', NULL, NULL, 12, ARRAY[3, 1], true),
 ('a2000000-0000-0000-0000-000000000009', 'PAYOFF', 'communication', NULL, 4, ARRAY[1], true),
-('a2000000-0000-0000-0000-000000000010', 'PAYOFF', 'document_processing', NULL, 2, ARRAY[1], true);
+('a2000000-0000-0000-0000-000000000010', 'PAYOFF', 'document_processing', NULL, 2, ARRAY[1], true)
+ON CONFLICT (id) DO NOTHING;
 
--- Insert sample counterparties
+-- =====================================================
+-- 4. COUNTERPARTIES
+-- =====================================================
+
 INSERT INTO counterparties (id, name, type, email, phone, address, contact_info) VALUES
 -- HOAs
 ('c1000000-0000-0000-0000-000000000001', 'Sunset Hills HOA', 'hoa', 'info@sunsethillshoa.com', '(555) 123-4567', 
@@ -107,73 +122,13 @@ INSERT INTO counterparties (id, name, type, email, phone, address, contact_info)
 
 ('c1000000-0000-0000-0000-000000000008', 'Miami-Dade Water and Sewer', 'utility', 'water@miamidade.gov', '(305) 665-7477',
  '3071 SW 38th Ave, Miami, FL 33146',
- '{"website": "https://www.miamidade.gov/water", "account_transfer": true, "deposit_required": false}');
+ '{"website": "https://www.miamidade.gov/water", "account_transfer": true, "deposit_required": false}')
+ON CONFLICT (id) DO NOTHING;
 
--- Insert sample workflow contacts labels
-INSERT INTO contact_labels (label, display_name, description, workflow_types, is_required, default_notifications) VALUES
-('buyer', 'Buyer', 'Property buyer or borrower', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH', 'PAYOFF'], true,
- '{"notify_on_completion": true, "notify_on_issues": true, "notification_method": "email"}'),
+-- =====================================================
+-- 5. AGENT PERFORMANCE METRICS
+-- =====================================================
 
-('seller', 'Seller', 'Property seller', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false,
- '{"notify_on_completion": false, "notify_on_issues": false, "notification_method": "none"}'),
-
-('title_officer', 'Title Officer', 'Title company officer handling the transaction', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH', 'PAYOFF'], true,
- '{"notify_on_completion": true, "notify_on_issues": true, "notification_method": "email"}'),
-
-('escrow_officer', 'Escrow Officer', 'Escrow company officer', ARRAY['PAYOFF'], false,
- '{"notify_on_completion": true, "notify_on_issues": true, "notification_method": "email"}'),
-
-('loan_officer', 'Loan Officer', 'Lending institution loan officer', ARRAY['PAYOFF'], false,
- '{"notify_on_completion": true, "notify_on_issues": false, "notification_method": "email"}'),
-
-('attorney', 'Attorney', 'Real estate attorney', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH', 'PAYOFF'], false,
- '{"notify_on_completion": true, "notify_on_issues": true, "notification_method": "email"}'),
-
-('realtor_buyer', 'Buyer''s Realtor', 'Real estate agent representing buyer', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false,
- '{"notify_on_completion": false, "notify_on_issues": false, "notification_method": "none"}'),
-
-('realtor_seller', 'Seller''s Realtor', 'Real estate agent representing seller', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false,
- '{"notify_on_completion": false, "notify_on_issues": false, "notification_method": "none"}'),
-
-('processor', 'Loan Processor', 'Loan processing specialist', ARRAY['PAYOFF', 'HOA_ACQUISITION'], false,
- '{"notify_on_completion": true, "notify_on_issues": true, "notification_method": "email"}'),
-
-('underwriter', 'Underwriter', 'Loan underwriter', ARRAY['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false,
- '{"notify_on_completion": true, "notify_on_issues": true, "notification_method": "email"}');
-
--- Insert contact types for counterparty contacts
-INSERT INTO contact_types (code, description) VALUES
-('primary', 'Primary contact person'),
-('billing', 'Billing and financial contact'),
-('technical', 'Technical support contact'),
-('legal', 'Legal department contact'),
-('management', 'Management company contact'),
-('board_president', 'HOA Board President'),
-('board_treasurer', 'HOA Board Treasurer'),
-('property_manager', 'Property Manager'),
-('assistant', 'Administrative Assistant'),
-('supervisor', 'Department Supervisor');
-
--- Insert sample counterparty contacts
-INSERT INTO counterparty_contacts (counterparty_id, type_code, name, email, phone, is_primary) VALUES
--- Sunset Hills HOA contacts
-('c1000000-0000-0000-0000-000000000001', 'primary', 'Sarah Johnson', 'sarah.johnson@sunsethillshoa.com', '(555) 123-4567', true),
-('c1000000-0000-0000-0000-000000000001', 'board_president', 'Michael Davis', 'president@sunsethillshoa.com', '(555) 123-4568', false),
-('c1000000-0000-0000-0000-000000000001', 'property_manager', 'Lisa Chen', 'lisa.chen@abcproperties.com', '(555) 123-4569', false),
-
--- Ocean View Condominiums contacts
-('c1000000-0000-0000-0000-000000000002', 'primary', 'Robert Martinez', 'robert@oceanviewcondos.org', '(555) 234-5678', true),
-('c1000000-0000-0000-0000-000000000002', 'board_treasurer', 'Jennifer Wilson', 'treasurer@oceanviewcondos.org', '(555) 234-5679', false),
-
--- Chase Bank Mortgage contacts
-('c1000000-0000-0000-0000-000000000003', 'primary', 'Payoff Department', 'payoffs@chase.com', '(800) 848-9136', true),
-('c1000000-0000-0000-0000-000000000003', 'supervisor', 'David Thompson', 'david.thompson@chase.com', '(800) 848-9137', false),
-
--- Bank of America contacts
-('c1000000-0000-0000-0000-000000000004', 'primary', 'Mortgage Servicing', 'payoff.requests@bankofamerica.com', '(800) 669-6607', true),
-('c1000000-0000-0000-0000-000000000004', 'technical', 'Portal Support', 'portal.support@bankofamerica.com', '(800) 669-6608', false);
-
--- Initialize agent performance metrics with baseline data
 INSERT INTO agent_performance_metrics (agent_id, metric_type, metric_value, measurement_date) VALUES
 -- Nina (Research Agent) metrics
 ('a1000000-0000-0000-0000-000000000001', 'avg_execution_time_ms', 15000, CURRENT_DATE),
@@ -187,7 +142,7 @@ INSERT INTO agent_performance_metrics (agent_id, metric_type, metric_value, meas
 ('a1000000-0000-0000-0000-000000000002', 'avg_confidence_score', 0.92, CURRENT_DATE),
 ('a1000000-0000-0000-0000-000000000002', 'cost_per_task_cents', 150, CURRENT_DATE),
 
--- Florian (Phone Agent) metrics
+-- Florian (Phone Agent) metrics  
 ('a1000000-0000-0000-0000-000000000003', 'avg_execution_time_ms', 45000, CURRENT_DATE),
 ('a1000000-0000-0000-0000-000000000003', 'success_rate', 0.85, CURRENT_DATE),
 ('a1000000-0000-0000-0000-000000000003', 'avg_confidence_score', 0.78, CURRENT_DATE),
@@ -196,41 +151,63 @@ INSERT INTO agent_performance_metrics (agent_id, metric_type, metric_value, meas
 -- Rex (Web Navigation Agent) metrics
 ('a1000000-0000-0000-0000-000000000004', 'avg_execution_time_ms', 60000, CURRENT_DATE),
 ('a1000000-0000-0000-0000-000000000004', 'success_rate', 0.82, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000004', 'avg_confidence_score', 0.75, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000004', 'cost_per_task_cents', 500, CURRENT_DATE),
+('a1000000-0000-0000-0000-000000000004', 'avg_confidence_score', 0.85, CURRENT_DATE),
+('a1000000-0000-0000-0000-000000000004', 'cost_per_task_cents', 900, CURRENT_DATE),
 
 -- Iris (Document Processing Agent) metrics
-('a1000000-0000-0000-0000-000000000005', 'avg_execution_time_ms', 20000, CURRENT_DATE),
+('a1000000-0000-0000-0000-000000000005', 'avg_execution_time_ms', 25000, CURRENT_DATE),
 ('a1000000-0000-0000-0000-000000000005', 'success_rate', 0.93, CURRENT_DATE),
 ('a1000000-0000-0000-0000-000000000005', 'avg_confidence_score', 0.91, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000005', 'cost_per_task_cents', 300, CURRENT_DATE),
+('a1000000-0000-0000-0000-000000000005', 'cost_per_task_cents', 350, CURRENT_DATE)
+ON CONFLICT (agent_id, metric_type, measurement_date) DO NOTHING;
 
--- Ria (Client Communication Agent) metrics
-('a1000000-0000-0000-0000-000000000006', 'avg_execution_time_ms', 12000, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000006', 'success_rate', 0.96, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000006', 'avg_confidence_score', 0.89, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000006', 'cost_per_task_cents', 200, CURRENT_DATE),
+-- =====================================================
+-- 6. CONTACT LABELS
+-- =====================================================
 
--- Kosha (Financial Agent) metrics
-('a1000000-0000-0000-0000-000000000007', 'avg_execution_time_ms', 10000, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000007', 'success_rate', 0.99, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000007', 'avg_confidence_score', 0.95, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000007', 'cost_per_task_cents', 100, CURRENT_DATE),
+INSERT INTO contact_labels (label, display_name, description, workflow_types, is_required, default_notifications) VALUES
+-- Real Estate workflow contacts
+('buyer', 'Buyer', 'Property buyer/purchaser', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], true, '{"notify_on_completion": true, "notify_on_issues": true}'),
+('seller', 'Seller', 'Property seller', ARRAY['PAYOFF', 'HOA_ACQUISITION'], false, '{"notify_on_completion": true}'),
+('title_officer', 'Title Officer', 'Title company representative', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_completion": true, "notify_on_documents": true}'),
+('escrow_officer', 'Escrow Officer', 'Escrow company representative', ARRAY['PAYOFF', 'HOA_ACQUISITION'], false, '{"notify_on_status_change": true, "notify_on_completion": true}'),
+('loan_officer', 'Loan Officer', 'Lender representative handling the loan', ARRAY['PAYOFF'], false, '{"notify_on_completion": true, "notify_on_issues": true}'),
+('real_estate_agent', 'Real Estate Agent', 'Buyer or seller agent', ARRAY['PAYOFF', 'HOA_ACQUISITION'], false, '{"notify_on_completion": true}'),
+('attorney', 'Attorney', 'Legal representative', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_issues": true, "notify_on_documents": true}'),
+('hoa_manager', 'HOA Manager', 'Homeowners association manager', ARRAY['HOA_ACQUISITION'], false, '{"notify_on_status_change": true}'),
+('lender_contact', 'Lender Contact', 'Primary contact at lending institution', ARRAY['PAYOFF'], false, '{"notify_on_completion": true}'),
 
--- Cassy (QA Agent) metrics
-('a1000000-0000-0000-0000-000000000008', 'avg_execution_time_ms', 18000, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000008', 'success_rate', 0.94, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000008', 'avg_confidence_score', 0.87, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000008', 'cost_per_task_cents', 275, CURRENT_DATE),
+-- Generic workflow contacts
+('primary_contact', 'Primary Contact', 'Main contact person for this workflow', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_status_change": true, "notify_on_completion": true, "notify_on_issues": true}'),
+('secondary_contact', 'Secondary Contact', 'Backup contact person', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_completion": true}'),
+('project_manager', 'Project Manager', 'Project or case manager', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_status_change": true, "notify_on_issues": true}'),
+('client_representative', 'Client Representative', 'Client organization representative', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_status_change": true, "notify_on_completion": true}'),
+('vendor_contact', 'Vendor Contact', 'Third-party vendor or service provider', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_completion": true}'),
+('compliance_officer', 'Compliance Officer', 'Regulatory or compliance contact', ARRAY['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'], false, '{"notify_on_documents": true, "notify_on_completion": true}')
+ON CONFLICT (label) DO NOTHING;
 
--- Max (IVR Navigation Agent) metrics
-('a1000000-0000-0000-0000-000000000009', 'avg_execution_time_ms', 90000, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000009', 'success_rate', 0.78, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000009', 'avg_confidence_score', 0.72, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000009', 'cost_per_task_cents', 600, CURRENT_DATE),
+-- =====================================================
+-- 7. SAMPLE WORKFLOWS (For Testing)
+-- =====================================================
 
--- Corey (HOA Specialist Agent) metrics
-('a1000000-0000-0000-0000-000000000010', 'avg_execution_time_ms', 25000, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000010', 'success_rate', 0.90, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000010', 'avg_confidence_score', 0.85, CURRENT_DATE),
-('a1000000-0000-0000-0000-000000000010', 'cost_per_task_cents', 350, CURRENT_DATE);
+-- First, we need to create a system user since workflows require created_by
+-- Note: This will need to be properly set up with actual auth.users
+-- For now, we'll comment this out and rely on the frontend fallback data
+
+-- Sample data can be added later once proper user authentication is set up
+
+-- =====================================================
+-- 8. COMPLETION LOG
+-- =====================================================
+
+INSERT INTO audit_events (
+    actor_type, actor_id, actor_name,
+    event_type, action,
+    resource_type, resource_id,
+    event_data
+) VALUES (
+    'system', 'migration', 'Database Seed System',
+    'data.seeded', 'create',
+    'database', gen_random_uuid(),
+    '{"migration": "seed_data", "version": "20250703133000", "clients": 5, "agents": 10, "slas": 10, "counterparties": 8, "contact_labels": 15, "performance_metrics": 20}'
+) ON CONFLICT DO NOTHING;
