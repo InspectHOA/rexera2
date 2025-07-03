@@ -1,9 +1,8 @@
 {
   "version": 2,
   "name": "rexera2-frontend",
-  "root": ".",
   "buildCommand": "npx turbo run build --filter=@rexera/frontend",
-  "outputDirectory": "packages/frontend/.next",
+  "outputDirectory": "frontend/.next",
   "installCommand": "npm install",
   "framework": "nextjs"
 }
