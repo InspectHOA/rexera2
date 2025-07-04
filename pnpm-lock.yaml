@@ -71,11 +71,11 @@ importers:
   api:
     dependencies:
       '@rexera/schemas':
-        specifier: file:../packages/schemas
+        specifier: workspace:*
         version: link:../packages/schemas
       '@rexera/types':
-        specifier: file:../types
-        version: types@file:types
+        specifier: workspace:*
+        version: link:../packages/types
       '@supabase/supabase-js':
         specifier: ^2.38.0
         version: 2.50.3
@@ -4623,9 +4623,6 @@ packages:
   typed-array-length@1.0.7:
     resolution: {integrity: sha512-3KS2b+kL7fsuk/eJZ7EQdnEmQoaho/r6KUef7hxvltNA5DR8NAUM+8wJMbJyZ4G9/7i3v5zPBIMN5aybAh2/Jg==}
     engines: {node: '>= 0.4'}
-
-  types@file:types:
-    resolution: {directory: types, type: directory}
 
   typescript@4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
@@ -9849,8 +9846,6 @@ snapshots:
       is-typed-array: 1.1.15
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
-
-  types@file:types: {}
 
   typescript@4.9.5: {}
 

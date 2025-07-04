@@ -18,8 +18,8 @@
     "setup": "npm install"
   },
   "dependencies": {
-    "@rexera/types": "file:../types",
-    "@rexera/schemas": "file:../packages/schemas",
+    "@rexera/types": "workspace:*",
+    "@rexera/schemas": "workspace:*",
     "@supabase/supabase-js": "^2.38.0",
     "@trpc/server": "^11.4.3",
     "cors": "^2.8.5",

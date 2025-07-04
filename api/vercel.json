@@ -1,20 +1,48 @@
 {
   "version": 2,
   "name": "rexera-api",
+  "buildCommand": "cd .. && pnpm install && pnpm run build --filter=@rexera/api",
+  "outputDirectory": "dist",
+  "installCommand": "cd .. && pnpm install",
+  "rootDirectory": "api",
   "functions": {
-    "src/server.ts": {
+    "dist/**/*.js": {
       "runtime": "nodejs18.x",
       "maxDuration": 60
     }
   },
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/dist/index.js"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/src/server.ts"
+      "dest": "/dist/index.js"
     }
   ],
   "env": {
     "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key"
-  }
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
+    "NODE_ENV": "production"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ]
 }

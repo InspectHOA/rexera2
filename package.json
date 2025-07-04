@@ -7,7 +7,7 @@
     "frontend",
     "api",
     "workflows",
-    "types",
+    "packages/types",
     "agents",
     "packages/schemas"
   ],

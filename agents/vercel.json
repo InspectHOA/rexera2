@@ -1,62 +1,30 @@
 {
   "version": 2,
-  "name": "rexera2-agents",
+  "name": "rexera-agents",
+  "buildCommand": "cd .. && npm install && npm run build --filter=@rexera/agents",
+  "outputDirectory": "dist",
+  "installCommand": "cd .. && npm install",
+  "rootDirectory": "agents",
   "functions": {
-    "src/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "src/agent-coordinator.ts": {
-      "maxDuration": 600,
-      "memory": 1024
-    },
-    "src/load-balancer.ts": {
-      "maxDuration": 120,
-      "memory": 512
-    },
-    "src/monitoring.ts": {
-      "maxDuration": 60,
-      "memory": 256
-    },
-    "src/agents/*.ts": {
+    "dist/**/*.js": {
+      "runtime": "nodejs18.x",
       "maxDuration": 300,
       "memory": 1024
     }
   },
   "routes": [
     {
-      "src": "/api/agents/coordinate",
-      "dest": "/src/agent-coordinator.ts"
+      "src": "/api/(.*)",
+      "dest": "/dist/index.js"
     },
     {
-      "src": "/api/agents/load-balance",
-      "dest": "/src/load-balancer.ts"
-    },
-    {
-      "src": "/api/agents/monitor",
-      "dest": "/src/monitoring.ts"
-    },
-    {
-      "src": "/api/agents/health",
-      "dest": "/src/index.ts"
-    },
-    {
-      "src": "/api/agents/(.*)",
-      "dest": "/src/agents/$1.ts"
+      "src": "/(.*)",
+      "dest": "/dist/index.js"
     }
   ],
   "env": {
     "NODE_ENV": "production"
   },
-  "build": {
-    "env": {
-      "TURBO_TOKEN": "@turbo_token",
-      "TURBO_TEAM": "@turbo_team"
-    }
-  },
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install && npx turbo run build --filter=agents^...",
   "headers": [
     {
       "source": "/api/(.*)",
@@ -71,29 +39,9 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization, X-Agent-ID, X-Request-ID"
-        },
-        {
-          "key": "X-Service-Type",
-          "value": "agent-coordination"
+          "value": "Content-Type, Authorization"
         }
       ]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/agents/health",
-      "schedule": "0 */5 * * * *"
-    },
-    {
-      "path": "/api/agents/monitor",
-      "schedule": "0 */2 * * * *"
-    },
-    {
-      "path": "/api/agents/cleanup",
-      "schedule": "0 0 * * *"
-    }
-  ],
-  "regions": ["iad1", "sfo1"],
-  "framework": null
+  ]
 }
