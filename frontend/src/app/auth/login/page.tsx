@@ -15,10 +15,15 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
+      // Use the current origin for the redirect URL
+      const redirectUrl = process.env.NODE_ENV === 'development'
+        ? `${window.location.origin}/auth/callback`
+        : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
 
@@ -37,6 +42,13 @@ export default function LoginPage() {
     <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
+          <div className="mb-6 flex justify-center">
+            <img
+              src="/rexera-logo.svg"
+              alt="Rexera Logo"
+              className="h-12 w-auto"
+            />
+          </div>
           <h2 className="text-3xl font-extrabold text-gray-900">
             Welcome to Rexera
           </h2>
@@ -91,7 +103,6 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Secure authentication powered by Supabase
                 </span>
               </div>
             </div>
