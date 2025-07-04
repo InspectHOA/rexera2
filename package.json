@@ -5,10 +5,11 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "apis",
+    "api",
     "workflows",
     "types",
-    "agents"
+    "agents",
+    "packages/schemas"
   ],
   "scripts": {
     "dev": "turbo run dev",

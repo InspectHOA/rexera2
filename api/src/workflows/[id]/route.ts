@@ -6,7 +6,7 @@ import type { Database } from '@rexera/types';
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     // Add optional includes
     if (include.includes('tasks')) {
-      selectQuery += `, tasks(*, task_executions(*), task_dependencies(*))`;
+      selectQuery += `, tasks(*)`;
     }
     if (include.includes('documents')) {
       selectQuery += `, documents(*)`;
@@ -51,7 +51,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     return NextResponse.json({ success: true, data: workflow });
   } catch (error) {
-    console.error('Workflow GET error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal Server Error', message: 'Failed to fetch workflow' },
       { status: 500 }
@@ -63,7 +62,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
@@ -122,7 +121,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       .single();
 
     if (error) {
-      console.error('Workflow update error:', error);
       return NextResponse.json(
         { success: false, error: 'Database Error', message: 'Failed to update workflow' },
         { status: 500 }
@@ -131,7 +129,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     return NextResponse.json({ success: true, data: updatedWorkflow });
   } catch (error) {
-    console.error('Workflow PUT error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal Server Error', message: 'Failed to update workflow' },
       { status: 500 }
@@ -143,7 +140,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
@@ -175,7 +172,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       .eq('id', params.id);
 
     if (error) {
-      console.error('Workflow deletion error:', error);
       return NextResponse.json(
         { success: false, error: 'Database Error', message: 'Failed to delete workflow' },
         { status: 500 }
@@ -184,7 +180,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     return NextResponse.json({ success: true, data: { message: 'Workflow deleted successfully' } });
   } catch (error) {
-    console.error('Workflow DELETE error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal Server Error', message: 'Failed to delete workflow' },
       { status: 500 }

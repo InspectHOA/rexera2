@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     // Use service role key for direct database access
     const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
       .limit(10);
 
     if (error) {
-      console.error('Database error:', error);
       return Response.json({ error: error.message }, { status: 500 });
     }
 
@@ -29,7 +28,6 @@ export async function GET(req: NextRequest) {
       .limit(5);
 
     if (clientsError) {
-      console.error('Clients error:', clientsError);
       return Response.json({ error: clientsError.message }, { status: 500 });
     }
 
@@ -44,8 +42,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Test endpoint error:', error);
-    return Response.json({ 
+    return Response.json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });

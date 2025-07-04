@@ -9,7 +9,7 @@ type PriorityLevel = Database['public']['Enums']['priority_level'];
 // Create Supabase client with service role for server-side operations
 function createServerClient() {
   return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
@@ -17,7 +17,13 @@ function createServerClient() {
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient();
-    const { searchParams } = new URL(request.url);
+    // Handle both full URLs (Next.js) and relative URLs (Express)
+    let url = request.url.startsWith('http') ? request.url : `http://localhost:3002${request.url}`;
+    // Clean up trailing ? that might cause URL parsing issues
+    if (url.endsWith('?')) {
+      url = url.slice(0, -1);
+    }
+    const { searchParams } = new URL(url);
 
     // Parse query parameters
     const workflow_type = searchParams.get('workflow_type') as WorkflowType | null;
@@ -61,7 +67,6 @@ export async function GET(request: NextRequest) {
     const { data: workflows, error, count } = await query;
 
     if (error) {
-      console.error('Database error:', error);
       return NextResponse.json(
         { success: false, error: { message: 'Database query failed', details: error.message } },
         { status: 500 }
@@ -120,7 +125,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('API error:', error);
     return NextResponse.json(
       { success: false, error: { message: 'Internal server error' } },
       { status: 500 }
@@ -155,6 +159,7 @@ export async function POST(request: NextRequest) {
     const { data: workflow, error } = await supabase
       .from('workflows')
       .insert({
+        id: crypto.randomUUID(),
         workflow_type,
         client_id,
         title,
@@ -183,7 +188,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Database error:', error);
       return NextResponse.json(
         { success: false, error: { message: 'Failed to create workflow', details: error.message } },
         { status: 500 }
@@ -199,7 +203,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('API error:', error);
     return NextResponse.json(
       { success: false, error: { message: 'Internal server error' } },
       { status: 500 }

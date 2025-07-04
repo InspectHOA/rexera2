@@ -1,154 +1,35 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [
-    "**/.env.*local",
-    "tsconfig.json",
-    "tailwind.config.js"
-  ],
-  "globalEnv": [
-    "NODE_ENV",
-    "VERCEL_URL",
-    "VERCEL_ENV"
-  ],
+  "$schema": "https://turborepo.org/schema.json",
   "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
-    },
-    "build:frontend": {
-      "dependsOn": ["build:types"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "env": [
-        "NODE_ENV",
-        "NEXT_PUBLIC_*",
-        "SUPABASE_*",
-        "JWT_SECRET",
-        "NEXTAUTH_*"
-      ]
-    },
-    "frontend#build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "env": [
-        "NODE_ENV",
-        "NEXT_PUBLIC_*",
-        "SUPABASE_*",
-        "JWT_SECRET",
-        "NEXTAUTH_*"
-      ]
-    },
-    "build:apis": {
-      "dependsOn": ["build:types"],
-      "outputs": ["dist/**"],
-      "env": [
-        "NODE_ENV",
-        "SUPABASE_*",
-        "JWT_SECRET",
-        "AGENT_*"
-      ]
-    },
-    "apis#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"],
-      "env": [
-        "NODE_ENV",
-        "SUPABASE_*",
-        "JWT_SECRET",
-        "AGENT_*"
-      ]
-    },
-    "build:agents": {
-      "dependsOn": ["build:types"],
-      "outputs": ["dist/**"],
-      "env": ["NODE_ENV"]
-    },
-    "build:workflows": {
-      "dependsOn": ["build:types", "build:agents"],
-      "outputs": ["dist/**"],
-      "env": ["NODE_ENV"]
-    },
-    "build:types": {
-      "outputs": ["dist/**", "**/*.d.ts"]
-    },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,         // ✅ Add this to ensure dev server keeps running
+      "parallel": true
     },
-    "dev:frontend": {
-      "dependsOn": ["build:types"],
-      "cache": false,
-      "persistent": true,
-      "env": ["NODE_ENV", "NEXT_PUBLIC_*", "DATABASE_URL", "SUPABASE_*"]
-    },
-    "dev:agents": {
-      "dependsOn": ["build:types"],
-      "cache": false,
-      "persistent": true,
-      "env": ["NODE_ENV", "DATABASE_URL"]
-    },
-    "dev:apis": {
-      "dependsOn": ["build:types"],
-      "cache": false,
-      "persistent": true,
-      "env": ["NODE_ENV", "DATABASE_URL", "SUPABASE_*"]
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [
+        "dist/**",                // ✅ Backend build output
+        ".next/**",               // ✅ Next.js output
+        "!.next/cache/**"         // ✅ Ignore cache
+      ]
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],    // ✅ Fix: ensure upstream dependencies build too
       "outputs": ["coverage/**"]
-    },
-    "test:unit": {
-      "dependsOn": ["build:types"],
-      "outputs": ["coverage/**"]
-    },
-    "test:integration": {
-      "dependsOn": ["build"],
-      "outputs": ["coverage/**"],
-      "env": ["NODE_ENV", "DATABASE_URL", "SUPABASE_*"]
     },
     "lint": {
-      "outputs": []
-    },
-    "lint:fix": {
-      "outputs": []
+      "outputs": [],
+      "cache": false              // ✅ Add: disable cache for lint
     },
     "type-check": {
       "dependsOn": ["^build"],
-      "outputs": []
+      "outputs": [],
+      "cache": false              // ✅ Add: disable cache for type-check
     },
     "clean": {
-      "cache": false
-    },
-    "setup": {
-      "cache": false
-    },
-    "db:migrate": {
       "cache": false,
-      "env": ["DATABASE_URL", "SUPABASE_*"]
-    },
-    "db:seed": {
-      "dependsOn": ["db:migrate"],
-      "cache": false,
-      "env": ["DATABASE_URL", "SUPABASE_*"]
-    },
-    "deploy:staging": {
-      "dependsOn": ["build", "test"],
-      "outputs": []
-    },
-    "deploy:prod": {
-      "dependsOn": ["build", "test", "lint"],
-      "outputs": []
-    },
-    "deploy:frontend": {
-      "dependsOn": ["build:frontend", "test:unit", "lint"],
-      "outputs": []
-    },
-    "deploy:agents": {
-      "dependsOn": ["build:agents", "test:unit"],
-      "outputs": []
-    },
-    "deploy:apis": {
-      "dependsOn": ["build:apis", "test:unit", "lint"],
-      "outputs": []
+      "outputs": []               // ✅ Add: no outputs to track
     }
   }
 }

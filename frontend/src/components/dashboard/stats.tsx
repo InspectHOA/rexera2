@@ -1,9 +1,9 @@
 'use client';
 
-import { useWorkflows } from '@/lib/hooks/useWorkflows';
+import { useWorkflowsTRPC } from '@/lib/hooks/useWorkflowsTRPC';
 
 export function DashboardStats() {
-  const { stats, loading, error } = useWorkflows({ include: ['tasks'] });
+  const { stats, loading, error } = useWorkflowsTRPC({ include: ['tasks'] });
   return (
     <div 
       className="stats-bar"

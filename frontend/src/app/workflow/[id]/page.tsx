@@ -9,7 +9,7 @@ import { TabNavigation } from '@/components/workflow/TabNavigation';
 import { TaskDetailView } from '@/components/workflow/TaskDetailView';
 import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
-import { useWorkflow } from '@/lib/hooks/useWorkflows';
+import { useWorkflowTRPC } from '@/lib/hooks/useWorkflowsTRPC';
 
 // Types
 interface Task {
@@ -40,7 +40,7 @@ export default function WorkflowDetailPage() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('details');
 
-  const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
+  const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflowTRPC(params.id as string);
   
   // Transform API data to component format
   const workflow = workflowData ? {
@@ -260,7 +260,7 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
         { label: 'Payoff Date', value: workflow.due_date ? new Date(workflow.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' },
         { label: 'Primary HIL', value: workflow.assigned_user?.full_name || 'Unassigned' },
         { label: 'Client', value: workflow.client?.name || 'Unknown' }
-      ] : DETAIL_FIELDS;
+      ] : [];
       
       return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -285,19 +285,13 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
     case 'files':
       return (
         <div className="flex flex-col gap-5">
-          <FileUpload 
-            workflowId={workflow?.id || ''} 
-            onUploadComplete={() => {
-              // Refresh documents list by re-rendering
-              window.location.reload();
-            }}
+          <FileUpload
+            workflowId={workflow?.id || ''}
+            onUploadComplete={() => {}}
           />
-          <DocumentList 
-            workflowId={workflow?.id || ''} 
-            onDocumentDeleted={() => {
-              // Refresh documents list by re-rendering
-              window.location.reload();
-            }}
+          <DocumentList
+            workflowId={workflow?.id || ''}
+            onDocumentDeleted={() => {}}
           />
         </div>
       );

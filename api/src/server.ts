@@ -1,142 +1,184 @@
-import dotenv from 'dotenv';
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { NextRequest, NextResponse } from 'next/server';
+import dotenv from 'dotenv';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './trpc/router';
+import { createTRPCContext } from './trpc/context';
 
-// Load environment variables
+// Load environment variables - prioritize .env.local for development
 dotenv.config({ path: '.env.local' });
-
-// Import API route handlers
-import { GET as workflowsGET, POST as workflowsPOST } from './workflows/route';
-import { GET as healthGET } from './health/route';
-import { GET as workflowByIdGET, PUT as workflowByIdPUT, DELETE as workflowByIdDELETE } from './workflows/[id]/route';
+dotenv.config(); // Fallback to .env
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:3000',
+    'https://rexera-frontend.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Helper function to convert Express req/res to Next.js format
-function createNextRequest(req: Request): NextRequest {
-  const url = new URL(req.url!, `http://localhost:${PORT}`);
-  
-  return new NextRequest(url, {
-    method: req.method,
-    headers: new Headers(req.headers as Record<string, string>),
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
-  });
-}
+// tRPC middleware
+app.use(
+  '/api/trpc',
+  createExpressMiddleware({
+    router: appRouter,
+    createContext: createTRPCContext,
+  })
+);
 
-async function handleNextResponse(nextResponse: NextResponse, res: Response) {
-  const status = nextResponse.status;
-  const body = await nextResponse.text();
-  
-  // Copy headers
-  nextResponse.headers.forEach((value, key) => {
-    res.setHeader(key, value);
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ 
+    success: true, 
+    message: 'API server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
-  
-  res.status(status).send(body);
-}
+});
+
+// Import route handlers
+const workflowsRoute = require('./workflows/route');
+const tasksRoute = require('./tasks/route');
+const healthRoute = require('./health/route');
 
 // API Routes
 app.get('/api/health', async (req: Request, res: Response) => {
   try {
-    const nextReq = createNextRequest(req);
-    const nextRes = await healthGET(nextReq);
-    await handleNextResponse(nextRes, res);
+    const mockRequest = {
+      url: `/api/health`,
+      method: 'GET',
+      headers: req.headers,
+      nextUrl: { searchParams: new URLSearchParams() }
+    };
+    const response = await healthRoute.GET(mockRequest);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Health endpoint error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Health check failed' });
   }
 });
 
 app.get('/api/workflows', async (req: Request, res: Response) => {
   try {
-    const nextReq = createNextRequest(req);
-    const nextRes = await workflowsGET(nextReq);
-    await handleNextResponse(nextRes, res);
+    const searchParams = new URLSearchParams(req.query as any);
+    const mockRequest = {
+      url: `/api/workflows?${searchParams.toString()}`,
+      method: 'GET',
+      headers: req.headers,
+      nextUrl: { searchParams }
+    };
+    const response = await workflowsRoute.GET(mockRequest);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Workflows GET error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Failed to fetch workflows' });
   }
 });
 
 app.post('/api/workflows', async (req: Request, res: Response) => {
   try {
-    const nextReq = createNextRequest(req);
-    const nextRes = await workflowsPOST(nextReq);
-    await handleNextResponse(nextRes, res);
+    const mockRequest = {
+      url: '/api/workflows',
+      method: 'POST',
+      headers: req.headers,
+      json: () => Promise.resolve(req.body),
+      nextUrl: { searchParams: new URLSearchParams() }
+    };
+    const response = await workflowsRoute.POST(mockRequest);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Workflows POST error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Failed to create workflow' });
   }
 });
 
 app.get('/api/workflows/:id', async (req: Request, res: Response) => {
   try {
-    const nextReq = createNextRequest(req);
-    const nextRes = await workflowByIdGET(nextReq, { params: { id: req.params.id } });
-    await handleNextResponse(nextRes, res);
+    const searchParams = new URLSearchParams(req.query as any);
+    const mockRequest = {
+      url: `/api/workflows/${req.params.id}?${searchParams.toString()}`,
+      method: 'GET',
+      headers: req.headers,
+      nextUrl: { searchParams }
+    };
+    const mockContext = { params: { id: req.params.id } };
+    const response = await workflowsRoute.GET(mockRequest, mockContext);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Workflow GET by ID error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Failed to fetch workflow' });
   }
 });
 
-app.put('/api/workflows/:id', async (req: Request, res: Response) => {
+app.get('/api/tasks', async (req: Request, res: Response) => {
   try {
-    const nextReq = createNextRequest(req);
-    const nextRes = await workflowByIdPUT(nextReq, { params: { id: req.params.id } });
-    await handleNextResponse(nextRes, res);
+    const searchParams = new URLSearchParams(req.query as any);
+    const mockRequest = {
+      url: `/api/tasks?${searchParams.toString()}`,
+      method: 'GET',
+      headers: req.headers,
+      nextUrl: { searchParams }
+    };
+    const response = await tasksRoute.GET(mockRequest);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Workflow PUT by ID error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Failed to fetch tasks' });
   }
 });
 
-app.delete('/api/workflows/:id', async (req: Request, res: Response) => {
+app.post('/api/tasks', async (req: Request, res: Response) => {
   try {
-    const nextReq = createNextRequest(req);
-    const nextRes = await workflowByIdDELETE(nextReq, { params: { id: req.params.id } });
-    await handleNextResponse(nextRes, res);
+    const mockRequest = {
+      url: '/api/tasks',
+      method: 'POST',
+      headers: req.headers,
+      json: () => Promise.resolve(req.body),
+      nextUrl: { searchParams: new URLSearchParams() }
+    };
+    const response = await tasksRoute.POST(mockRequest);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Workflow DELETE by ID error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Failed to create task' });
   }
 });
 
-// Catch-all for undefined routes
+// 404 handler
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({ 
     success: false, 
-    error: 'Not Found',
-    message: `Route ${req.method} ${req.originalUrl} not found`
+    error: 'Endpoint not found',
+    path: req.originalUrl 
   });
 });
 
-// Error handling middleware
-app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Server error:', error);
-  res.status(500).json({ 
-    success: false, 
-    error: 'Internal Server Error',
-    message: error.message 
+// Error handler
+app.use((error: any, req: Request, res: Response, next: any) => {
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
 
+// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 API server running on http://localhost:${PORT}`);
-  console.log(`📋 Available endpoints:`);
-  console.log(`   GET    http://localhost:${PORT}/api/health`);
-  console.log(`   GET    http://localhost:${PORT}/api/workflows`);
-  console.log(`   POST   http://localhost:${PORT}/api/workflows`);
-  console.log(`   GET    http://localhost:${PORT}/api/workflows/:id`);
-  console.log(`   PUT    http://localhost:${PORT}/api/workflows/:id`);
-  console.log(`   DELETE http://localhost:${PORT}/api/workflows/:id`);
+  console.log(`🚀 API Server running on http://localhost:${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔗 Workflows API: http://localhost:${PORT}/api/workflows`);
+  console.log(`📋 Tasks API: http://localhost:${PORT}/api/tasks`);
+  console.log(`⚡ tRPC API: http://localhost:${PORT}/api/trpc`);
 });
+
+export default app;

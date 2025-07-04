@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
@@ -8,6 +8,45 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if we're in localhost development mode
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const shouldBypassAuth = isLocalhost && isDevelopment;
+
+  useEffect(() => {
+    if (shouldBypassAuth) {
+      // Automatically redirect to dashboard for localhost development
+      router.push('/dashboard');
+    }
+  }, [shouldBypassAuth, router]);
+
+  // Don't render the login form if we're bypassing auth
+  if (shouldBypassAuth) {
+    return (
+      <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="text-center">
+            <div className="mb-6 flex justify-center">
+              <img
+                src="/rexera-logo.svg"
+                alt="Rexera Logo"
+                className="h-12 w-auto"
+              />
+            </div>
+            <h2 className="text-3xl font-extrabold text-gray-900">
+              Development Mode
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Redirecting to dashboard...
+            </p>
+            <div className="mt-4 animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = async () => {
     try {

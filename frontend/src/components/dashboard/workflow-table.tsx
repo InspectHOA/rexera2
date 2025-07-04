@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useWorkflows } from '@/lib/hooks/useWorkflows';
+import { useWorkflowsTRPC } from '@/lib/hooks/useWorkflowsTRPC';
 
 export function WorkflowTable() {
   const router = useRouter();
-  const { workflows: workflowData, loading, error } = useWorkflows({ 
+  const { workflows: workflowData, loading, error } = useWorkflowsTRPC({ 
     include: ['client', 'tasks'], 
     limit: 20 
   });

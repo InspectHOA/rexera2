@@ -1,8 +1,24 @@
 {
   "version": 2,
+  "name": "rexera-api",
+  "builds": [
+    {
+      "src": "src/server.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/src/server.ts"
+    }
+  ],
+  "env": {
+    "SUPABASE_URL": "@supabase-url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key"
+  },
   "functions": {
-    "src/**/*.ts": {
-      "runtime": "@vercel/node@3.0.12",
+    "src/server.ts": {
       "maxDuration": 60
     }
   }

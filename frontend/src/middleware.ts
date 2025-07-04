@@ -13,6 +13,21 @@ export default async function middleware(req: NextRequest) {
   // Get the pathname
   const pathname = req.nextUrl.pathname;
 
+  // Check if we're in localhost development mode
+  const isLocalhost = req.nextUrl.hostname === 'localhost' || req.nextUrl.hostname === '127.0.0.1';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const shouldBypassAuth = isLocalhost && isDevelopment;
+
+  // If we're bypassing auth for localhost development, allow all routes
+  if (shouldBypassAuth) {
+    // If accessing root, redirect to dashboard
+    if (pathname === '/') {
+      const redirectUrl = new URL('/dashboard', req.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+    return response;
+  }
+
   // Create a Supabase client configured to use cookies
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

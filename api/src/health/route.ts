@@ -6,7 +6,7 @@ import type { Database } from '@rexera/types';
 export async function GET(request: NextRequest) {
   try {
     // Check environment variables
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseUrl = process.env.SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !serviceKey) {
@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Health check error:', error);
     return NextResponse.json({
       success: false,
       status: 'error',
