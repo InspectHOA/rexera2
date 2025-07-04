@@ -1,19 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase/provider';
 
 export default function AuthCallbackPage() {
   const { supabase } = useSupabase();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        // Handle the OAuth callback
+        const { data, error } = await supabase.auth.exchangeCodeForSession(
+          window.location.href
+        );
         
         if (error) {
           console.error('Auth callback error:', error);
@@ -21,8 +25,34 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        if (data.session) {
-          // User is authenticated, redirect to dashboard
+        if (data.session?.user) {
+          const user = data.session.user;
+          
+          // Create or update user profile with Google OAuth data
+          try {
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+                avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+                role: 'USER',
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'id'
+              });
+
+            if (profileError) {
+              console.error('Error creating/updating user profile:', profileError);
+              // Don't block login for profile errors, just log them
+            }
+          } catch (profileErr) {
+            console.error('Unexpected error creating user profile:', profileErr);
+            // Don't block login for profile errors
+          }
+
+          // Redirect to dashboard
           router.push('/dashboard');
         } else {
           // No session, redirect to login
@@ -30,7 +60,7 @@ export default function AuthCallbackPage() {
         }
       } catch (err) {
         console.error('Unexpected error during auth callback:', err);
-        setError('An unexpected error occurred');
+        setError('An unexpected error occurred during authentication');
       } finally {
         setLoading(false);
       }

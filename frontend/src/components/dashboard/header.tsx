@@ -1,8 +1,52 @@
 'use client';
 
+import { useAuth } from '@/lib/auth/provider';
+
 export function DashboardHeader() {
+  const { user, profile, signOut } = useAuth();
+
+  // Get user display name from Google OAuth data or profile
+  const getDisplayName = () => {
+    if (profile?.full_name) {
+      return profile.full_name;
+    }
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  // Get user initials for avatar
+  const getInitials = () => {
+    const name = getDisplayName();
+    if (name === 'User' || name.includes('@')) {
+      return user?.email?.charAt(0).toUpperCase() || 'U';
+    }
+    return name
+      .split(' ')
+      .map((word: string) => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Get user avatar URL from Google OAuth
+  const getAvatarUrl = () => {
+    return user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
-    <div 
+    <div
       className="header"
       style={{
         background: '#ffffff',
@@ -15,7 +59,7 @@ export function DashboardHeader() {
         boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
       }}
     >
-      <div 
+      <div
         className="logo"
         style={{
           fontSize: '18px',
@@ -26,7 +70,7 @@ export function DashboardHeader() {
           gap: '8px'
         }}
       >
-        <div 
+        <div
           className="logo-icon"
           style={{
             width: '24px',
@@ -45,7 +89,7 @@ export function DashboardHeader() {
         Rexera HIL Dashboard
       </div>
       
-      <div 
+      <div
         className="user-info"
         style={{
           display: 'flex',
@@ -54,7 +98,7 @@ export function DashboardHeader() {
           fontSize: '13px'
         }}
       >
-        <div 
+        <div
           className="notification-badge"
           style={{
             background: '#ef4444',
@@ -72,23 +116,29 @@ export function DashboardHeader() {
         >
           3
         </div>
-        <span>Sarah Chen</span>
-        <div 
+        <span>{getDisplayName()}</span>
+        <div
           className="user-avatar"
           style={{
             width: '32px',
             height: '32px',
-            background: 'linear-gradient(135deg, #8cc8c0, #64B6AC)',
+            background: getAvatarUrl() ? 'transparent' : 'linear-gradient(135deg, #8cc8c0, #64B6AC)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
             fontWeight: '600',
-            fontSize: '12px'
+            fontSize: '12px',
+            backgroundImage: getAvatarUrl() ? `url(${getAvatarUrl()})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            cursor: 'pointer'
           }}
+          onClick={handleSignOut}
+          title="Click to sign out"
         >
-          SC
+          {!getAvatarUrl() && getInitials()}
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@ BE VERY CAREFULY ABOUT ADDING UNNESSARY COMPLEXITY IN THE CODE. OPTIMIZE FOR DEV
 ### Database Operations
 - `npm run db:migrate` - Run database migrations
 - `npm run db:seed` - Seed database with initial data
-- `cd database && npm run generate-types` - Generate TypeScript types from Supabase schema
+- `npx supabase gen types typescript` - Generate TypeScript types from Supabase schema
 
 ### Testing
 - `npm run e2e` - Run end-to-end tests with Playwright
@@ -47,7 +47,7 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 
 **APIs (apis/)**: Vercel Edge Functions providing all API endpoints for workflows, agents, tasks, and communications. Deployed as part of the same Vercel application but logically separated.
 
-**Database (database/)**: Supabase PostgreSQL setup with Row-Level Security, migrations, and generated TypeScript types. Contains comprehensive schema for workflows, tasks, agents, and business entities.
+**Database (supabase/)**: Supabase PostgreSQL setup with Row-Level Security, migrations, and configuration. Contains comprehensive schema for workflows, tasks, agents, and business entities.
 
 **Workflows (workflows/)**: n8n workflow definitions and validation scripts for orchestrating AI agent coordination.
 
@@ -70,10 +70,10 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 This is a Turbo monorepo with the following workspaces:
 - `frontend` - Next.js application (UI components and pages)
 - `apis` - API routes and server-side logic (deploys with frontend as single Vercel app)
-- `database` - Schema, migrations, and database utilities
 - `workflows` - n8n workflow definitions
 - `types` - Shared TypeScript types
 - `agents` - AI agent integration system
+- `supabase` - Database schema, migrations, and Supabase configuration
 
 Each workspace has its own package.json with specific scripts. Use `cd <workspace>` to run workspace-specific commands.
 

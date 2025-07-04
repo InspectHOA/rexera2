@@ -57,6 +57,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const ensureUserProfile = async (user: User) => {
+    try {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        // Create profile with Google OAuth data
+        const { error } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+            role: 'USER',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) {
+          console.error('Error creating user profile:', error);
+        }
+      } else {
+        // Update existing profile with latest OAuth data
+        const { error } = await supabase
+          .from('user_profiles')
+          .update({
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || existingProfile.full_name,
+            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || existingProfile.avatar_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (error) {
+          console.error('Error updating user profile:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error ensuring user profile:', error);
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -86,6 +132,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_OUT') {
           setProfile(null);
           router.push('/auth/login' as Route);
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // When user signs in, ensure profile exists or create it
+          await ensureUserProfile(session.user);
         }
         
         setLoading(false);
