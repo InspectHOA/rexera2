@@ -8,21 +8,8 @@ export default async function middleware(req: NextRequest) {
   // Get the pathname
   const pathname = req.nextUrl.pathname;
 
-  // Skip authentication entirely in development mode (localhost)
-  const isLocalhost = req.nextUrl.hostname === 'localhost' || req.nextUrl.hostname === '127.0.0.1';
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
-  if (isLocalhost && isDevelopment) {
-    // In development on localhost, redirect root to dashboard without authentication
-    if (pathname === '/') {
-      const redirectUrl = new URL('/dashboard', req.url);
-      return NextResponse.redirect(redirectUrl);
-    }
-    // Allow all other routes without authentication
-    return res;
-  }
-
-  // Production authentication logic
+  // Authentication logic for all environments (including localhost)
+  // Since we're using Supabase Cloud, OAuth is configured on the Supabase side
   const supabase = createMiddlewareClient({ req, res });
 
   // Define public routes that don't require authentication

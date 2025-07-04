@@ -1,0 +1,35 @@
+MUNICIPAL LIEN SEARCH REPORT
+Miami-Dade County Tax Collector
+Search Date: December 28, 2024
+
+Property Information:
+Address: 789 Coral Way, Miami, FL 33134
+Parcel ID: 30-3021-000-0750
+Legal Description: Lot 12, Block 3, Coral Gardens Subdivision
+
+SEARCH RESULTS:
+
+PROPERTY TAXES:
+2024 Tax Year: $3,247.82 (CURRENT)
+2023 Tax Year: PAID IN FULL
+2022 Tax Year: PAID IN FULL
+
+SPECIAL ASSESSMENTS:
+Street Lighting District: $124.50 (CURRENT)
+Drainage Assessment: $89.75 (CURRENT)
+
+CODE VIOLATIONS:
+No active code violations found.
+
+WATER/SEWER LIENS:
+Water Account #: 445-789-123
+Current Balance: $0.00
+No outstanding liens.
+
+TOTAL MUNICIPAL LIENS: $214.25
+
+Note: This search reflects records as of December 28, 2024.
+For the most current information, contact the Tax Collector's office.
+
+Certificate #: ML-2024-1287
+Valid for 30 days from search date.

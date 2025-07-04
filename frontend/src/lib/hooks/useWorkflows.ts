@@ -22,62 +22,6 @@ interface WorkflowStats {
   completedToday: number;
 }
 
-// Fallback data when API is not available
-function getFallbackWorkflows() {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  
-  return [
-    {
-      id: 'PAY-0891',
-      workflow_type: 'PAYOFF',
-      title: '123 Oak Street, Miami, FL 33101',
-      status: 'AWAITING_REVIEW',
-      priority: 'URGENT',
-      client: { name: 'First National Bank' },
-      due_date: today.toISOString(),
-      created_at: yesterday.toISOString(),
-      metadata: { borrower_name: 'John Rodriguez', loan_number: 'FNB-2019-445821' },
-      tasks: [
-        { id: '1', status: 'COMPLETED', title: 'Lookup Lender' },
-        { id: '2', status: 'AWAITING_REVIEW', title: 'Process Document', metadata: { agent_name: 'Iris' } }
-      ]
-    },
-    {
-      id: 'HOA-0440',
-      workflow_type: 'HOA_ACQUISITION',
-      title: '456 Paradise Lane, Orlando, FL 32801',
-      status: 'IN_PROGRESS',
-      priority: 'NORMAL',
-      client: { name: 'Realty Plus' },
-      due_date: new Date(today.getTime() + 24*60*60*1000).toISOString(),
-      created_at: yesterday.toISOString(),
-      metadata: { borrower_name: 'Maria Santos', loan_number: 'RP-2024-112233' },
-      tasks: [
-        { id: '3', status: 'COMPLETED', title: 'Research HOA' },
-        { id: '4', status: 'IN_PROGRESS', title: 'Request Documents' }
-      ]
-    },
-    {
-      id: 'MUN-0332',
-      workflow_type: 'MUNI_LIEN_SEARCH',
-      title: '789 Pine Avenue, Tampa, FL 33602',
-      status: 'COMPLETED',
-      priority: 'NORMAL',
-      client: { name: 'City Bank' },
-      due_date: yesterday.toISOString(),
-      completed_at: today.toISOString(),
-      created_at: new Date(yesterday.getTime() - 24*60*60*1000).toISOString(),
-      metadata: { borrower_name: 'David Kim', loan_number: 'CB-2024-998877' },
-      tasks: [
-        { id: '5', status: 'COMPLETED', title: 'Municipal Search' },
-        { id: '6', status: 'COMPLETED', title: 'Generate Report' }
-      ]
-    }
-  ];
-}
-
 function calculateStatsFromData(workflows: any[]) {
   const today = new Date().toDateString();
   return {
@@ -130,14 +74,7 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
       const response = await fetch(`/api/workflows?${params.toString()}`);
       
       if (!response.ok) {
-        console.warn(`API error! status: ${response.status}. Using fallback data.`);
-        // Use fallback data when API is not available
-        const fallbackData = getFallbackWorkflows();
-        setWorkflows(fallbackData);
-        const fallbackStats = calculateStatsFromData(fallbackData);
-        setStats(fallbackStats);
-        setPagination({ page: 1, limit: 20, total: fallbackData.length, totalPages: 1 });
-        return;
+        throw new Error(`Failed to fetch workflows: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -227,34 +164,18 @@ export function useWorkflow(id: string) {
       setLoading(true);
       setError(null);
 
-      // Fetch all workflows and find the specific one
-      const workflowResponse = await fetch(`/api/workflows?include=client,tasks`);
+      // Fetch specific workflow by ID
+      const workflowResponse = await fetch(`/api/workflows/${id}?include=client,tasks`);
       
       if (!workflowResponse.ok) {
-        console.warn(`API error! status: ${workflowResponse.status}. Using fallback data.`);
-        // Use fallback data for specific workflow
-        const fallbackWorkflows = getFallbackWorkflows();
-        const fallbackWorkflow = fallbackWorkflows.find(w => w.id === id);
-        if (fallbackWorkflow) {
-          setWorkflow(fallbackWorkflow);
-          setTasks(fallbackWorkflow.tasks || []);
-        } else {
-          throw new Error('Workflow not found in fallback data');
-        }
-        return;
+        throw new Error(`Failed to fetch workflow: ${workflowResponse.status} ${workflowResponse.statusText}`);
       }
 
       const workflowResult = await workflowResponse.json();
       
       if (workflowResult.success) {
-        // Find the specific workflow by ID
-        const foundWorkflow = workflowResult.data.find((w: any) => w.id === id);
-        if (foundWorkflow) {
-          setWorkflow(foundWorkflow);
-          setTasks(foundWorkflow.tasks || []);
-        } else {
-          throw new Error('Workflow not found');
-        }
+        setWorkflow(workflowResult.data);
+        setTasks(workflowResult.data.tasks || []);
       } else {
         throw new Error(workflowResult.error?.message || 'Failed to fetch workflow');
       }

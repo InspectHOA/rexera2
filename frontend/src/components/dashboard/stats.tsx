@@ -3,7 +3,7 @@
 import { useWorkflows } from '@/lib/hooks/useWorkflows';
 
 export function DashboardStats() {
-  const { stats, loading } = useWorkflows({ include: ['tasks'] });
+  const { stats, loading, error } = useWorkflows({ include: ['tasks'] });
   return (
     <div 
       className="stats-bar"
@@ -38,7 +38,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            {loading ? '...' : stats.total}
+            {loading ? '...' : error ? 'Error' : stats.total}
           </div>
           <div 
             className="stat-label"
@@ -63,7 +63,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            {loading ? '...' : stats.active}
+            {loading ? '...' : error ? 'Error' : stats.active}
           </div>
           <div 
             className="stat-label"
@@ -88,7 +88,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            {loading ? '...' : stats.interrupts}
+            {loading ? '...' : error ? 'Error' : stats.interrupts}
           </div>
           <div 
             className="stat-label"
@@ -113,7 +113,7 @@ export function DashboardStats() {
               marginBottom: '2px'
             }}
           >
-            {loading ? '...' : stats.completedToday}
+            {loading ? '...' : error ? 'Error' : stats.completedToday}
           </div>
           <div 
             className="stat-label"
@@ -137,62 +137,91 @@ export function DashboardStats() {
           fontSize: '11px'
         }}
       >
-        <div 
-          className="status-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            background: '#f1f5f9',
-            color: '#475569',
-            fontWeight: '500',
-            borderRadius: '0'
-          }}
-        >
+        {error ? (
           <div 
-            className="status-dot"
+            className="status-item"
             style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: '#10b981'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              background: '#fee2e2',
+              color: '#dc2626',
+              fontWeight: '500',
+              borderRadius: '0'
             }}
-          ></div>
-          <span>All Agents Online</span>
-        </div>
-        
-        <div 
-          className="status-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            background: '#f1f5f9',
-            color: '#475569',
-            fontWeight: '500',
-            borderRadius: '0'
-          }}
-        >
-          <span>47 in Queue</span>
-        </div>
-        
-        <div 
-          className="status-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            background: '#f1f5f9',
-            color: '#475569',
-            fontWeight: '500',
-            borderRadius: '0'
-          }}
-        >
-          <span>94.2% Success</span>
-        </div>
+          >
+            <div 
+              className="status-dot"
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#dc2626'
+              }}
+            ></div>
+            <span>Database Connection Failed</span>
+          </div>
+        ) : loading ? (
+          <div 
+            className="status-item"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              background: '#f1f5f9',
+              color: '#475569',
+              fontWeight: '500',
+              borderRadius: '0'
+            }}
+          >
+            <span>Loading system status...</span>
+          </div>
+        ) : (
+          <>
+            <div 
+              className="status-item"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 8px',
+                background: '#f1f5f9',
+                color: '#475569',
+                fontWeight: '500',
+                borderRadius: '0'
+              }}
+            >
+              <div 
+                className="status-dot"
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#10b981'
+                }}
+              ></div>
+              <span>System Online</span>
+            </div>
+            
+            <div 
+              className="status-item"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 8px',
+                background: '#f1f5f9',
+                color: '#475569',
+                fontWeight: '500',
+                borderRadius: '0'
+              }}
+            >
+              <span>Data Connected</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

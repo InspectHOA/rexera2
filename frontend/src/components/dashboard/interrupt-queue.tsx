@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, Clock, User, ArrowRight } from 'lucide-react';
 
 interface InterruptItem {
@@ -14,35 +14,40 @@ interface InterruptItem {
 }
 
 export function InterruptQueue() {
-  const [interrupts] = useState<InterruptItem[]>([
-    {
-      id: '1',
-      workflow_id: 'WF-2024-001',
-      task_title: 'Document verification required',
-      interrupt_reason: 'AI unable to verify property ownership document - image quality too low',
-      priority: 'CRITICAL',
-      created_at: '2024-01-15T11:45:00Z',
-      workflow_type: 'Municipal Lien Search'
-    },
-    {
-      id: '2',
-      workflow_id: 'WF-2024-003', 
-      task_title: 'Multiple contact numbers found',
-      interrupt_reason: 'Nina found 3 different phone numbers for HOA contact - need manual verification',
-      priority: 'HIGH',
-      created_at: '2024-01-15T10:30:00Z',
-      workflow_type: 'HOA Acquisition'
-    },
-    {
-      id: '3',
-      workflow_id: 'WF-2024-005', 
-      task_title: 'Payment amount discrepancy',
-      interrupt_reason: 'Calculated payoff amount differs from lender quote by $2,450',
-      priority: 'HIGH',
-      created_at: '2024-01-15T09:15:00Z',
-      workflow_type: 'Payoff Request'
-    }
-  ]);
+  const [interrupts, setInterrupts] = useState<InterruptItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchInterrupts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/interrupts');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch interrupts: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setInterrupts(data.interrupts || []);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load interrupt queue';
+        setError(errorMessage);
+        console.error('Interrupt queue error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInterrupts();
+    
+    // Set up polling for real-time updates
+    const interval = setInterval(fetchInterrupts, 15000); // Poll every 15 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
@@ -72,6 +77,55 @@ export function InterruptQueue() {
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${Math.floor(diffHours / 24)}d ago`;
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">HIL Interrupt Queue</h2>
+                <p className="text-sm text-gray-500">Tasks requiring human review</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">HIL Interrupt Queue</h2>
+                <p className="text-sm text-gray-500">Tasks requiring human review</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center h-32 flex items-center justify-center">
+            <div className="text-red-600">
+              <p className="text-sm font-medium">Unable to load interrupt queue</p>
+              <p className="text-xs text-gray-500 mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">

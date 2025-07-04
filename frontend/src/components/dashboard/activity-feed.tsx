@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ActivityItem {
   id: string;
@@ -12,37 +12,35 @@ interface ActivityItem {
 }
 
 export function ActivityFeed() {
-  const [activities] = useState<ActivityItem[]>([
-    {
-      id: '1',
-      type: 'workflow_started',
-      message: 'New municipal lien search workflow created',
-      timestamp: '2024-01-15T12:30:00Z',
-      workflow_id: 'wf_123'
-    },
-    {
-      id: '2',
-      type: 'agent_completed',
-      message: 'Nina completed property research task',
-      timestamp: '2024-01-15T12:15:00Z',
-      workflow_id: 'wf_456'
-    },
-    {
-      id: '3',
-      type: 'hil_intervention',
-      message: 'HIL review requested for document verification',
-      timestamp: '2024-01-15T11:45:00Z',
-      user: 'Sarah Johnson',
-      workflow_id: 'wf_789'
-    },
-    {
-      id: '4',
-      type: 'workflow_completed',
-      message: 'HOA acquisition workflow completed successfully',
-      timestamp: '2024-01-15T11:30:00Z',
-      workflow_id: 'wf_321'
-    }
-  ]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/activities');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setActivities(data.activities || []);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
+        setError(errorMessage);
+        console.error('Activity feed error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -74,6 +72,39 @@ export function ActivityFeed() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            Recent Activity
+          </h3>
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            Recent Activity
+          </h3>
+          <div className="text-center h-32 flex items-center justify-center">
+            <div className="text-red-600">
+              <p className="text-sm font-medium">Unable to load activities</p>
+              <p className="text-xs text-gray-500 mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:p-6">
@@ -81,9 +112,16 @@ export function ActivityFeed() {
           Recent Activity
         </h3>
         
-        <div className="flow-root">
-          <ul className="-mb-8">
-            {activities.map((activity, activityIdx) => (
+        {activities.length === 0 ? (
+          <div className="text-center h-32 flex items-center justify-center">
+            <div className="text-gray-500">
+              <p className="text-sm">No recent activity</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flow-root">
+            <ul className="-mb-8">
+              {activities.map((activity, activityIdx) => (
               <li key={activity.id}>
                 <div className="relative pb-8">
                   {activityIdx !== activities.length - 1 ? (
@@ -121,9 +159,10 @@ export function ActivityFeed() {
                   </div>
                 </div>
               </li>
-            ))}
-          </ul>
-        </div>
+              ))}
+            </ul>
+          </div>
+        )}
         
         <div className="mt-4">
           <button className="w-full text-center text-sm text-blue-600 hover:text-blue-500">

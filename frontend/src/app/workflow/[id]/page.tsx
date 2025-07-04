@@ -7,6 +7,8 @@ import { WorkflowHeader } from '@/components/workflow/WorkflowHeader';
 import { TaskList } from '@/components/workflow/TaskList';
 import { TabNavigation } from '@/components/workflow/TabNavigation';
 import { TaskDetailView } from '@/components/workflow/TaskDetailView';
+import { FileUpload } from '@/components/workflow/file-upload';
+import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflow } from '@/lib/hooks/useWorkflows';
 
 // Types
@@ -31,78 +33,6 @@ interface Workflow {
   progress: string;
 }
 
-// Mock data
-const MOCK_WORKFLOW: Workflow = {
-  id: 'PAY-0891',
-  title: '123 Oak Street, Miami, FL 33101',
-  subtitle: 'PAY-0891 • Payoff Request - First National',
-  status: 'Urgent',
-  eta: 'Dec 29, 6:00 PM',
-  due: 'Dec 29, 2024',
-  closing: 'Dec 30, 2024',
-  progress: '6 of 10 tasks'
-};
-
-const MOCK_TASKS: Task[] = [
-  {
-    id: 'lookup-lender',
-    name: 'Lookup Lender Contact Information',
-    agent: '🔍 Nina',
-    status: 'completed',
-    meta: 'Completed Dec 27, 9:45 AM',
-    sla: 'ON TIME'
-  },
-  {
-    id: 'send-request',
-    name: 'Send Payoff Request',
-    agent: '📧 Mia',
-    status: 'completed',
-    meta: 'Completed Dec 27, 11:30 AM (Email method)',
-    sla: 'ON TIME'
-  },
-  {
-    id: 'await-response',
-    name: 'Await Statement Response',
-    agent: '👤 HIL Monitor',
-    status: 'completed',
-    meta: 'Received Dec 29, 1:30 PM',
-    sla: 'ON TIME'
-  },
-  {
-    id: 'portal-access',
-    name: 'Access Lender Portal (Conditional)',
-    agent: '🌐 Rex',
-    status: 'awaiting-review',
-    meta: 'Failed Dec 29, 2:15 PM • Backup attempt',
-    sla: 'LATE',
-    conditional: true
-  },
-  {
-    id: 'process-document',
-    name: 'Process Payoff Document',
-    agent: '📄 Iris',
-    status: 'awaiting-review',
-    meta: 'Low confidence Dec 29, 1:45 PM',
-    sla: 'DUE SOON'
-  },
-  {
-    id: 'qa-review',
-    name: 'Quality Assurance Review',
-    agent: '✓ Cassy',
-    status: 'pending',
-    meta: 'Depends on: Document Processing',
-    sla: 'SLA: 3:00 PM'
-  }
-];
-
-const DETAIL_FIELDS = [
-  { label: 'Borrower Name', value: 'John & Maria Rodriguez' },
-  { label: 'Lender Name', value: 'First National Bank' },
-  { label: 'Loan Number', value: 'FNB-2019-445821', mono: true },
-  { label: 'Payoff Date', value: 'December 29, 2024' },
-  { label: 'Primary HIL', value: 'Sarah Chen' },
-  { label: 'Client', value: 'Sunshine Title Company' }
-];
 
 export default function WorkflowDetailPage() {
   const params = useParams();
@@ -353,7 +283,24 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
       );
     
     case 'files':
-      return <PlaceholderContent>Files tab content would go here</PlaceholderContent>;
+      return (
+        <div className="flex flex-col gap-5">
+          <FileUpload 
+            workflowId={workflow?.id || ''} 
+            onUploadComplete={() => {
+              // Refresh documents list by re-rendering
+              window.location.reload();
+            }}
+          />
+          <DocumentList 
+            workflowId={workflow?.id || ''} 
+            onDocumentDeleted={() => {
+              // Refresh documents list by re-rendering
+              window.location.reload();
+            }}
+          />
+        </div>
+      );
     
     case 'audit':
       return <PlaceholderContent>Audit trail content would go here</PlaceholderContent>;

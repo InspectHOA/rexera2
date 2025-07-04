@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import type { Database } from '@rexera/database';
+import type { Database } from '@rexera/types';
 import { 
   withAuth, 
   withErrorHandling, 
@@ -10,7 +10,7 @@ import {
   createApiResponse,
   createErrorResponse,
   AuthenticatedRequest
-} from '@/lib/api/middleware';
+} from '../../utils/middleware';
 
 // GET /api/workflows/[id] - Get specific workflow
 export const GET = withRateLimit(
