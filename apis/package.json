@@ -12,6 +12,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:health": "jest health-simple.test.ts",
+    "test:unit": "jest --testPathPattern=__tests__ --testNamePattern='(health-simple|middleware)' --verbose",
     "clean": "rm -rf dist .vercel",
     "setup": "npm install"
   },

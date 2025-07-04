@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSupabase } from '@/lib/supabase/provider';
+import { supabase } from '@/lib/supabase/client';
 
 export default function LoginPage() {
-  const { supabase } = useSupabase();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,15 +14,15 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
-      // Use the current origin for the redirect URL
-      const redirectUrl = process.env.NODE_ENV === 'development'
+      // Force localhost redirect for development
+      const redirectTo = process.env.NODE_ENV === 'development'
         ? `${window.location.origin}/auth/callback`
         : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo,
         },
       });
 

@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useSupabase } from '@/lib/supabase/provider';
+import { supabase } from '@/lib/supabase/client';
 
 export default function AuthCallbackPage() {
-  const { supabase } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -55,7 +54,7 @@ export default function AuthCallbackPage() {
     };
 
     handleAuthCallback();
-  }, [supabase, router]);
+  }, []);
 
   if (loading) {
     return (

@@ -11,9 +11,7 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  moduleNameMapping: {
-    '^@rexera/types$': '<rootDir>/../types/src/index.ts'
-  },
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
   transform: {
     '^.+\\.ts$': 'ts-jest'
   },
