@@ -1,16 +1,58 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export default async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  // Create response that we can modify
+  let response = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
   
   // Get the pathname
   const pathname = req.nextUrl.pathname;
 
-  // Authentication logic for all environments (including localhost)
-  // Since we're using Supabase Cloud, OAuth is configured on the Supabase side
-  const supabase = createMiddlewareClient({ req, res });
+  // Create a Supabase client configured to use cookies
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // Apply the cookie to the request
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          // Apply the cookie to the response
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          // Remove from request
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          // Remove from response
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
+    }
+  );
 
   // Define public routes that don't require authentication
   const publicRoutes = [
@@ -24,7 +66,7 @@ export default async function middleware(req: NextRequest) {
 
   // If it's a public route, allow access
   if (isPublicRoute) {
-    return res;
+    return response;
   }
 
   // Check if user is authenticated
@@ -44,7 +86,7 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  return res;
+  return response;
 }
 
 export const config = {
