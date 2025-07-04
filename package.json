@@ -12,7 +12,9 @@
     "packages/schemas"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "npm run kill-ports && turbo run dev",
+    "dev:clean": "npm run kill-ports && turbo run dev",
+    "kill-ports": "fuser -k 3000/tcp 2>/dev/null || true && fuser -k 3001/tcp 2>/dev/null || true && fuser -k 3002/tcp 2>/dev/null || true",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",

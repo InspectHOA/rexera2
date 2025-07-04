@@ -3,33 +3,32 @@
   "pipeline": {
     "dev": {
       "cache": false,
-      "persistent": true,         // ✅ Add this to ensure dev server keeps running
-      "parallel": true
+      "persistent": true
     },
     "build": {
       "dependsOn": ["^build"],
       "outputs": [
-        "dist/**",                // ✅ Backend build output
-        ".next/**",               // ✅ Next.js output
-        "!.next/cache/**"         // ✅ Ignore cache
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
       ]
     },
     "test": {
-      "dependsOn": ["^build"],    // ✅ Fix: ensure upstream dependencies build too
+      "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
     },
     "lint": {
       "outputs": [],
-      "cache": false              // ✅ Add: disable cache for lint
+      "cache": false
     },
     "type-check": {
       "dependsOn": ["^build"],
       "outputs": [],
-      "cache": false              // ✅ Add: disable cache for type-check
+      "cache": false
     },
     "clean": {
       "cache": false,
-      "outputs": []               // ✅ Add: no outputs to track
+      "outputs": []
     }
   }
 }

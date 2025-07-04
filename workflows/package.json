@@ -15,9 +15,8 @@
     "validate": "node scripts/validate-workflows.js"
   },
   "dependencies": {
-    "@rexera/types": "*",
-    "@rexera/database": "*",
-    "@rexera/agents": "*",
+    "@rexera/types": "workspace:*",
+    "@rexera/agents": "workspace:*",
     "n8n-workflow": "^1.0.0",
     "axios": "^1.6.0"
   },

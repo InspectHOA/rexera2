@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Input schemas
 export const GetTasksInput = z.object({
-  workflow_id: z.string().uuid().optional(),
+  workflow_id: z.string().optional(),
   status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED', 'AWAITING_REVIEW']).optional(),
   executor_type: z.enum(['AI', 'HIL']).optional(),
   assigned_to: z.string().uuid().optional(),
@@ -13,7 +13,7 @@ export const GetTasksInput = z.object({
 });
 
 export const CreateTaskInput = z.object({
-  workflow_id: z.string().uuid(),
+  workflow_id: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
   executor_type: z.enum(['AI', 'HIL']),

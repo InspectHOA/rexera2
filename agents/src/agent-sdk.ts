@@ -19,8 +19,8 @@ import type {
 // Validation schemas
 const AgentTaskRequestSchema = z.object({
   agent_type: z.enum(['nina', 'mia', 'florian', 'rex', 'iris', 'ria', 'kosha', 'cassy', 'max', 'corey']),
-  task_id: z.string().uuid(),
-  workflow_id: z.string().uuid(),
+  task_id: z.string(),
+  workflow_id: z.string(),
   task_type: z.string(),
   complexity: z.enum(['simple', 'moderate', 'complex']),
   input_data: z.record(z.any()),

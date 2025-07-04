@@ -3,7 +3,7 @@ import { procedure, router } from '../trpc';
 import type { Database } from '@rexera/types';
 
 const createTaskSchema = z.object({
-  workflow_id: z.string().uuid(),
+  workflow_id: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
   executor_type: z.enum(['AI', 'HIL']),
@@ -14,7 +14,7 @@ const createTaskSchema = z.object({
 });
 
 const getTasksSchema = z.object({
-  workflow_id: z.string().uuid().optional(),
+  workflow_id: z.string().optional(),
   status: z.enum(['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED']).optional(),
   executor_type: z.enum(['AI', 'HIL']).optional(),
   assigned_to: z.string().uuid().optional(),

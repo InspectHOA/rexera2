@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Input schemas
 export const GetWorkflowInput = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   include: z.array(z.enum(['client', 'tasks', 'assigned_user'])).default([])
 });
 
