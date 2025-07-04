@@ -1,184 +1,208 @@
-import { NextRequest } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import type { Database } from '@rexera/database';
-import { 
-  withAuth, 
-  withErrorHandling, 
-  withRateLimit,
-  parseJsonBody,
-  validateRequiredFields,
-  createApiResponse,
-  createErrorResponse,
-  AuthenticatedRequest
-} from '@/lib/api/middleware';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@rexera/types';
 
-// GET /api/workflows - List workflows with filtering and pagination
-export const GET = withRateLimit(
-  withAuth(
-    withErrorHandling(async (req: AuthenticatedRequest) => {
-      const supabase = createServerComponentClient<Database>({ cookies });
-      const { searchParams } = new URL(req.url);
+type WorkflowType = Database['public']['Enums']['workflow_type'];
+type WorkflowStatus = Database['public']['Enums']['workflow_status'];
+type PriorityLevel = Database['public']['Enums']['priority_level'];
 
-      // Parse query parameters
-      const page = parseInt(searchParams.get('page') || '1');
-      const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-      const offset = (page - 1) * limit;
-      
-      const workflowType = searchParams.get('workflow_type');
-      const status = searchParams.get('status');
-      const clientId = searchParams.get('client_id');
-      const assignedTo = searchParams.get('assigned_to');
-      const priority = searchParams.get('priority');
-      const include = searchParams.get('include')?.split(',') || [];
-      const sort = searchParams.get('sort') || 'created_at';
-      const order = searchParams.get('order') === 'asc' ? 'asc' : 'desc';
+// Create Supabase client with service role for server-side operations
+function createServerClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-      // Build base query
-      let query = supabase.from('workflows').select(`
-        *,
-        ${include.includes('client') ? 'client:clients(id, name),' : ''}
-        ${include.includes('assigned_user') ? 'assigned_user:user_profiles!workflows_assigned_to_fkey(id, full_name, email),' : ''}
-        ${include.includes('tasks') ? 'tasks(id, title, status, priority, due_date),' : ''}
-        ${include.includes('documents') ? 'documents(id, filename, document_type, created_at),' : ''}
-        ${include.includes('communications') ? 'communications(id, subject, communication_type, created_at)' : ''}
-      `.replace(/,\s*$/, ''));
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createServerClient();
+    const { searchParams } = new URL(request.url);
 
-      // Apply filters based on user permissions
-      if (req.user.user_type === 'client_user' && req.user.company_id) {
-        query = query.eq('client_id', req.user.company_id);
-      }
+    // Parse query parameters
+    const workflow_type = searchParams.get('workflow_type') as WorkflowType | null;
+    const status = searchParams.get('status') as WorkflowStatus | null;
+    const client_id = searchParams.get('client_id');
+    const assigned_to = searchParams.get('assigned_to');
+    const priority = searchParams.get('priority') as PriorityLevel | null;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const include = searchParams.get('include')?.split(',') || [];
 
-      // Apply additional filters
-      if (workflowType) query = query.eq('workflow_type', workflowType);
-      if (status) query = query.eq('status', status);
-      if (clientId && req.user.user_type === 'hil_user') query = query.eq('client_id', clientId);
-      if (assignedTo) query = query.eq('assigned_to', assignedTo);
-      if (priority) query = query.eq('priority', priority);
+    // Build the base query with simple select
+    let query = supabase
+      .from('workflows')
+      .select('*', { count: 'exact' });
 
-      // Apply sorting and pagination
-      query = query.order(sort, { ascending: order === 'asc' });
-      
-      // Get total count for pagination
-      const { count } = await supabase
-        .from('workflows')
-        .select('*', { count: 'exact', head: true });
+    // Apply filters
+    if (workflow_type) {
+      query = query.eq('workflow_type', workflow_type);
+    }
+    if (status) {
+      query = query.eq('status', status);
+    }
+    if (client_id) {
+      query = query.eq('client_id', client_id);
+    }
+    if (assigned_to) {
+      query = query.eq('assigned_to', assigned_to);
+    }
+    if (priority) {
+      query = query.eq('priority', priority);
+    }
 
-      // Execute main query
-      const { data: workflows, error } = await query
-        .range(offset, offset + limit - 1);
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    query = query.range(offset, offset + limit - 1);
 
-      if (error) {
-        console.error('Workflows query error:', error);
-        return createErrorResponse('Database Error', 'Failed to fetch workflows', 500);
-      }
+    // Order by created_at desc
+    query = query.order('created_at', { ascending: false });
 
-      // Calculate pagination metadata
-      const totalPages = Math.ceil((count || 0) / limit);
-      const baseUrl = req.url.split('?')[0];
+    const { data: workflows, error, count } = await query;
 
-      return createApiResponse(
-        workflows || [],
-        {
-          total: count || 0,
-          page,
-          limit,
-          totalPages,
-        },
-        {
-          ...(page > 1 && { previous: `${baseUrl}?page=${page - 1}&limit=${limit}` }),
-          ...(page < totalPages && { next: `${baseUrl}?page=${page + 1}&limit=${limit}` }),
-          first: `${baseUrl}?page=1&limit=${limit}`,
-          last: `${baseUrl}?page=${totalPages}&limit=${limit}`,
-        }
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json(
+        { success: false, error: { message: 'Database query failed', details: error.message } },
+        { status: 500 }
       );
-    })
-  )
-);
+    }
 
-// POST /api/workflows - Create new workflow
-export const POST = withRateLimit(
-  withAuth(
-    withErrorHandling(async (req: AuthenticatedRequest) => {
-      const supabase = createServerComponentClient<Database>({ cookies });
-      const body = await parseJsonBody(req);
+    // Fetch related data if requested
+    const transformedWorkflows = await Promise.all(
+      (workflows || []).map(async (workflow: any) => {
+        const result: any = { ...workflow };
 
-      // Validate required fields
-      validateRequiredFields(body, ['workflow_type', 'client_id', 'title']);
-
-      // Validate workflow type
-      const validWorkflowTypes = ['MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF'];
-      if (!validWorkflowTypes.includes(body.workflow_type)) {
-        return createErrorResponse(
-          'Validation Error',
-          'Invalid workflow type',
-          400
-        );
-      }
-
-      // Check client access permissions
-      if (req.user.user_type === 'client_user') {
-        if (body.client_id !== req.user.company_id) {
-          return createErrorResponse(
-            'Forbidden',
-            'Cannot create workflow for different client',
-            403
-          );
+        // Fetch client data if requested
+        if (include.includes('client')) {
+          const { data: client } = await supabase
+            .from('clients')
+            .select('id, name, domain')
+            .eq('id', workflow.client_id)
+            .single();
+          result.client = client;
         }
+
+        // Fetch tasks data if requested
+        if (include.includes('tasks')) {
+          const { data: tasks } = await supabase
+            .from('tasks')
+            .select('id, title, status, metadata, assigned_to, due_date')
+            .eq('workflow_id', workflow.id);
+          result.tasks = tasks || [];
+        }
+
+        // Fetch assigned user data if requested
+        if (include.includes('assigned_user') && workflow.assigned_to) {
+          const { data: assignedUser } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .eq('id', workflow.assigned_to)
+            .single();
+          result.assigned_user = assignedUser;
+        }
+
+        return result;
+      })
+    );
+
+    const totalPages = Math.ceil((count || 0) / limit);
+
+    return NextResponse.json({
+      success: true,
+      data: transformedWorkflows,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages
       }
+    });
 
-      // Verify client exists
-      const { data: client, error: clientError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('id', body.client_id)
-        .single();
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { success: false, error: { message: 'Internal server error' } },
+      { status: 500 }
+    );
+  }
+}
 
-      if (clientError || !client) {
-        return createErrorResponse('Validation Error', 'Invalid client ID', 400);
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createServerClient();
+    const body = await request.json();
+
+    const {
+      workflow_type,
+      client_id,
+      title,
+      description,
+      priority = 'NORMAL',
+      metadata = {},
+      due_date,
+      created_by
+    } = body;
+
+    // Validate required fields
+    if (!workflow_type || !client_id || !title || !created_by) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Missing required fields: workflow_type, client_id, title, created_by' } },
+        { status: 400 }
+      );
+    }
+
+    const { data: workflow, error } = await supabase
+      .from('workflows')
+      .insert({
+        workflow_type,
+        client_id,
+        title,
+        description,
+        priority,
+        metadata,
+        due_date,
+        created_by
+      })
+      .select(`
+        id,
+        workflow_type,
+        title,
+        description,
+        status,
+        priority,
+        metadata,
+        created_by,
+        assigned_to,
+        created_at,
+        updated_at,
+        completed_at,
+        due_date,
+        clients!workflows_client_id_fkey(id, name)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json(
+        { success: false, error: { message: 'Failed to create workflow', details: error.message } },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...workflow,
+        client: workflow.clients
       }
+    });
 
-      // Create workflow
-      const workflowData = {
-        workflow_type: body.workflow_type,
-        client_id: body.client_id,
-        title: body.title,
-        description: body.description,
-        priority: body.priority || 'NORMAL',
-        metadata: body.metadata || {},
-        created_by: req.user.id,
-        assigned_to: body.assigned_to,
-        due_date: body.due_date,
-      };
-
-      const { data: workflow, error } = await supabase
-        .from('workflows')
-        .insert(workflowData)
-        .select(`
-          *,
-          client:clients(id, name),
-          assigned_user:user_profiles!workflows_assigned_to_fkey(id, full_name, email)
-        `)
-        .single();
-
-      if (error) {
-        console.error('Workflow creation error:', error);
-        return createErrorResponse('Database Error', 'Failed to create workflow', 500);
-      }
-
-      return createApiResponse(workflow);
-    })
-  ),
-  { maxRequests: 20, windowMs: 60000 } // More restrictive rate limit for creation
-);
-
-export const OPTIONS = async () => {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
-};
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { success: false, error: { message: 'Internal server error' } },
+      { status: 500 }
+    );
+  }
+}

@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@rexera/types';
 
 type WorkflowType = Database['public']['Enums']['workflow_type'];
 type WorkflowStatus = Database['public']['Enums']['workflow_status'];
 type PriorityLevel = Database['public']['Enums']['priority_level'];
 
+// Create Supabase client for API routes
+function createServerClient() {
+  // For development/testing, use service role if available, otherwise use anon key
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceKey || anonKey
+  );
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = createServerClient();
     const { searchParams } = new URL(request.url);
 
     // Parse query parameters
@@ -122,7 +134,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = createServerClient();
     const body = await request.json();
 
     const {
@@ -170,7 +182,7 @@ export async function POST(request: NextRequest) {
         updated_at,
         completed_at,
         due_date,
-        clients!workflows_client_id_fkey(id, name)
+        client_id
       `)
       .single();
 
@@ -184,10 +196,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        ...workflow,
-        client: workflow.clients
-      }
+      data: workflow
     });
 
   } catch (error) {

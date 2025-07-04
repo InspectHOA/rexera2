@@ -227,10 +227,8 @@ export function useWorkflow(id: string) {
       setLoading(true);
       setError(null);
 
-      // Fetch workflow with all includes
-      const workflowResponse = await fetch(
-        `/api/workflows/${id}?include=client,assigned_user,tasks,documents,communications`
-      );
+      // Fetch all workflows and find the specific one
+      const workflowResponse = await fetch(`/api/workflows?include=client,tasks`);
       
       if (!workflowResponse.ok) {
         console.warn(`API error! status: ${workflowResponse.status}. Using fallback data.`);
@@ -249,18 +247,13 @@ export function useWorkflow(id: string) {
       const workflowResult = await workflowResponse.json();
       
       if (workflowResult.success) {
-        setWorkflow(workflowResult.data);
-        
-        // Fetch tasks separately with more detail
-        const tasksResponse = await fetch(
-          `/api/tasks?workflow_id=${id}&include=assigned_user,dependencies,agent_executions`
-        );
-        
-        if (tasksResponse.ok) {
-          const tasksResult = await tasksResponse.json();
-          if (tasksResult.success) {
-            setTasks(tasksResult.data);
-          }
+        // Find the specific workflow by ID
+        const foundWorkflow = workflowResult.data.find((w: any) => w.id === id);
+        if (foundWorkflow) {
+          setWorkflow(foundWorkflow);
+          setTasks(foundWorkflow.tasks || []);
+        } else {
+          throw new Error('Workflow not found');
         }
       } else {
         throw new Error(workflowResult.error?.message || 'Failed to fetch workflow');

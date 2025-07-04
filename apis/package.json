@@ -4,9 +4,9 @@
   "description": "API endpoints for Rexera 2.0",
   "private": true,
   "scripts": {
-    "dev": "vercel dev --listen 3001",
+    "dev": "echo 'APIs workspace disabled - routes symlinked to frontend'",
     "build": "tsc",
-    "start": "vercel dev",
+    "start": "npx vercel dev",
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .vercel",
