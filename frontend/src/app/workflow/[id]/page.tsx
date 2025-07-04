@@ -2,11 +2,10 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { styles, colors } from '@/styles/workflow-detail';
-import { WorkflowHeader } from '@/components/workflow/WorkflowHeader';
-import { TaskList } from '@/components/workflow/TaskList';
-import { TabNavigation } from '@/components/workflow/TabNavigation';
-import { TaskDetailView } from '@/components/workflow/TaskDetailView';
+import { WorkflowHeader } from '@/components/workflow/workflow-header';
+import { TaskList } from '@/components/workflow/task-list';
+import { TabNavigation } from '@/components/workflow/tab-navigation';
+import { TaskDetailView } from '@/components/workflow/task-detail-view';
 import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflowTRPC } from '@/lib/hooks/useWorkflowsTRPC';
@@ -43,7 +42,7 @@ export default function WorkflowDetailPage() {
   const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflowTRPC(params.id as string);
   
   // Transform API data to component format
-  const workflow = workflowData ? {
+  const workflow: Workflow | null = workflowData ? {
     id: workflowData.id,
     title: workflowData.title || 'Workflow Details',
     subtitle: `${workflowData.id} • ${getDisplayWorkflowType(workflowData.workflow_type)} - ${workflowData.client?.name || 'Unknown Client'}`,
@@ -68,7 +67,7 @@ export default function WorkflowDetailPage() {
     };
   }, [workflow?.title, workflowData?.id]);
 
-  const tasks = tasksData?.map(task => ({
+  const tasks = tasksData?.map((task: any) => ({
     id: task.id,
     name: task.title,
     agent: getAgentDisplay(task),
@@ -183,13 +182,7 @@ export default function WorkflowDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh',
-        color: '#64748b' 
-      }}>
+      <div className="flex justify-center items-center h-96 text-gray-500">
         Loading workflow details...
       </div>
     );
@@ -197,13 +190,7 @@ export default function WorkflowDetailPage() {
 
   if (error || !workflow) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh',
-        color: '#ef4444' 
-      }}>
+      <div className="flex justify-center items-center h-96 text-red-500">
         {error || 'Workflow not found'}
       </div>
     );
@@ -212,15 +199,17 @@ export default function WorkflowDetailPage() {
   const handleBackClick = () => router.push('/dashboard');
 
   return (
-    <div style={styles.page}>
+    <div className="page-container">
       <WorkflowHeader workflow={workflow} onBackClick={handleBackClick} />
       
-      <div style={styles.mainContent}>
+      <div className="main-grid">
         {/* Left Panel */}
-        <div style={{ ...styles.panel, borderRight: `1px solid ${colors.border.default}` }}>
-          <div style={styles.panelHeader}>📋 Workflow Details</div>
+        <div className="panel border-r overflow-y-auto custom-scrollbar">
+          <div className="panel-header">
+            📋 Workflow Details
+          </div>
           
-          <div style={{ padding: '20px' }}>
+          <div className="content-padding space-y-6">
             <TaskList
               tasks={tasks}
               selectedTask={selectedTask}
@@ -235,10 +224,10 @@ export default function WorkflowDetailPage() {
         </div>
 
         {/* Right Panel */}
-        <div style={styles.panel}>
-          <div style={styles.panelHeader}>
+        <div className="panel overflow-y-auto custom-scrollbar">
+          <div className="panel-header">
             📋 Task Details
-            <span style={{ color: colors.text.tertiary, fontSize: '10px', fontWeight: '400', textTransform: 'none', letterSpacing: 0 }}>
+            <span className="text-gray-400 text-xs font-normal normal-case tracking-normal">
               {selectedTask ? 'Task selected' : 'Select a task to view details'}
             </span>
           </div>
@@ -263,18 +252,13 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
       ] : [];
       
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid grid-cols-2 gap-4">
           {detailFields.map((field) => (
-            <div key={field.label} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ fontSize: '11px', color: colors.text.secondary, fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div key={field.label} className="flex flex-col gap-1">
+              <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
                 {field.label}
               </div>
-              <div style={{ 
-                fontSize: '13px', 
-                color: colors.text.primary, 
-                fontWeight: '400',
-                ...(field.mono && { fontFamily: 'Monaco, Menlo, monospace' })
-              }}>
+              <div className={`text-sm text-gray-900 ${field.mono ? 'font-mono' : ''}`}>
                 {field.value}
               </div>
             </div>
@@ -284,7 +268,7 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
     
     case 'files':
       return (
-        <div className="flex flex-col gap-5">
+        <div className="space-y-5">
           <FileUpload
             workflowId={workflow?.id || ''}
             onUploadComplete={() => {}}
@@ -309,7 +293,7 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
 
 function PlaceholderContent({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ color: colors.text.secondary, fontSize: '12px', textAlign: 'center', padding: '20px' }}>
+    <div className="text-gray-500 text-sm text-center py-5">
       {children}
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useSupabase } from '@/lib/supabase/provider';
-import { fileUploadStyles } from '@/styles/file-upload';
+import { Upload, Loader2 } from 'lucide-react';
 
 interface FileUploadProps {
   workflowId: string;
@@ -116,16 +116,18 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
     setIsDragOver(false);
   };
 
-  const getUploadAreaStyle = () => {
-    if (uploading) return { ...fileUploadStyles.uploadArea, ...fileUploadStyles.uploadAreaUploading };
-    if (isDragOver) return { ...fileUploadStyles.uploadArea, ...fileUploadStyles.uploadAreaHover };
-    return fileUploadStyles.uploadArea;
-  };
-
   return (
-    <div style={fileUploadStyles.container} className={className}>
+    <div className={`space-y-4 ${className}`}>
       <div
-        style={getUploadAreaStyle()}
+        className={`
+          relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
+          ${uploading 
+            ? 'border-primary-300 bg-primary-50' 
+            : isDragOver 
+              ? 'border-primary-400 bg-primary-50' 
+              : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+          }
+        `}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -138,57 +140,47 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
           accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
           onChange={handleFileSelect}
           disabled={uploading}
-          style={{ display: 'none' }}
+          className="hidden"
         />
 
         {uploading ? (
-          <div>
-            <div style={{ ...fileUploadStyles.spinner, animation: 'spin 1s linear infinite' }} />
-            <p style={fileUploadStyles.uploadProgress}>
+          <div className="space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-600 mx-auto" />
+            <p className="text-sm font-medium text-primary-700">
               Uploading... {uploadProgress}%
             </p>
             {uploadProgress > 0 && (
-              <div style={fileUploadStyles.progressBar}>
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  style={{ ...fileUploadStyles.progressFill, width: `${uploadProgress}%` }}
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
                 />
               </div>
             )}
           </div>
         ) : (
-          <div>
-            <div style={fileUploadStyles.uploadIcon}>
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7,10 12,15 17,10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+          <div className="space-y-4">
+            <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Upload Documents
+              </h3>
+              <p className="text-sm text-gray-600">
+                Drag and drop files here, or click to browse
+              </p>
+              <p className="text-xs text-gray-500">
+                Supports: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX, JPG, PNG (max 50MB)
+              </p>
             </div>
-            <h3 style={fileUploadStyles.title}>
-              Upload Documents
-            </h3>
-            <p style={fileUploadStyles.subtitle}>
-              Drag and drop files here, or click to browse
-            </p>
-            <p style={fileUploadStyles.hint}>
-              Supports: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX, JPG, PNG (max 50MB)
-            </p>
           </div>
         )}
       </div>
 
       {error && (
-        <div style={fileUploadStyles.error}>
-          {error}
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

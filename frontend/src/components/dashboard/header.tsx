@@ -46,88 +46,34 @@ export function DashboardHeader() {
   };
 
   return (
-    <div
-      className="header"
-      style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        padding: '12px 20px',
-        marginBottom: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
-      }}
-    >
-      <div
-        className="logo"
-        style={{
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
+    <header className="page-header">
+      <div className="flex items-center">
         <img
           src="/rexera-logo.svg"
           alt="Rexera Logo"
-          style={{
-            height: '32px',
-            width: 'auto'
-          }}
+          className="h-8 w-auto"
         />
       </div>
       
-      <div
-        className="user-info"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          fontSize: '13px'
-        }}
-      >
-        <div
-          className="notification-badge"
-          style={{
-            background: '#ef4444',
-            color: 'white',
-            borderRadius: '50%',
-            width: '20px',
-            height: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '11px',
-            fontWeight: '600',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
-          }}
-        >
+      <div className="flex items-center gap-3 text-sm">
+        <div className="status-badge status-urgent w-5 h-5 flex items-center justify-center text-xs font-semibold rounded-full">
           3
         </div>
-        <span>{getDisplayName()}</span>
-        <div
-          className="user-avatar"
-          style={{
-            width: '32px',
-            height: '32px',
-            background: getAvatarUrl() ? 'transparent' : 'linear-gradient(135deg, #8cc8c0, #64B6AC)',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: '600',
-            fontSize: '12px',
-            backgroundImage: getAvatarUrl() ? `url(${getAvatarUrl()})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            cursor: 'pointer'
-          }}
+        <span className="text-gray-700">{getDisplayName()}</span>
+        <button
           onClick={handleSignOut}
           title="Click to sign out"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80"
+          style={{
+            background: getAvatarUrl() ? 'transparent' : 'linear-gradient(135deg, #8cc8c0, #64B6AC)',
+            backgroundImage: getAvatarUrl() ? `url(${getAvatarUrl()})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
         >
           {!getAvatarUrl() && getInitials()}
-        </div>
+        </button>
       </div>
-    </div>
+    </header>
   );
 }

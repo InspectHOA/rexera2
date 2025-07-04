@@ -18,19 +18,19 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Rexera Brand Colors
+        // Rexera Brand Colors (Consistent #64B6AC base)
         primary: {
           50: "#f0fdfa",
-          100: "#ccfbf1",
+          100: "#ccfbf1", 
           200: "#99f6e4",
           300: "#5eead4",
-          400: "#2dd4bf",
+          400: "#8cc8c0", // Lighter version of brand
           500: "#64B6AC", // Main brand color
-          600: "#0891b2",
-          700: "#0e7490",
-          800: "#155e75",
-          900: "#164e63",
-          950: "#083344",
+          600: "#5a9f95", // Darker version of brand  
+          700: "#4a8379",
+          800: "#3a675d",
+          900: "#2a4b41",
+          950: "#1a2f25",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

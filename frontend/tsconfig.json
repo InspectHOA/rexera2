@@ -25,13 +25,13 @@
       "@/components/*": ["./src/components/*"],
       "@/lib/*": ["./src/lib/*"],
       "@/hooks/*": ["./src/hooks/*"],
-      "@/types": ["../types/src"],
-      "@rexera/types": ["../types/src"]
+      "@/types": ["../packages/types/src"],
+      "@rexera/types": ["../packages/types/src"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"],
   "references": [
-    { "path": "../types" }
+    { "path": "../packages/types" }
   ]
 }

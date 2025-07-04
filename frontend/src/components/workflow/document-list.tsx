@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSupabase } from '@/lib/supabase/provider';
-import { documentListStyles } from '@/styles/file-upload';
+import { FileText, Download, Trash2, Loader2, AlertCircle } from 'lucide-react';
 
 interface Document {
   id: string;
@@ -129,67 +129,68 @@ export function DocumentList({ workflowId, taskId, onDocumentDeleted }: Document
 
   if (loading) {
     return (
-      <div style={documentListStyles.loadingContainer}>
-        <div style={{ ...documentListStyles.loadingSpinner, animation: 'spin 1s linear infinite' }} />
-        <p style={documentListStyles.loadingText}>Loading documents...</p>
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+        <p className="text-sm text-gray-600">Loading documents...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={documentListStyles.error}>
-        Error loading documents: {error}
+      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-5 w-5 text-red-600" />
+          <p className="text-sm text-red-700">Error loading documents: {error}</p>
+        </div>
       </div>
     );
   }
 
   if (documents.length === 0) {
     return (
-      <div style={documentListStyles.emptyState}>
-        <p>No documents uploaded yet.</p>
+      <div className="text-center py-12">
+        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-sm text-gray-500">No documents uploaded yet.</p>
       </div>
     );
   }
 
   return (
-    <div style={documentListStyles.container}>
+    <div className="space-y-3">
       {documents.map((document) => (
-        <div key={document.id} style={documentListStyles.documentItem}>
-          <div style={documentListStyles.fileIcon}>
+        <div 
+          key={document.id} 
+          className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div className="text-2xl flex-shrink-0">
             {getFileIcon(document.mime_type || '')}
           </div>
           
-          <div style={documentListStyles.fileInfo}>
-            <p style={documentListStyles.fileName}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
               {document.filename}
             </p>
-            <p style={documentListStyles.fileMeta}>
+            <p className="text-xs text-gray-500">
               {formatFileSize(document.file_size_bytes || 0)} • {new Date(document.created_at).toLocaleDateString()}
             </p>
           </div>
 
-          <div style={documentListStyles.actions}>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => handleDownload(document)}
-              style={{ ...documentListStyles.button, ...documentListStyles.downloadButton }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded hover:bg-primary-100 transition-colors duration-200"
+              title="Download document"
             >
+              <Download className="h-3 w-3" />
               Download
             </button>
             <button
               onClick={() => handleDelete(document)}
-              style={{ ...documentListStyles.button, ...documentListStyles.deleteButton }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors duration-200"
+              title="Delete document"
             >
+              <Trash2 className="h-3 w-3" />
               Delete
             </button>
           </div>
