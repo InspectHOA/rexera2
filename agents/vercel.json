@@ -1,12 +1,28 @@
 {
   "version": 2,
   "name": "rexera2-agents",
-  "builds": [
-    {
-      "src": "src/index.ts",
-      "use": "@vercel/node"
+  "functions": {
+    "src/**/*.ts": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "src/agent-coordinator.ts": {
+      "maxDuration": 600,
+      "memory": 1024
+    },
+    "src/load-balancer.ts": {
+      "maxDuration": 120,
+      "memory": 512
+    },
+    "src/monitoring.ts": {
+      "maxDuration": 60,
+      "memory": 256
+    },
+    "src/agents/*.ts": {
+      "maxDuration": 300,
+      "memory": 1024
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/agents/coordinate",
@@ -41,28 +57,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install && npx turbo run build --filter=agents^...",
-  "functions": {
-    "src/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "src/agent-coordinator.ts": {
-      "maxDuration": 600,
-      "memory": 1024
-    },
-    "src/load-balancer.ts": {
-      "maxDuration": 120,
-      "memory": 512
-    },
-    "src/monitoring.ts": {
-      "maxDuration": 60,
-      "memory": 256
-    },
-    "src/agents/*.ts": {
-      "maxDuration": 300,
-      "memory": 1024
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
