@@ -24,6 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if we're in localhost development mode
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const shouldBypassAuth = isLocalhost && isDevelopment;
+
   const refreshProfile = async () => {
     if (!user) {
       setProfile(null);
@@ -115,6 +121,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    if (shouldBypassAuth) {
+      // Create mock user for localhost development
+      const mockUser = {
+        id: 'localhost-dev-user',
+        email: 'dev@localhost.com',
+        app_metadata: {},
+        aud: 'authenticated',
+        user_metadata: {
+          full_name: 'Development User',
+          name: 'Development User',
+          avatar_url: null,
+          picture: null
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as User;
+
+      const mockProfile: UserProfile = {
+        id: 'localhost-dev-user',
+        user_type: 'hil_user',
+        email: 'dev@localhost.com',
+        full_name: 'Development User',
+        role: 'USER',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      setUser(mockUser);
+      setProfile(mockProfile);
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -142,7 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase, router]);
+  }, [supabase, router, shouldBypassAuth]);
 
   useEffect(() => {
     if (user && !profile) {

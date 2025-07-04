@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { styles, colors } from '@/styles/workflow-detail';
 import { WorkflowHeader } from '@/components/workflow/WorkflowHeader';
 import { TaskList } from '@/components/workflow/TaskList';
@@ -123,6 +123,20 @@ export default function WorkflowDetailPage() {
     closing: formatDate(workflowData.metadata?.closing_date),
     progress: `${tasksData?.filter(t => t.status === 'COMPLETED').length || 0} of ${tasksData?.length || 0} tasks`
   } : null;
+
+  // Update browser tab title with workflow address
+  useEffect(() => {
+    if (workflow?.title && workflow.title !== 'Workflow Details') {
+      document.title = workflow.title;
+    } else if (workflowData?.id) {
+      document.title = `Workflow ${workflowData.id}`;
+    }
+    
+    // Cleanup: restore default title when component unmounts
+    return () => {
+      document.title = 'Rexera HIL Dashboard';
+    };
+  }, [workflow?.title, workflowData?.id]);
 
   const tasks = tasksData?.map(task => ({
     id: task.id,

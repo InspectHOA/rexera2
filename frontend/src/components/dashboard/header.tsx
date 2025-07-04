@@ -62,23 +62,18 @@ export function DashboardHeader() {
       <div
         className="logo"
         style={{
-          fontSize: '18px',
-          fontWeight: '600',
-          color: '#0f172a',
           display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
+          alignItems: 'center'
         }}
       >
         <img
           src="/rexera-logo.svg"
           alt="Rexera Logo"
           style={{
-            height: '24px',
+            height: '32px',
             width: 'auto'
           }}
         />
-        Rexera HIL Dashboard
       </div>
       
       <div

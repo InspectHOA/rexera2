@@ -407,7 +407,7 @@ export function WorkflowTable() {
       </table>
 
       {/* Pagination */}
-      <div 
+      <div
         className="pagination"
         style={{
           padding: '16px 20px',
@@ -418,55 +418,33 @@ export function WorkflowTable() {
           alignItems: 'center'
         }}
       >
-        <div 
+        <div
           className="pagination-info"
           style={{
             fontSize: '13px',
             color: '#475569'
           }}
         >
-          Showing 1-20 of 156 workflows
+          Showing 1-{workflows.length} of {workflows.length} workflows
         </div>
-        <div 
-          className="pagination-controls"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <button 
-            className="btn btn-secondary btn-small"
-            disabled
+        {workflows.length > 20 && (
+          <div
+            className="pagination-controls"
             style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '500',
-              border: '1px solid #e2e8f0',
-              cursor: 'not-allowed',
-              textDecoration: 'none',
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-              gap: '6px',
-              background: '#ffffff',
-              color: '#475569',
-              opacity: '0.5'
+              gap: '8px'
             }}
           >
-            « Previous
-          </button>
-          <span className="page-numbers" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <button 
-              className="btn btn-primary btn-small"
+            <button
+              className="btn btn-secondary btn-small"
+              disabled
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
                 fontWeight: '500',
-                border: 'none',
-                cursor: 'pointer',
+                border: '1px solid #e2e8f0',
+                cursor: 'not-allowed',
                 textDecoration: 'none',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -474,14 +452,38 @@ export function WorkflowTable() {
                 transition: 'all 0.2s ease',
                 whiteSpace: 'nowrap',
                 gap: '6px',
-                background: '#64B6AC',
-                color: 'white',
-                boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
+                background: '#ffffff',
+                color: '#475569',
+                opacity: '0.5'
               }}
             >
-              1
+              « Previous
             </button>
-            <button 
+            <span className="page-numbers" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button
+                className="btn btn-primary btn-small"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  gap: '6px',
+                  background: '#64B6AC',
+                  color: 'white',
+                  boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
+                }}
+              >
+                1
+              </button>
+            </span>
+            <button
               className="btn btn-secondary btn-small"
               style={{
                 padding: '6px 12px',
@@ -500,74 +502,10 @@ export function WorkflowTable() {
                 color: '#475569'
               }}
             >
-              2
+              Next »
             </button>
-            <button 
-              className="btn btn-secondary btn-small"
-              style={{
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                border: '1px solid #e2e8f0',
-                cursor: 'pointer',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                whiteSpace: 'nowrap',
-                gap: '6px',
-                background: '#ffffff',
-                color: '#475569'
-              }}
-            >
-              3
-            </button>
-            <span className="page-dots" style={{ color: '#94a3b8', fontSize: '12px', padding: '0 4px' }}>...</span>
-            <button 
-              className="btn btn-secondary btn-small"
-              style={{
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                border: '1px solid #e2e8f0',
-                cursor: 'pointer',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                whiteSpace: 'nowrap',
-                gap: '6px',
-                background: '#ffffff',
-                color: '#475569'
-              }}
-            >
-              8
-            </button>
-          </span>
-          <button 
-            className="btn btn-secondary btn-small"
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '500',
-              border: '1px solid #e2e8f0',
-              cursor: 'pointer',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-              gap: '6px',
-              background: '#ffffff',
-              color: '#475569'
-            }}
-          >
-            Next »
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
