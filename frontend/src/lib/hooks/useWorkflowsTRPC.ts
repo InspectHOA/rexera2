@@ -103,7 +103,7 @@ export function useWorkflowsTRPC(filters: WorkflowFilters = {}) {
     workflows,
     stats,
     loading,
-    error: error?.message,
+    error: error ? String(error) : null,
     pagination,
     refetch
   };
@@ -140,7 +140,7 @@ export function useWorkflowTRPC(id: string) {
 
   const tasks = tasksResult?.data || [];
   const loading = workflowLoading || tasksLoading;
-  const error = workflowError?.message || tasksError?.message;
+  const error = workflowError ? String(workflowError) : tasksError ? String(tasksError) : null;
 
   const refetch = () => {
     refetchWorkflow();
