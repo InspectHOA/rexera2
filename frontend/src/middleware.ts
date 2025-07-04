@@ -58,7 +58,8 @@ export default async function middleware(req: NextRequest) {
   const publicRoutes = [
     '/auth/login',
     '/auth/callback',
-    '/auth/error'
+    '/auth/error',
+    '/api'  // Allow all API routes to handle their own auth
   ];
 
   // Check if the current route is public

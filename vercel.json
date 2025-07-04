@@ -1,29 +1,18 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
+  "installCommand": "npm install",
   "functions": {
-    "apis/src/**/*.ts": {
+    "api/src/**/*.ts": {
       "runtime": "@vercel/node@3.0.12",
       "maxDuration": 60
-    },
-    "apis/src/agents/**/*.ts": {
-      "runtime": "@vercel/node@3.0.12", 
-      "maxDuration": 120
-    },
-    "apis/src/workflows/**/*.ts": {
-      "runtime": "@vercel/node@3.0.12",
-      "maxDuration": 180
-    },
-    "apis/src/webhooks/**/*.ts": {
-      "runtime": "@vercel/node@3.0.12",
-      "maxDuration": 31
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/apis/src/$1"
+      "destination": "/api/src/$1"
     }
   ]
 }

@@ -71,7 +71,8 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
       if (filters.limit) params.append('limit', filters.limit.toString());
       if (filters.include?.length) params.append('include', filters.include.join(','));
 
-      const response = await fetch(`/api/workflows?${params.toString()}`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/workflows?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch workflows: ${response.status} ${response.statusText}`);
@@ -165,7 +166,8 @@ export function useWorkflow(id: string) {
       setError(null);
 
       // Fetch specific workflow by ID
-      const workflowResponse = await fetch(`/api/workflows/${id}?include=client,tasks`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const workflowResponse = await fetch(`${apiUrl}/api/workflows/${id}?include=client,tasks`);
       
       if (!workflowResponse.ok) {
         throw new Error(`Failed to fetch workflow: ${workflowResponse.status} ${workflowResponse.statusText}`);
