@@ -1,39 +1,41 @@
-# Rexera 2.0 - Dual Deployment Architecture
+# Rexera 2.0 - AI-Powered Real Estate Workflow Automation
 
-A scalable, maintainable monorepo with clean separation between frontend UI and backend business logic, deployed as independent services for maximum flexibility and performance.
+A scalable, maintainable monorepo for AI-powered real estate workflow automation platform with clean separation between frontend UI, backend business logic, AI agents, and workflow orchestration.
 
 ## 🏗️ Architecture Overview
 
-### Why Dual Deployment?
+### Monorepo Structure
 
-This architecture separates concerns by deploying the frontend and API as independent services:
+This architecture uses a modern monorepo approach with multiple specialized services:
 
-- **Frontend Service**: Pure Next.js UI focused solely on user experience
-- **API Service**: Express.js server handling all business logic and data operations
-- **Clean Separation**: No mixing of UI and business logic in a single deployment
-- **Independent Scaling**: Scale frontend and API based on different demand patterns
-- **Team Collaboration**: Frontend and backend teams can work independently
+- **Frontend Service**: Next.js 14 with App Router for user interface
+- **API Service**: Express.js server with tRPC for type-safe APIs
+- **AI Agents Service**: Specialized AI agents for real estate tasks
+- **Workflows Service**: Workflow orchestration and automation
+- **Shared Packages**: Common types, schemas, and utilities
+- **Independent Scaling**: Scale each service based on different demand patterns
+- **Team Collaboration**: Teams can work independently on different services
 - **Technology Flexibility**: Easy to swap technologies without affecting other services
 
 ### Architecture Diagram
 
 ```
-┌─────────────────┐    HTTP/HTTPS     ┌─────────────────┐
+┌─────────────────┐    tRPC/HTTP      ┌─────────────────┐
 │   Frontend      │ ──────────────► │   API Server    │
-│   (Next.js)     │                  │   (Express.js)  │
+│   (Next.js 14)  │                  │ (Express+tRPC)  │
 │   Port 3000     │                  │   Port 3002     │
 └─────────────────┘                  └─────────────────┘
          │                                     │
          │                                     │
          ▼                                     ▼
 ┌─────────────────┐                  ┌─────────────────┐
-│   Vercel        │                  │   Vercel        │
-│   Frontend      │                  │   API           │
-│   Deployment    │                  │   Deployment    │
+│   AI Agents     │                  │   Workflows     │
+│   Service       │                  │   Service       │
+│   (Vercel)      │                  │   (Automation)  │
 └─────────────────┘                  └─────────────────┘
          │                                     │
-         └──────────── External Services ──────┘
-                      (N8N, AI Agents, etc.)
+         └──────────── Supabase Database ──────┘
+                      (PostgreSQL + Auth)
 ```
 
 ### Technology Stack
@@ -41,72 +43,111 @@ This architecture separates concerns by deploying the frontend and API as indepe
 **Frontend:**
 - Next.js 14 with App Router
 - TypeScript for type safety
-- Tailwind CSS for styling
-- Supabase for real-time data
-- React Query for state management
+- Tailwind CSS + Radix UI for styling
+- Supabase for authentication and real-time data
+- TanStack Query (React Query) for state management
+- tRPC for type-safe API calls
 
 **API:**
-- Express.js server
+- Express.js server with tRPC
 - TypeScript for consistency
 - Supabase for database operations
 - CORS for cross-origin requests
 - Zod for request validation
 
+**AI Agents:**
+- Specialized AI agents for real estate tasks
+- Independent deployment on Vercel
+- Integration with workflow orchestration
+
+**Workflows:**
+- Workflow automation and orchestration
+- Task management and processing
+- Integration with external services
+
+**Shared Packages:**
+- `@rexera/types`: Shared TypeScript types
+- `@rexera/schemas`: Zod validation schemas
+
 ## 📁 Project Structure
 
 ```
 📁 /rexera2/
-├── 📁 frontend/              ← Pure Next.js Frontend (UI Only)
+├── 📁 frontend/              ← Next.js Frontend with App Router
 │   ├── 📁 src/app/           ← App Router pages & layouts
 │   │   ├── 📁 auth/          ← Authentication pages
 │   │   ├── 📁 dashboard/     ← Main dashboard UI
 │   │   └── 📁 workflow/      ← Workflow management UI
 │   ├── 📁 src/components/    ← Reusable React components
-│   │   ├── 📁 ui/            ← Base UI components
+│   │   ├── 📁 ui/            ← Base UI components (Radix UI)
 │   │   ├── 📁 dashboard/     ← Dashboard-specific components
 │   │   └── 📁 workflow/      ← Workflow-specific components
 │   ├── 📁 src/lib/           ← Utilities, hooks, and integrations
 │   │   ├── 📁 auth/          ← Authentication logic
 │   │   ├── 📁 hooks/         ← Custom React hooks
-│   │   └── 📁 supabase/      ← Supabase client configuration
+│   │   ├── 📁 supabase/      ← Supabase client configuration
+│   │   └── 📁 trpc/          ← tRPC client setup
 │   ├── 📁 public/            ← Static assets (logos, images)
-│   ├── next.config.js        ← Next.js configuration
-│   ├── package.json          ← Frontend dependencies
-│   └── .env.local            ← Frontend environment variables
-├── 📁 api/                   ← Standalone Express API Server
+│   ├── vercel.json           ← Vercel deployment configuration
+│   └── package.json          ← Frontend dependencies
+├── 📁 api/                   ← Express API Server with tRPC
 │   ├── 📁 src/               ← API source code
 │   │   ├── server.ts         ← Express server entry point
+│   │   ├── 📁 trpc/          ← tRPC router and context
 │   │   ├── 📁 health/        ← Health check endpoints
 │   │   ├── 📁 tasks/         ← Task management APIs
 │   │   ├── 📁 workflows/     ← Workflow management APIs
 │   │   └── 📁 test-db/       ← Database testing endpoints
+│   ├── vercel.json           ← Vercel deployment configuration
 │   ├── package.json          ← API dependencies
-│   ├── tsconfig.json         ← TypeScript configuration
-│   └── .env.local            ← API environment variables
-├── 📁 types/                 ← Shared TypeScript types
-│   └── 📁 src/               ← Type definitions used by both services
+│   └── tsconfig.json         ← TypeScript configuration
+├── 📁 agents/                ← AI Agents Service
+│   ├── 📁 src/               ← Agent source code
+│   │   ├── 📁 agents/        ← Individual AI agents
+│   │   ├── agent-coordinator.ts ← Agent coordination logic
+│   │   └── agent-sdk.ts      ← Agent SDK and utilities
+│   ├── vercel.json           ← Vercel deployment configuration
+│   └── package.json          ← Agents dependencies
+├── 📁 workflows/             ← Workflow Orchestration Service
+│   ├── 📁 src/               ← Workflow source code
+│   │   ├── 📁 workflows/     ← Workflow definitions
+│   │   ├── 📁 shared/        ← Shared workflow utilities
+│   │   └── 📁 validation/    ← Workflow validation
+│   └── package.json          ← Workflows dependencies
+├── 📁 packages/              ← Shared Packages
+│   ├── 📁 types/             ← Shared TypeScript types
+│   │   └── 📁 src/           ← Type definitions
+│   └── 📁 schemas/           ← Shared Zod schemas
+│       └── 📁 src/           ← Schema definitions
 ├── 📁 supabase/              ← Database migrations & configuration
 │   ├── 📁 migrations/        ← SQL migration files
 │   └── config.toml           ← Supabase configuration
-├── vercel-frontend.json      ← Frontend deployment configuration
-├── vercel-api.json           ← API deployment configuration
+├── 📁 docs/                  ← Project documentation
+├── package.json              ← Root package.json with workspaces
+├── pnpm-workspace.yaml       ← PNPM workspace configuration
+├── turbo.json                ← Turborepo configuration
 └── README.md                 ← This documentation
 ```
 
 ### Key Files Explained
 
 - **[`frontend/src/app/auth/login/page.tsx`](frontend/src/app/auth/login/page.tsx)**: Authentication with localhost bypass
-- **[`api/src/server.ts`](api/src/server.ts)**: Express server wrapping Next.js API routes
-- **[`vercel-frontend.json`](vercel-frontend.json)**: Frontend deployment configuration
-- **[`vercel-api.json`](vercel-api.json)**: API deployment configuration
-- **[`types/src/`](types/src/)**: Shared TypeScript types across services
+- **[`api/src/server.ts`](api/src/server.ts)**: Express server with tRPC integration
+- **[`frontend/vercel.json`](frontend/vercel.json)**: Frontend deployment configuration
+- **[`api/vercel.json`](api/vercel.json)**: API deployment configuration
+- **[`packages/types/src/`](packages/types/src/)**: Shared TypeScript types across services
+- **[`packages/schemas/src/`](packages/schemas/src/)**: Shared Zod validation schemas
+- **[`agents/src/`](agents/src/)**: AI agents for real estate automation
+- **[`workflows/src/`](workflows/src/)**: Workflow orchestration and automation
+- **[`turbo.json`](turbo.json)**: Turborepo build pipeline configuration
+- **[`pnpm-workspace.yaml`](pnpm-workspace.yaml)**: PNPM workspace configuration
 
 ## 🚀 Development Setup
 
 ### Prerequisites
 
 - **Node.js**: Version 18 or higher
-- **npm**: Version 8 or higher (or yarn equivalent)
+- **PNPM**: Version 8 or higher (preferred package manager)
 - **Supabase Account**: For database and authentication
 - **Git**: For version control
 
@@ -118,28 +159,16 @@ This architecture separates concerns by deploying the frontend and API as indepe
    cd rexera2
    ```
 
-2. **Install Frontend Dependencies**
+2. **Install Dependencies (All Workspaces)**
    ```bash
-   cd frontend
-   npm install
-   cd ..
+   # Install PNPM if not already installed
+   npm install -g pnpm
+   
+   # Install all workspace dependencies
+   pnpm install
    ```
 
-3. **Install API Dependencies**
-   ```bash
-   cd api
-   npm install
-   cd ..
-   ```
-
-4. **Install Shared Types**
-   ```bash
-   cd types
-   npm install
-   cd ..
-   ```
-
-5. **Set Up Database**
+3. **Set Up Database**
    ```bash
    # Install Supabase CLI if not already installed
    npm install -g @supabase/cli
@@ -151,21 +180,34 @@ This architecture separates concerns by deploying the frontend and API as indepe
    supabase db reset
    ```
 
-### Verification Steps
-
-1. **Check Node.js Version**
+4. **Build Shared Packages**
    ```bash
-   node --version  # Should be 18+
-   npm --version   # Should be 8+
+   # Build shared types and schemas
+   pnpm run build
    ```
 
-2. **Verify Dependencies**
+### Verification Steps
+
+1. **Check Node.js and PNPM Version**
    ```bash
-   # Frontend
-   cd frontend && npm list --depth=0
+   node --version  # Should be 18+
+   pnpm --version  # Should be 8+
+   ```
+
+2. **Verify Workspace Dependencies**
+   ```bash
+   # Check all workspaces
+   pnpm list --depth=0
    
-   # API
-   cd ../api && npm list --depth=0
+   # Verify specific workspace
+   pnpm --filter @rexera/frontend list --depth=0
+   pnpm --filter @rexera/api list --depth=0
+   ```
+
+3. **Verify Turborepo Setup**
+   ```bash
+   # Check if turbo is working
+   pnpm turbo --version
    ```
 
 ## ⚙️ Environment Configuration
@@ -239,10 +281,22 @@ NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
 
 ### Development Workflow
 
+#### Option 1: Start All Services (Recommended)
+```bash
+# Start all services with Turborepo
+pnpm dev
+```
+
+This will start:
+- Frontend on http://localhost:3000
+- API on http://localhost:3002
+- All other services as configured
+
+#### Option 2: Start Individual Services
+
 1. **Start API Server (Terminal 1)**
    ```bash
-   cd api
-   npm run dev
+   pnpm --filter @rexera/api dev
    ```
    
    Expected output:
@@ -251,12 +305,12 @@ NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
    📊 Health check: http://localhost:3002/health
    🔗 Workflows API: http://localhost:3002/api/workflows
    📋 Tasks API: http://localhost:3002/api/tasks
+   ⚡ tRPC API: http://localhost:3002/api/trpc
    ```
 
 2. **Start Frontend Server (Terminal 2)**
    ```bash
-   cd frontend
-   npm run dev
+   pnpm --filter @rexera/frontend dev
    ```
    
    Expected output:
@@ -266,10 +320,21 @@ NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
    - Ready in 2.1s
    ```
 
-3. **Verify Connection**
-   - Frontend: http://localhost:3000
-   - API Health: http://localhost:3002/health
-   - API Docs: http://localhost:3002/api/workflows
+3. **Start AI Agents Service (Terminal 3)**
+   ```bash
+   pnpm --filter @rexera/agents dev
+   ```
+
+4. **Start Workflows Service (Terminal 4)**
+   ```bash
+   pnpm --filter @rexera/workflows dev
+   ```
+
+### Verify Connection
+- Frontend: http://localhost:3000
+- API Health: http://localhost:3002/health
+- API tRPC: http://localhost:3002/api/trpc
+- API Workflows: http://localhost:3002/api/workflows
 
 ### Port Configuration
 
@@ -277,25 +342,32 @@ NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
 |---------|--------------|-------------|
 | Frontend | 3000 | 3001 |
 | API | 3002 | 3003 |
+| Agents | 3004 | 3005 |
+| Workflows | 3006 | 3007 |
 
 **Port Conflict Resolution:**
 ```bash
 # If port 3000 is busy
-cd frontend
-PORT=3001 npm run dev
+PORT=3001 pnpm --filter @rexera/frontend dev
 
 # If port 3002 is busy
-cd api
-PORT=3003 npm run dev
+PORT=3003 pnpm --filter @rexera/api dev
+
+# Kill all ports and restart
+pnpm run kill-ports
+pnpm dev
 ```
 
 ### Development Features
 
-- **Hot Reloading**: Both services auto-reload on file changes
-- **TypeScript**: Real-time type checking
+- **Hot Reloading**: All services auto-reload on file changes
+- **TypeScript**: Real-time type checking across all workspaces
+- **tRPC**: Type-safe API calls between frontend and backend
+- **Turborepo**: Optimized build pipeline with caching
 - **CORS**: Pre-configured for local development
 - **Auth Bypass**: Automatic login for localhost
 - **Error Handling**: Detailed error messages in development
+- **Shared Types**: Consistent types across all services
 
 ## 📡 API Documentation
 
@@ -303,6 +375,13 @@ PORT=3003 npm run dev
 
 - **Development**: `http://localhost:3002`
 - **Production**: `https://rexera-api.vercel.app`
+
+### API Architecture
+
+The API uses a hybrid approach:
+- **tRPC**: Type-safe API calls at `/api/trpc`
+- **REST**: Traditional REST endpoints for external integrations
+- **Express**: Underlying server framework
 
 ### Health Check
 
@@ -320,6 +399,26 @@ Response:
   "timestamp": "2024-01-15T10:30:00.000Z",
   "environment": "development"
 }
+```
+
+### tRPC API
+
+**Endpoint**: `/api/trpc`
+
+The tRPC API provides type-safe communication between frontend and backend:
+
+```typescript
+// Frontend usage example
+import { trpc } from '@/lib/trpc/client';
+
+// Get workflows with full type safety
+const { data: workflows } = trpc.workflows.list.useQuery({
+  status: 'active',
+  limit: 10
+});
+
+// Create workflow with validation
+const createWorkflow = trpc.workflows.create.useMutation();
 ```
 
 ### Workflows API
@@ -544,39 +643,63 @@ if (shouldBypassAuth) {
 
 ### Vercel Configuration
 
-#### Frontend Deployment (`vercel-frontend.json`)
+Each service has its own `vercel.json` configuration file:
+
+#### Frontend Deployment (`frontend/vercel.json`)
 
 ```json
 {
   "version": 2,
   "name": "rexera-frontend",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm install",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://rexera-api.vercel.app"
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "NEXT_PUBLIC_API_URL": "@api-url"
   }
 }
 ```
 
-#### API Deployment (`vercel-api.json`)
+#### API Deployment (`api/vercel.json`)
 
 ```json
 {
   "version": 2,
   "name": "rexera-api",
-  "buildCommand": "cd api && npm run build",
-  "outputDirectory": "api/dist",
-  "installCommand": "cd api && npm install",
-  "functions": {
-    "api/dist/server.js": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "src/server.ts",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/dist/server.js"
+      "dest": "/src/server.ts"
+    }
+  ],
+  "env": {
+    "SUPABASE_URL": "@supabase-url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key"
+  }
+}
+```
+
+#### Agents Deployment (`agents/vercel.json`)
+
+```json
+{
+  "version": 2,
+  "name": "rexera-agents",
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node"
     }
   ]
 }
@@ -586,19 +709,35 @@ if (shouldBypassAuth) {
 
 1. **Deploy API First**
    ```bash
-   vercel --config vercel-api.json
+   cd api
+   vercel
    ```
 
-2. **Update Frontend Environment**
+2. **Deploy Agents Service**
    ```bash
-   # Update NEXT_PUBLIC_API_URL in vercel-frontend.json
-   # or set in Vercel dashboard
+   cd agents
+   vercel
    ```
 
 3. **Deploy Frontend**
    ```bash
-   vercel --config vercel-frontend.json
+   cd frontend
+   vercel
    ```
+
+4. **Deploy Workflows (if applicable)**
+   ```bash
+   cd workflows
+   vercel
+   ```
+
+### Alternative: Turborepo Deployment
+
+```bash
+# Deploy all services using Turborepo
+pnpm run deploy:staging  # For staging
+pnpm run deploy:prod     # For production
+```
 
 ### Environment Variables in Vercel
 
@@ -640,83 +779,132 @@ NODE_ENV=production
 
 ### Architectural Benefits
 
-1. **Clear Separation of Concerns**
-   - Frontend focuses purely on user experience
-   - API handles all business logic and data operations
-   - No mixing of UI and backend code
+1. **Monorepo with Clear Separation**
+   - Frontend focuses on user experience with Next.js 14
+   - API handles business logic with Express + tRPC
+   - AI Agents provide specialized automation
+   - Workflows orchestrate complex processes
+   - Shared packages ensure consistency
 
-2. **Independent Scaling**
-   - Scale frontend based on user traffic
-   - Scale API based on data processing needs
-   - Different resource allocation strategies
+2. **Type Safety Across Services**
+   - tRPC provides end-to-end type safety
+   - Shared TypeScript types and Zod schemas
+   - Compile-time error detection
+   - Reduced runtime errors
 
-3. **Team Collaboration**
-   - Frontend team works independently on UI/UX
-   - Backend team focuses on APIs and business logic
-   - Parallel development workflows
+3. **Independent Scaling**
+   - Scale each service based on demand
+   - Frontend optimized for UI delivery
+   - API optimized for data processing
+   - Agents optimized for AI workloads
+   - Workflows optimized for orchestration
 
-4. **Technology Flexibility**
-   - Easy to swap frontend framework (React → Vue, etc.)
+4. **Team Collaboration**
+   - Teams can work independently on different services
+   - Shared types ensure interface compatibility
+   - Turborepo enables efficient builds and testing
+   - Clear service boundaries
+
+5. **Technology Flexibility**
+   - Easy to swap technologies within service boundaries
    - API can serve multiple clients (web, mobile, external)
-   - Independent technology upgrade paths
+   - Independent deployment and upgrade paths
+   - Microservices-ready architecture
 
 ### Performance Benefits
 
-1. **Optimized Deployments**
-   - Frontend optimized for static content delivery
-   - API optimized for server-side processing
-   - Reduced bundle sizes
+1. **Optimized Builds with Turborepo**
+   - Intelligent caching across all services
+   - Parallel builds and testing
+   - Only rebuild what changed
+   - Faster CI/CD pipelines
 
-2. **Caching Strategies**
-   - Frontend: Static asset caching
-   - API: Database query caching
-   - CDN optimization
+2. **Type-Safe Performance**
+   - tRPC eliminates runtime type checking overhead
+   - Compile-time optimization
+   - Reduced bundle sizes through tree shaking
 
-3. **Load Distribution**
-   - Frontend served from edge locations
-   - API processing distributed across regions
-   - Reduced latency
+3. **Service-Specific Optimization**
+   - Frontend: Static generation and edge caching
+   - API: Efficient database queries and caching
+   - Agents: Optimized for AI workloads
+   - Workflows: Streamlined orchestration
+
+### AI-Powered Features
+
+1. **Specialized AI Agents**
+   - Real estate document processing
+   - Automated workflow execution
+   - Intelligent task routing
+   - Context-aware decision making
+
+2. **Workflow Automation**
+   - HOA document processing workflows
+   - Lien processing automation
+   - Payoff request handling
+   - Custom workflow creation
 
 ### External Service Integration
 
-External services can directly access the API:
+External services can access the API through multiple interfaces:
 
-**Development:**
-```bash
-curl http://localhost:3002/api/workflows
+**tRPC (Type-safe):**
+```typescript
+// For TypeScript clients
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '@rexera/api';
+
+const client = createTRPCProxyClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3002/api/trpc' })],
+});
 ```
 
-**Production:**
+**REST API (External integrations):**
 ```bash
+# Development
+curl http://localhost:3002/api/workflows
+
+# Production
 curl https://rexera-api.vercel.app/api/workflows \
   -H "Authorization: Bearer your-api-key"
 ```
 
 **Supported Integrations:**
 - N8N workflow automation
-- AI agent systems
+- AI agent orchestration
 - Webhook endpoints
 - Third-party analytics
 - External monitoring tools
+- Real estate data providers
 
 ### Future-Proofing
 
-1. **Microservices Ready**
-   - Easy to split API into smaller services
-   - Database per service pattern
-   - Service mesh integration
+1. **Microservices Architecture**
+   - Already separated into distinct services
+   - Easy to extract services to separate repositories
+   - Service mesh ready with clear boundaries
+   - Independent scaling and deployment
 
 2. **Multi-Client Support**
    - Web application (current)
    - Mobile applications (future)
    - Desktop applications (future)
-   - Partner integrations
+   - Partner API integrations
+   - Third-party developer ecosystem
 
-3. **Technology Migration**
-   - Frontend: Next.js → any React framework
-   - API: Express → FastAPI, NestJS, etc.
-   - Database: Supabase → any PostgreSQL
-   - Deployment: Vercel → AWS, GCP, Azure
+3. **Technology Migration Paths**
+   - Frontend: Next.js → any React framework or other UI framework
+   - API: Express + tRPC → FastAPI, NestJS, GraphQL, etc.
+   - Agents: Current implementation → specialized AI frameworks
+   - Workflows: Current orchestration → dedicated workflow engines
+   - Database: Supabase → any PostgreSQL or other databases
+   - Deployment: Vercel → AWS, GCP, Azure, or hybrid cloud
+
+4. **AI/ML Evolution**
+   - Modular AI agent architecture
+   - Easy integration of new AI models
+   - Workflow automation expansion
+   - Machine learning pipeline integration
 
 ## 🛠️ Troubleshooting & Resources
 
@@ -725,8 +913,12 @@ curl https://rexera-api.vercel.app/api/workflows \
 #### Port Conflicts
 ```bash
 # Error: Port 3000 is already in use
-# Solution: Use alternative port
-PORT=3001 npm run dev
+# Solution: Kill ports and restart
+pnpm run kill-ports
+pnpm dev
+
+# Or use alternative port
+PORT=3001 pnpm --filter @rexera/frontend dev
 ```
 
 #### CORS Errors
@@ -740,7 +932,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 ```bash
 # Error: API_URL is undefined
 # Solution: Restart development server after .env changes
-npm run dev
+pnpm dev
 ```
 
 #### Database Connection Issues
@@ -750,20 +942,44 @@ npm run dev
 # Check: https://app.supabase.com/project/your-project/settings/api
 ```
 
+#### Workspace Dependencies Issues
+```bash
+# Error: Module not found in workspace
+# Solution: Reinstall dependencies
+pnpm install
+
+# Or rebuild shared packages
+pnpm run build
+```
+
+#### tRPC Type Errors
+```bash
+# Error: tRPC types not found
+# Solution: Rebuild API and restart frontend
+pnpm --filter @rexera/api build
+pnpm --filter @rexera/frontend dev
+```
+
 ### Quick Fixes
 
-1. **Clear Next.js Cache**
+1. **Clear All Caches**
    ```bash
-   cd frontend
-   rm -rf .next
-   npm run dev
+   # Clear Turborepo cache
+   pnpm turbo clean
+   
+   # Clear Next.js cache
+   rm -rf frontend/.next
+   
+   # Clear TypeScript build cache
+   rm -rf */tsconfig.tsbuildinfo
    ```
 
-2. **Rebuild TypeScript**
+2. **Rebuild Everything**
    ```bash
-   cd api
-   npm run build
-   npm run dev
+   pnpm clean
+   pnpm install
+   pnpm build
+   pnpm dev
    ```
 
 3. **Reset Database**
@@ -771,51 +987,88 @@ npm run dev
    supabase db reset
    ```
 
-4. **Verify API Health**
+4. **Verify All Services**
    ```bash
+   # API Health
    curl http://localhost:3002/health
+   
+   # tRPC Health
+   curl http://localhost:3002/api/trpc/health.check
+   
+   # Frontend
+   curl http://localhost:3000
+   ```
+
+5. **Check Workspace Status**
+   ```bash
+   # List all workspaces
+   pnpm list --depth=0
+   
+   # Check specific workspace
+   pnpm --filter @rexera/frontend list
    ```
 
 ### Additional Documentation
 
-- **[Dual Deployment Guide](./DUAL_DEPLOYMENT_GUIDE.md)**: Detailed deployment instructions
-- **[API Documentation](./docs/)**: Complete API specifications
-- **[Database Schema](./supabase/migrations/)**: Database structure and migrations
-- **[Google OAuth Setup](./GOOGLE_OAUTH_SETUP.md)**: Authentication configuration
-- **[Vercel Environment Setup](./VERCEL_ENV_SETUP.md)**: Production environment guide
+- **[Project Documentation](./docs/)**: Complete project specifications and guides
+- **[API Documentation](./docs/03_API_SPECIFICATIONS.md)**: Complete API specifications
+- **[Database Schema](./docs/02_DB_SCHEMA.md)**: Database structure and design
+- **[AI Agents Guide](./docs/05_AI_AGENTS.md)**: AI agents implementation
+- **[Workflows Guide](./docs/06_WORKFLOWS.md)**: Workflow automation
+- **[Authentication Setup](./docs/04_AUTHENTICATION.md)**: Authentication configuration
+- **[Environment Variables](./docs/08_ENV_VARS.md)**: Environment configuration guide
+- **[Deployment Plan](./docs/09_DEPLOYMENT_PLAN.md)**: Production deployment guide
 
 ### Support Resources
 
 - **GitHub Issues**: Report bugs and feature requests
-- **Documentation**: Comprehensive guides in `/docs` folder
+- **Documentation**: Comprehensive guides in [`/docs`](./docs/) folder
 - **Supabase Docs**: https://supabase.com/docs
 - **Next.js Docs**: https://nextjs.org/docs
+- **tRPC Docs**: https://trpc.io/docs
+- **Turborepo Docs**: https://turbo.build/repo/docs
 - **Vercel Docs**: https://vercel.com/docs
 
 ### Development Best Practices
 
-1. **Environment Management**
-   - Keep `.env.local` files out of version control
-   - Use `.env.example` for documentation
-   - Validate environment variables on startup
+1. **Monorepo Management**
+   - Use PNPM workspaces for dependency management
+   - Leverage Turborepo for build optimization
+   - Keep shared packages up to date
+   - Use consistent naming conventions
 
-2. **API Development**
-   - Always return consistent response formats
+2. **Type Safety**
+   - Use tRPC for type-safe API communication
+   - Share types through workspace packages
+   - Validate data with Zod schemas
+   - Enable strict TypeScript settings
+
+3. **API Development**
+   - Use tRPC for internal APIs
+   - Provide REST endpoints for external integrations
    - Implement proper error handling
-   - Use TypeScript for type safety
+   - Use consistent response formats
 
-3. **Frontend Development**
+4. **Frontend Development**
    - Keep components small and focused
-   - Use React Query for API state management
+   - Use TanStack Query for server state
    - Implement proper loading and error states
+   - Follow Next.js App Router patterns
 
-4. **Database Operations**
+5. **Database Operations**
    - Use migrations for schema changes
    - Implement proper RLS policies
    - Test with realistic data volumes
+   - Monitor query performance
+
+6. **AI/Workflow Development**
+   - Keep agents modular and focused
+   - Implement proper error handling and retries
+   - Log agent activities for debugging
+   - Test workflows with various scenarios
 
 ---
 
-**Built with ❤️ for scalable, maintainable architecture.**
+**Built with ❤️ for AI-powered real estate automation.**
 
-*This dual deployment strategy provides the foundation for a robust, scalable application that can grow with your needs while maintaining clean separation of concerns and excellent developer experience.*
+*This monorepo architecture provides the foundation for a robust, scalable AI-powered application that can grow with your needs while maintaining clean separation of concerns, type safety, and excellent developer experience.*

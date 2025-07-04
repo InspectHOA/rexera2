@@ -1,29 +1,34 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-BE VERY CAREFULY ABOUT ADDING UNNESSARY COMPLEXITY IN THE CODE. OPTIMIZE FOR DEVELOPER EASE.
+
+## Core Principles
+- **BE VERY CAREFUL ABOUT ADDING UNNECESSARY COMPLEXITY IN THE CODE. OPTIMIZE FOR DEVELOPER EASE.**
+- **KEEP CODE CLEAN AND CONSISTENT** - Follow established patterns and conventions
+- **MAINTAIN TYPE SAFETY** - Use TypeScript properly with strict mode
+- **EMBRACE MODERN PATTERNS** - Leverage Zod, Turbo, and modern tooling effectively
 ## Development Commands
 
-### Root Level Commands (using Turbo monorepo)
-- `npm run dev` - Start all services in development mode
-- `npm run build` - Build all packages
-- `npm run test` - Run tests across all packages
-- `npm run lint` - Lint all packages
-- `npm run type-check` - Type check all packages
-- `npm run clean` - Clean build artifacts
+### Root Level Commands (using Turbo + pnpm)
+- `pnpm dev` - Start all services in development mode (Turbo orchestrated)
+- `pnpm build` - Build all packages in dependency order
+- `pnpm test` - Run tests across all packages
+- `pnpm lint` - Lint all packages
+- `pnpm type-check` - Type check all packages  
+- `pnpm clean` - Clean build artifacts
 
 ### Database Operations
-- `npm run db:migrate` - Run database migrations
-- `npm run db:seed` - Seed database with initial data
+- `pnpm db:migrate` - Run database migrations
+- `pnpm db:seed` - Seed database with initial data
 - `npx supabase gen types typescript` - Generate TypeScript types from Supabase schema
 
 ### Testing
-- `npm run e2e` - Run end-to-end tests with Playwright
-- `cd agents && npm run test` - Run agent integration tests
+- `pnpm e2e` - Run end-to-end tests with Playwright
+- `pnpm --filter agents test` - Run agent integration tests
 
 ### Deployment
-- `npm run deploy:staging` - Deploy to staging environment
-- `npm run deploy:prod` - Deploy to production environment
+- `pnpm deploy:staging` - Deploy to staging environment
+- `pnpm deploy:prod` - Deploy to production environment
 
 ## Architecture Overview
 
@@ -45,7 +50,7 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 
 **Frontend (frontend/)**: Next.js 14 application with TypeScript, Tailwind CSS, and shadcn/ui components. Features real-time dashboard updates via WebSocket connections. UI-focused with no API routes.
 
-**APIs (apis/)**: Vercel Edge Functions providing all API endpoints for workflows, agents, tasks, and communications. Deployed as part of the same Vercel application but logically separated.
+**API (api/)**: Standalone API service providing all endpoints for workflows, agents, tasks, and communications. Deployed separately on Vercel.
 
 **Database (supabase/)**: Supabase PostgreSQL setup with Row-Level Security, migrations, and configuration. Contains comprehensive schema for workflows, tasks, agents, and business entities.
 
@@ -63,21 +68,38 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 - Max 📞 (IVR Navigation)
 - Corey 🏢 (HOA Specialized Analysis)
 
-**Types (types/)**: Shared TypeScript type definitions across all packages for workflows, agents, API responses, and database entities.
+**Types & Schemas (packages/)**: Organized type system with clear separation:
+- `packages/types/` - Shared enums, utility types, external service interfaces
+- `packages/schemas/` - Zod validation schemas for all API endpoints
 
-## Workspace Structure
+## Monorepo Architecture
 
-This is a Turbo monorepo with the following workspaces:
-- `frontend` - Next.js application (UI components and pages)
-- `apis` - API routes and server-side logic (deploys with frontend as single Vercel app)
-- `workflows` - n8n workflow definitions
-- `types` - Shared TypeScript types
-- `agents` - AI agent integration system
-- `supabase` - Database schema, migrations, and Supabase configuration
+This project uses a **Turbo + pnpm** monorepo setup for optimal performance and developer experience.
 
-Each workspace has its own package.json with specific scripts. Use `cd <workspace>` to run workspace-specific commands.
+### Technology Stack
+- **🏗️ Monorepo**: Turborepo for task orchestration and caching
+- **📦 Package Manager**: pnpm for fast, efficient dependency management
+- **⚡ Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS
+- **🔒 Validation**: Zod for runtime type safety and API validation
+- **🗄️ Database**: Supabase PostgreSQL with Row-Level Security
+- **🎨 UI**: shadcn/ui components with Radix primitives
 
-**Note**: The `apis` workspace contains the API routes that are deployed as part of the same Vercel application as the frontend, maintaining the unified deployment model while providing better code organization.
+### Workspace Structure
+```
+├── frontend/           # Next.js 14 application
+├── api/               # Standalone API service  
+├── agents/            # AI agent integration system
+├── workflows/         # n8n workflow definitions
+├── supabase/          # Database schema and migrations
+└── packages/
+    ├── types/         # Shared enums, utilities, external interfaces
+    └── schemas/       # Zod validation schemas for APIs
+```
+
+### Package Management
+- **Workspace Dependencies**: Use `workspace:*` for internal packages
+- **Script Execution**: Use `pnpm --filter <package>` for workspace-specific commands
+- **Caching**: Turbo handles build caching and dependency graphs
 
 ## Authentication & Security
 
@@ -101,11 +123,45 @@ The system uses WebSocket connections for live updates:
 **Database Sync**: n8n workflows update PostgreSQL at each step for business visibility
 **Error Handling**: Automatic retry with exponential backoff, HIL escalation on failure
 
-## Development Guidelines
+## Development Guidelines & Patterns
 
-1. **Type Safety**: All components use shared types from `types/` package
-2. **Real-Time**: Use Supabase real-time subscriptions for live data updates
-3. **Error Handling**: Implement graceful degradation and HIL escalation paths
-4. **Testing**: Run type checks and tests before committing changes
-5. **Database Changes**: Use migrations in `database/migrations/` for schema changes
-6. **API Patterns**: Follow the 12 unified endpoints pattern with Resources + Actions + Views + Events
+### 🎯 Type Safety & Validation
+1. **Zod-First APIs**: Use `@rexera/schemas` for all API endpoints
+   ```typescript
+   // ✅ API validation with Zod
+   const createWorkflowSchema = z.object({
+     title: z.string().min(1),
+     workflow_type: z.enum(['HOA_ACQUISITION', 'MUNICIPAL_LIEN_SEARCH'])
+   });
+   ```
+
+2. **Dual Package System**:
+   - `@rexera/schemas` - Runtime validation + type inference for APIs
+   - `@rexera/types` - Shared enums, utilities, external service types
+
+3. **Strict TypeScript**: Enable strict mode, use proper typing throughout
+
+### 🏗️ Code Organization
+1. **Clean Architecture**: Separate concerns, follow established patterns
+2. **Consistent Naming**: Use descriptive, consistent naming conventions
+3. **Component Structure**: Organize by feature, not by file type
+4. **Import Order**: External deps → Internal packages → Relative imports
+
+### 🚀 Modern Patterns
+1. **Next.js App Router**: Use server components, streaming, and modern patterns
+2. **Turbo Orchestration**: Leverage Turbo for build optimization and caching  
+3. **pnpm Workspaces**: Use `workspace:*` for internal dependencies
+4. **Real-Time**: Implement live updates with Supabase subscriptions
+
+### ✅ Quality Standards
+1. **Testing**: Write tests, run type checks before committing
+2. **Error Handling**: Implement graceful degradation and HIL escalation
+3. **Database**: Use migrations in `supabase/migrations/` for schema changes
+4. **API Design**: Follow REST principles with standardized response formats
+5. **Performance**: Optimize for both developer experience and runtime performance
+
+### 🔧 Development Workflow
+1. **Branch Strategy**: Feature branches with descriptive names
+2. **Code Review**: All changes go through review process
+3. **CI/CD**: Automated testing and deployment pipelines
+4. **Documentation**: Keep CLAUDE.md updated with architectural changes
