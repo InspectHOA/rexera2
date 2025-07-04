@@ -3,8 +3,7 @@
  * Types for workflow definitions, execution, and coordination
  */
 
-import { AgentType } from './agents';
-import { WorkflowType, PriorityLevel } from './database';
+import type { AgentType, WorkflowType, PriorityLevel } from './enums';
 
 // =====================================================
 // WORKFLOW DEFINITION TYPES
@@ -60,7 +59,7 @@ export interface WorkflowTaskDefinition {
   fallback_agents: AgentType[];
   
   // Dependencies
-  dependencies: TaskDependency[];
+  dependencies: WorkflowTaskDependency[];
   
   // Input/Output specification
   input_schema: Record<string, any>;
@@ -88,7 +87,7 @@ export type TaskType =
   | 'hil_approval'
   | 'automated_action';
 
-export interface TaskDependency {
+export interface WorkflowTaskDependency {
   task_id: string;
   dependency_type: 'blocking' | 'data' | 'conditional';
   condition?: string; // For conditional dependencies
@@ -249,7 +248,7 @@ export interface WorkflowExecution {
   recovery_attempts: RecoveryAttempt[];
   
   // HIL interventions
-  hil_interventions: HilIntervention[];
+  hil_interventions: WorkflowHilIntervention[];
 }
 
 export type WorkflowExecutionStatus = 
@@ -300,7 +299,7 @@ export interface RecoveryAttempt {
   notes?: string;
 }
 
-export interface HilIntervention {
+export interface WorkflowHilIntervention {
   id: string;
   task_id: string;
   intervention_type: 'review' | 'approval' | 'manual_execution' | 'decision' | 'error_resolution';

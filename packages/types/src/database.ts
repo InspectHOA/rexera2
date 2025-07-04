@@ -3,41 +3,25 @@
  * Generated from the PostgreSQL schema definition
  */
 
-// =====================================================
-// 1. ENUMERATED TYPES
-// =====================================================
+import type {
+  UserType,
+  WorkflowType,
+  WorkflowStatus,
+  TaskStatus,
+  ExecutorType,
+  EmailDirection,
+  EmailStatus,
+  ThreadStatus,
+  CallDirection,
+  CounterpartyType,
+  WorkflowCounterpartyStatus,
+  InvoiceStatus,
+  PriorityLevel,
+  SlaTrackingStatus,
+  AlertLevel
+} from './enums';
 
-export type UserType = 'client_user' | 'hil_user';
-
-export type WorkflowType = 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF';
-export type WorkflowStatus = 'PENDING' | 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'BLOCKED' | 'COMPLETED';
-export type TaskStatus = 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED';
-export type ExecutorType = 'AI' | 'HIL';
-export type SlaStatus = 'ON_TIME' | 'AT_RISK' | 'BREACHED';
-
-export type EmailDirection = 'INBOUND' | 'OUTBOUND';
-export type EmailStatus = 'SENT' | 'DELIVERED' | 'READ' | 'BOUNCED' | 'FAILED';
-export type ThreadStatus = 'ACTIVE' | 'RESOLVED' | 'ARCHIVED';
-export type CallDirection = 'INBOUND' | 'OUTBOUND';
-
-export type CounterpartyType = 'hoa' | 'lender' | 'municipality' | 'utility' | 'tax_authority';
-export type WorkflowCounterpartyStatus = 'PENDING' | 'CONTACTED' | 'RESPONDED' | 'COMPLETED';
-
-export type InvoiceStatus = 'DRAFT' | 'FINALIZED' | 'PAID' | 'VOID';
-
-export type PriorityLevel = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-export type NotificationType = 
-  | 'WORKFLOW_UPDATE' 
-  | 'TASK_INTERRUPT' 
-  | 'HIL_MENTION' 
-  | 'CLIENT_MESSAGE_RECEIVED' 
-  | 'COUNTERPARTY_MESSAGE_RECEIVED' 
-  | 'SLA_WARNING' 
-  | 'AGENT_FAILURE';
-export type SenderType = 'CLIENT' | 'INTERNAL';
-
-export type SlaTrackingStatus = 'ACTIVE' | 'COMPLETED' | 'BREACHED' | 'PAUSED';
-export type AlertLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+// PaginationParams available from utilities if needed
 
 // =====================================================
 // 2. CORE USER AND CLIENT MANAGEMENT
@@ -412,8 +396,7 @@ export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at'>>;
 export type CommunicationUpdate = Partial<Omit<Communication, 'id' | 'created_at'>>;
 export type DocumentUpdate = Partial<Omit<Document, 'id' | 'created_at'>>;
 
-// Rename for consistency
-export type AgentPerformanceMetrics = AgentPerformanceMetric;
+// AgentPerformanceMetrics is imported from agents.ts
 
 // Database query filters
 export interface WorkflowFilters {
@@ -440,12 +423,7 @@ export interface TaskFilters {
   due_before?: string;
 }
 
-// Pagination types
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  offset?: number;
-}
+// PaginationParams is imported from utilities.ts
 
 export interface PaginatedResponse<T> {
   data: T[];

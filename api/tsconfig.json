@@ -15,7 +15,7 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@rexera/types": ["../types/src"]
+      "@rexera/types": ["../packages/types/src"]
     }
   },
   "include": [
@@ -23,7 +23,7 @@
   ],
   "references": [
     {
-      "path": "../types"
+      "path": "../packages/types"
     }
   ],
   "exclude": [

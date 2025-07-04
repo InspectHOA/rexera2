@@ -12,39 +12,21 @@ import {
   Agent,
   WorkflowFilters,
   TaskFilters,
-  PaginatedResponse,
+  PaginatedResponse
+} from './database';
+
+import type {
   WorkflowType,
   WorkflowStatus,
   TaskStatus,
   PriorityLevel
-} from './database';
+} from './enums';
+
+// WebSocketMessage and SubscriptionRequest available from utilities if needed
 
 // =====================================================
 // COMMON API TYPES
 // =====================================================
-
-export interface ApiResponse<T = any> {
-  data: T;
-  meta?: {
-    total?: number;
-    page?: number;
-    limit?: number;
-    totalPages?: number;
-  };
-  links?: {
-    first?: string;
-    previous?: string;
-    next?: string;
-    last?: string;
-  };
-}
-
-export interface ApiError {
-  error: string;
-  message: string;
-  code?: string;
-  details?: Record<string, any>;
-}
 
 export interface SuccessResponse {
   success: boolean;
@@ -433,21 +415,7 @@ export interface ActivityFeedResponse {
 // REAL-TIME API TYPES
 // =====================================================
 
-export interface WebSocketMessage {
-  type: 'workflow_update' | 'task_update' | 'agent_status' | 'hil_assignment' | 'sla_alert';
-  payload: any;
-  timestamp: string;
-}
-
-export interface SubscriptionRequest {
-  channels: string[]; // ['workflows', 'tasks', 'agents', 'dashboard']
-  filters?: {
-    workflow_ids?: string[];
-    task_ids?: string[];
-    user_id?: string;
-    client_id?: string;
-  };
-}
+// WebSocketMessage and SubscriptionRequest are imported from utilities
 
 // =====================================================
 // SEARCH API TYPES

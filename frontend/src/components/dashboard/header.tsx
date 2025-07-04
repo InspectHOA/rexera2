@@ -46,17 +46,16 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="page-header">
-      <div className="flex items-center">
-        <img
-          src="/rexera-logo.svg"
-          alt="Rexera Logo"
-          className="h-8 w-auto"
-        />
+    <header className="bg-white border border-gray-200 p-3 mb-5 flex justify-between items-center shadow-sm">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 bg-primary-500 flex items-center justify-center text-white font-semibold text-xs">
+          R
+        </div>
+        <span className="text-lg font-semibold text-gray-900">Rexera HIL Dashboard</span>
       </div>
       
       <div className="flex items-center gap-3 text-sm">
-        <div className="status-badge status-urgent w-5 h-5 flex items-center justify-center text-xs font-semibold rounded-full">
+        <div className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold shadow-sm">
           3
         </div>
         <span className="text-gray-700">{getDisplayName()}</span>

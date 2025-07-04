@@ -50,7 +50,7 @@ export default function WorkflowDetailPage() {
     eta: formatDateTime(workflowData.due_date),
     due: formatDate(workflowData.due_date),
     closing: formatDate(workflowData.metadata?.closing_date),
-    progress: `${tasksData?.filter(t => t.status === 'COMPLETED').length || 0} of ${tasksData?.length || 0} tasks`
+    progress: `${tasksData?.filter((t: any) => t.status === 'COMPLETED').length || 0} of ${tasksData?.length || 0} tasks`
   } : null;
 
   // Update browser tab title with workflow address
@@ -199,17 +199,19 @@ export default function WorkflowDetailPage() {
   const handleBackClick = () => router.push('/dashboard');
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-gray-50">
       <WorkflowHeader workflow={workflow} onBackClick={handleBackClick} />
       
-      <div className="main-grid">
+      <div className="grid grid-cols-2 gap-0 h-[calc(100vh-60px)]">
         {/* Left Panel */}
-        <div className="panel border-r overflow-y-auto custom-scrollbar">
-          <div className="panel-header">
-            📋 Workflow Details
+        <div className="bg-white border-r border-gray-200 overflow-y-auto">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              📋 Workflow Details
+            </div>
           </div>
           
-          <div className="content-padding space-y-6">
+          <div className="p-4 space-y-4">
             <TaskList
               tasks={tasks}
               selectedTask={selectedTask}
@@ -224,12 +226,14 @@ export default function WorkflowDetailPage() {
         </div>
 
         {/* Right Panel */}
-        <div className="panel overflow-y-auto custom-scrollbar">
-          <div className="panel-header">
-            📋 Task Details
-            <span className="text-gray-400 text-xs font-normal normal-case tracking-normal">
+        <div className="bg-white overflow-y-auto">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              📋 Task Details
+            </div>
+            <div className="text-gray-400 text-xs font-normal mt-1">
               {selectedTask ? 'Task selected' : 'Select a task to view details'}
-            </span>
+            </div>
           </div>
           
           <TaskDetailView selectedTask={selectedTask} tasks={tasks} />

@@ -21,7 +21,7 @@ export function TaskDetailView({ selectedTask, tasks }: TaskDetailViewProps) {
   if (!task) return <EmptyState />;
 
   return (
-    <div className="p-5 space-y-6">
+    <div className="p-4 space-y-4">
       <TaskDetailHeader task={task} />
       <TaskInformation task={task} />
       <ExecutionLogs />
@@ -33,12 +33,17 @@ export function TaskDetailView({ selectedTask, tasks }: TaskDetailViewProps) {
 
 function EmptyState() {
   return (
-    <div className="text-center p-10 text-gray-400">
-      <h3 className="text-gray-500 mb-2 text-sm font-medium">
+    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+      <div className="text-gray-300 mb-3">
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <h3 className="text-gray-500 mb-1 text-xs font-medium">
         No Task Selected
       </h3>
-      <p className="text-xs">
-        Click on a task from the workflow progress to view its details, logs, and results.
+      <p className="text-xs text-gray-400 text-center px-4">
+        Select a task from the workflow progress to view its details, logs, and results.
       </p>
     </div>
   );
@@ -46,14 +51,14 @@ function EmptyState() {
 
 function TaskDetailHeader({ task }: { task: Task }) {
   return (
-    <div className="pb-4 border-b-2 border-blue-600 flex justify-between items-start mb-5">
-      <div className="text-xs font-semibold text-gray-900 flex items-center gap-2">
-        <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+    <div className="pb-3 border-b border-gray-200 flex justify-between items-start">
+      <div className="text-xs font-medium text-gray-900 flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-red-500" />
         {task.name}
       </div>
       
-      <span className="text-xs font-semibold px-1.5 py-0.5 uppercase tracking-wider bg-red-50 text-red-500 rounded">
-        REVIEW REQUIRED
+      <span className="px-2 py-1 text-xs font-medium uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 rounded">
+        AWAITING REVIEW
       </span>
     </div>
   );
@@ -61,13 +66,15 @@ function TaskDetailHeader({ task }: { task: Task }) {
 
 function TaskInformation({ task }: { task: Task }) {
   return (
-    <div className="mb-6">
-      <div className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wider">Task Information</div>
-      <div className="grid grid-cols-2 gap-3">
-        <DetailItem label="Agent" value={task.agent} />
-        <DetailItem label="Status" value="AWAITING REVIEW" />
-        <DetailItem label="Completed" value="Dec 29, 1:45 PM" />
-        <DetailItem label="Duration" value="15 minutes" />
+    <div>
+      <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Task Information</div>
+      <div className="bg-gray-50 border border-gray-200 p-3 space-y-3">
+        <div className="grid grid-cols-2 gap-4">
+          <DetailItem label="Agent" value={task.agent} />
+          <DetailItem label="Status" value="Awaiting Review" />
+          <DetailItem label="Completed" value="Dec 29, 1:45 PM" />
+          <DetailItem label="Duration" value="15 minutes" />
+        </div>
       </div>
     </div>
   );
@@ -75,23 +82,25 @@ function TaskInformation({ task }: { task: Task }) {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-xs">
-      <div className="text-gray-500 mb-0.5">{label}</div>
-      <div className="text-gray-900 font-medium">{value}</div>
+    <div>
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className="text-xs text-gray-900 font-medium">{value}</div>
     </div>
   );
 }
 
 function ExecutionLogs() {
   return (
-    <div className="mb-6">
-      <div className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wider">Execution Logs</div>
-      <div className="p-3 font-mono text-xs text-gray-600 max-h-30 overflow-y-auto border-l-3 border-gray-300 pl-3 leading-relaxed">
-        [13:30] Received payoff statement via email<br/>
-        [13:31] Starting OCR processing on payoff_statement_fnb.pdf<br/>
-        [13:33] OCR completed - Processing 1 page document<br/>
-        [13:40] Extracting payoff amount - 67% confidence (LOW)<br/>
-        [13:45] Document processing completed with manual review flag
+    <div>
+      <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Execution Logs</div>
+      <div className="bg-white border border-gray-200 p-3 font-mono text-xs text-gray-600 max-h-32 overflow-y-auto">
+        <div className="space-y-1">
+          <div>[13:30] Received payoff statement via email</div>
+          <div>[13:31] Starting OCR processing on payoff_statement_fnb.pdf</div>
+          <div>[13:33] OCR completed - Processing 1 page document</div>
+          <div className="text-yellow-600">[13:40] Extracting payoff amount - 67% confidence (LOW)</div>
+          <div className="text-red-600">[13:45] Document processing completed with manual review flag</div>
+        </div>
       </div>
     </div>
   );
@@ -99,10 +108,10 @@ function ExecutionLogs() {
 
 function ResultSummary() {
   return (
-    <div className="mb-6">
-      <div className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wider">Result Summary</div>
-      <div className="p-3 text-xs text-gray-900 border-l-3 border-blue-600 pl-3 leading-relaxed">
-        Document processed successfully. Low confidence (67%) on payoff amount extraction: $247,856.32. Manual verification recommended.
+    <div>
+      <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Result Summary</div>
+      <div className="bg-blue-50 border border-blue-200 p-3 text-xs text-gray-900 border-l-4 border-l-blue-500">
+        Document processed successfully. Low confidence (67%) on payoff amount extraction: <span className="font-semibold">$247,856.32</span>. Manual verification recommended.
       </div>
     </div>
   );
@@ -110,13 +119,13 @@ function ResultSummary() {
 
 function ActionButtons() {
   return (
-    <div className="flex gap-2 mt-3">
-      <button className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 hover:shadow-md transition-all duration-200">
-        🔧 Open Agent Interface
+    <div className="flex gap-2 pt-2">
+      <button className="px-3 py-2 text-xs font-medium text-white bg-primary-500 border border-primary-500 hover:bg-primary-600 transition-colors duration-200">
+        Open Agent Interface
       </button>
       
-      <button className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-        🔄 Retry Task
+      <button className="px-3 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+        Retry Task
       </button>
     </div>
   );

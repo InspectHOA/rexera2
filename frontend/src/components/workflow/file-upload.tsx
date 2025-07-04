@@ -70,7 +70,7 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
             original_name: file.name,
             uploaded_at: new Date().toISOString(),
           },
-        })
+        } as any)
         .select()
         .single();
 

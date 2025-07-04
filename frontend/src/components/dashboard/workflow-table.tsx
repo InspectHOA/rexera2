@@ -278,7 +278,7 @@ export function WorkflowTable() {
           </tr>
         </thead>
         <tbody>
-          {workflows.map((workflow, index) => (
+          {workflows.map((workflow: any, index: number) => (
             <tr 
               key={index}
               onClick={() => handleWorkflowClick(workflow.workflowId)}

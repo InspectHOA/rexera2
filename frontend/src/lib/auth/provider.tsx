@@ -78,13 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('user_profiles')
           .insert({
             id: user.id,
-            email: user.email,
+            email: user.email!,
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
             avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
             role: 'USER',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          } as any);
 
         if (error) {
           console.error('Error creating user profile:', error);
@@ -95,9 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('user_profiles')
           .update({
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || existingProfile.full_name,
-            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || existingProfile.avatar_url,
             updated_at: new Date().toISOString()
-          })
+          } as any)
           .eq('id', user.id);
 
         if (error) {

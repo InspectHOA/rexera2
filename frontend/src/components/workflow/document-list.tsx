@@ -48,7 +48,7 @@ export function DocumentList({ workflowId, taskId, onDocumentDeleted }: Document
         throw new Error(error.message);
       }
 
-      setDocuments(data || []);
+      setDocuments((data || []) as any);
     } catch (err) {
       console.error('Error loading documents:', err);
       setError(err instanceof Error ? err.message : 'Failed to load documents');

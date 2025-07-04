@@ -6,7 +6,7 @@ import { WorkflowTable } from '@/components/dashboard/workflow-table';
 
 export default function DashboardPage() {
   return (
-    <>
+    <div className="dashboard-container">
       {/* Modern Header */}
       <DashboardHeader />
       
@@ -15,6 +15,6 @@ export default function DashboardPage() {
       
       {/* Modern Workflows */}
       <WorkflowTable />
-    </>
+    </div>
   );
 }

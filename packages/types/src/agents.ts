@@ -3,21 +3,11 @@
  * Types for the 10 specialized AI agents and their coordination
  */
 
+import type { AgentType } from './enums';
+
 // =====================================================
 // AGENT TYPES AND CAPABILITIES
 // =====================================================
-
-export type AgentType = 
-  | 'nina'      // 🔍 Research & Data Discovery
-  | 'mia'       // 📧 Email Communication
-  | 'florian'   // 🗣️ Phone Outreach
-  | 'rex'       // 🌐 Web Portal Navigation
-  | 'iris'      // 📄 Document Processing
-  | 'ria'       // 👩‍💼 Client Communication
-  | 'kosha'     // 💰 Financial Tracking
-  | 'cassy'     // ✓ Quality Assurance
-  | 'max'       // 📞 IVR Navigation
-  | 'corey';    // 🏢 HOA Specialist
 
 export type AgentStatus = 'online' | 'offline' | 'busy' | 'error' | 'maintenance';
 
