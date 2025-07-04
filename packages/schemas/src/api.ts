@@ -146,6 +146,86 @@ export const TaskQueryParams = z.object({
   include: z.array(z.enum(['assigned_user', 'executions', 'dependencies', 'workflow'])).default([])
 }).merge(PaginationParams);
 
+// =====================================================
+// TRPC ROUTER TYPES
+// =====================================================
+
+// Define AppRouter interface for tRPC client
+export interface AppRouter {
+  workflows: {
+    list: {
+      useQuery: (input: {
+        workflow_type?: 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF';
+        status?: 'PENDING' | 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'BLOCKED' | 'COMPLETED';
+        client_id?: string;
+        assigned_to?: string;
+        priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+        page?: number;
+        limit?: number;
+        include?: string[];
+      }) => {
+        data: {
+          data: any[];
+          pagination: PaginationResponse;
+        } | undefined;
+        isLoading: boolean;
+        error: any;
+        refetch: () => void;
+      };
+    };
+    byId: {
+      useQuery: (
+        input: {
+          id: string;
+          include?: string[];
+        },
+        options?: { enabled?: boolean }
+      ) => {
+        data: any;
+        isLoading: boolean;
+        error: any;
+        refetch: () => void;
+      };
+    };
+    create: {
+      useMutation: () => any;
+    };
+  };
+  tasks: {
+    list: {
+      useQuery: (
+        input: {
+          workflow_id?: string;
+          status?: 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED';
+          executor_type?: 'AI' | 'HIL';
+          assigned_to?: string;
+          priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+          page?: number;
+          limit?: number;
+          include?: string[];
+        },
+        options?: { enabled?: boolean }
+      ) => {
+        data: {
+          data: any[];
+          pagination: PaginationResponse;
+        } | undefined;
+        isLoading: boolean;
+        error: any;
+        refetch: () => void;
+      };
+    };
+    create: {
+      useMutation: () => any;
+    };
+  };
+  health: {
+    check: {
+      useQuery: () => any;
+    };
+  };
+}
+
 // Type exports
 export type ApiError = z.infer<typeof ApiError>;
 export type ApiSuccess<T = any> = Omit<z.infer<typeof ApiSuccess>, 'data'> & { data: T };
