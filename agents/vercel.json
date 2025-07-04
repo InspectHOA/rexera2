@@ -1,10 +1,6 @@
 {
-  "version": 2,
-  "name": "rexera-agents",
-  "buildCommand": "cd .. && npm install && npm run build --filter=@rexera/agents",
-  "outputDirectory": "dist",
-  "installCommand": "cd .. && npm install",
-  "rootDirectory": "agents",
+  "buildCommand": "pnpm install && pnpm run build",
+  "installCommand": "pnpm install",
   "functions": {
     "dist/**/*.js": {
       "runtime": "nodejs18.x",
@@ -14,20 +10,13 @@
   },
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/index.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/dist/index.js"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
