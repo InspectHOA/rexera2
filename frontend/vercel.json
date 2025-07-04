@@ -1,15 +1,5 @@
 {
-  "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "cd .. && pnpm install && pnpm run build --filter=@rexera/frontend",
-  "outputDirectory": ".next",
-  "installCommand": "cd .. && pnpm install",
-  "rootDirectory": "frontend",
-  "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
-    "NEXT_PUBLIC_API_URL": "@api-url",
-    "NEXT_PUBLIC_N8N_WEBHOOK_URL": "@n8n-webhook-url"
-  }
+  "buildCommand": "pnpm install && pnpm run build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs"
 }

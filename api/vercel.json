@@ -1,10 +1,6 @@
 {
-  "version": 2,
-  "name": "rexera-api",
-  "buildCommand": "cd .. && pnpm install && pnpm run build --filter=@rexera/api",
-  "outputDirectory": "dist",
-  "installCommand": "cd .. && pnpm install",
-  "rootDirectory": "api",
+  "buildCommand": "pnpm install && pnpm run build",
+  "installCommand": "pnpm install",
   "functions": {
     "dist/**/*.js": {
       "runtime": "nodejs18.x",
@@ -13,22 +9,13 @@
   },
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/index.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/dist/index.js"
     }
   ],
-  "env": {
-    "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
-    "NODE_ENV": "production"
-  },
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
