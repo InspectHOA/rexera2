@@ -2,16 +2,16 @@
   "buildCommand": "pnpm install && pnpm run build",
   "installCommand": "pnpm install",
   "functions": {
-    "dist/**/*.js": {
+    "dist/index.js": {
       "runtime": "nodejs18.x",
       "maxDuration": 300,
       "memory": 1024
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/dist/index.js"
+      "source": "/(.*)",
+      "destination": "/dist/index.js"
     }
   ],
   "headers": [
