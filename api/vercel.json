@@ -4,7 +4,7 @@
   "installCommand": "pnpm install",
   "functions": {
     "api/*.js": {
-      "runtime": "@vercel/node@3.0.0"
+      "runtime": "@vercel/node@5.3.2"
     }
   },
   "rewrites": [

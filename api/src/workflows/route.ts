@@ -1,4 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@rexera/types';
 
@@ -14,7 +13,7 @@ function createServerClient() {
   );
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: any) {
   try {
     const supabase = createServerClient();
     // Handle both full URLs (Next.js) and relative URLs (Express)
@@ -67,10 +66,12 @@ export async function GET(request: NextRequest) {
     const { data: workflows, error, count } = await query;
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: { message: 'Database query failed', details: error.message } },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: { message: 'Database query failed', details: error.message } }
+      ), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Fetch related data if requested
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil((count || 0) / limit);
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       data: transformedWorkflows,
       pagination: {
@@ -122,17 +123,22 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages
       }
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: { message: 'Internal server error' } },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: { message: 'Internal server error' } }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: any) {
   try {
     const supabase = createServerClient();
     const body = await request.json();
@@ -150,10 +156,12 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!workflow_type || !client_id || !title || !created_by) {
-      return NextResponse.json(
-        { success: false, error: { message: 'Missing required fields: workflow_type, client_id, title, created_by' } },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: { message: 'Missing required fields: workflow_type, client_id, title, created_by' } }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const { data: workflow, error } = await supabase
@@ -188,24 +196,31 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: { message: 'Failed to create workflow', details: error.message } },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: { message: 'Failed to create workflow', details: error.message } }
+      ), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       data: {
         ...workflow,
         client: workflow.clients
       }
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: { message: 'Internal server error' } },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: { message: 'Internal server error' } }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

@@ -1,16 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@rexera/types';
 
 // Health check endpoint to verify API and database connectivity
-export async function GET(request: NextRequest) {
+export async function GET(request: any) {
   try {
     // Check environment variables
     const supabaseUrl = process.env.SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({
+      return new Response(JSON.stringify({
         success: false,
         status: 'error',
         message: 'Missing environment variables',
@@ -18,7 +17,10 @@ export async function GET(request: NextRequest) {
           hasUrl: !!supabaseUrl,
           hasKey: !!serviceKey
         }
-      }, { status: 500 });
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Test database connectivity
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
       .select('id')
       .limit(1);
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -57,14 +59,20 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: false,
       status: 'error',
       message: 'Health check failed',
       error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

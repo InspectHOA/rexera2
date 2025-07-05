@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@rexera/types';
 
 // GET /api/workflows/[id] - Get specific workflow
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: any, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -43,23 +42,30 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       .single();
 
     if (error || !workflow) {
-      return NextResponse.json(
-        { success: false, error: 'Not Found', message: 'Workflow not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Not Found', message: 'Workflow not found' }
+      ), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return NextResponse.json({ success: true, data: workflow });
+    return new Response(JSON.stringify({ success: true, data: workflow }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Internal Server Error', message: 'Failed to fetch workflow' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: 'Internal Server Error', message: 'Failed to fetch workflow' }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
 // PUT /api/workflows/[id] - Update workflow
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: any, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -76,10 +82,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       .single();
 
     if (fetchError || !existingWorkflow) {
-      return NextResponse.json(
-        { success: false, error: 'Not Found', message: 'Workflow not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Not Found', message: 'Workflow not found' }
+      ), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Prepare update data (only allow certain fields to be updated)
@@ -98,10 +106,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     // Validate status transitions
     const validStatuses = ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'];
     if (updateData.status && !validStatuses.includes(updateData.status)) {
-      return NextResponse.json(
-        { success: false, error: 'Validation Error', message: 'Invalid workflow status' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Validation Error', message: 'Invalid workflow status' }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Auto-set completed_at when status changes to COMPLETED
@@ -121,23 +131,30 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: 'Database Error', message: 'Failed to update workflow' },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Database Error', message: 'Failed to update workflow' }
+      ), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return NextResponse.json({ success: true, data: updatedWorkflow });
+    return new Response(JSON.stringify({ success: true, data: updatedWorkflow }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Internal Server Error', message: 'Failed to update workflow' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: 'Internal Server Error', message: 'Failed to update workflow' }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
 // DELETE /api/workflows/[id] - Delete workflow
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: any, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -152,18 +169,22 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       .single();
 
     if (fetchError || !workflow) {
-      return NextResponse.json(
-        { success: false, error: 'Not Found', message: 'Workflow not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Not Found', message: 'Workflow not found' }
+      ), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Prevent deletion of active workflows
     if (['IN_PROGRESS', 'AWAITING_REVIEW'].includes(workflow.status)) {
-      return NextResponse.json(
-        { success: false, error: 'Validation Error', message: 'Cannot delete active workflows. Please cancel or complete first.' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Validation Error', message: 'Cannot delete active workflows. Please cancel or complete first.' }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const { error } = await supabase
@@ -172,18 +193,25 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       .eq('id', params.id);
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: 'Database Error', message: 'Failed to delete workflow' },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Database Error', message: 'Failed to delete workflow' }
+      ), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return NextResponse.json({ success: true, data: { message: 'Workflow deleted successfully' } });
+    return new Response(JSON.stringify({ success: true, data: { message: 'Workflow deleted successfully' } }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Internal Server Error', message: 'Failed to delete workflow' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: 'Internal Server Error', message: 'Failed to delete workflow' }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 

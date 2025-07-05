@@ -1,24 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { authenticate } from '../../../middleware/auth';
 
 // POST /api/workflows/[id]/actions - Execute workflow actions
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: any, { params }: { params: { id: string } }) {
   try {
     const auth = await authenticate(req);
     if (!auth) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const body = await req.json();
     
     if (!body.action) {
-      return NextResponse.json({ error: 'Action is required' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Action is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const validActions = ['start', 'pause', 'resume', 'complete', 'cancel', 'retry'];
     if (!validActions.includes(body.action)) {
-      return NextResponse.json({ error: 'Invalid action type' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Invalid action type' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const supabase = createClient(
@@ -34,7 +42,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .single();
 
     if (fetchError || !workflow) {
-      return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
+      return new Response(JSON.stringify({ error: 'Workflow not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Validate action based on current status
@@ -48,10 +59,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     };
 
     if (!statusTransitions[body.action]?.includes(workflow.status)) {
-      return NextResponse.json(
-        { error: `Cannot ${body.action} workflow with status ${workflow.status}` }, 
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { error: `Cannot ${body.action} workflow with status ${workflow.status}` }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Determine new status based on action
@@ -81,10 +94,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (updateError) {
       console.error('Workflow action error:', updateError);
-      return NextResponse.json({ error: 'Failed to execute workflow action' }, { status: 500 });
+      return new Response(JSON.stringify({ error: 'Failed to execute workflow action' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       ...updatedWorkflow,
       action_result: {
         action: body.action,
@@ -92,16 +108,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         message: `Workflow ${body.action} completed successfully`,
         timestamp: new Date().toISOString(),
       },
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error('Workflow action error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
+  return new Response(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',

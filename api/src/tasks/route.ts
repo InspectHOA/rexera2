@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@rexera/types';
 
 // GET /api/tasks - List tasks with filtering and pagination
-export async function GET(req: NextRequest) {
+export async function GET(req: any) {
   try {
     const supabase = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -66,10 +65,12 @@ export async function GET(req: NextRequest) {
     const { data: tasks, error } = await query;
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: 'Database Error', message: 'Failed to fetch tasks' },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Database Error', message: 'Failed to fetch tasks' }
+      ), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Get total count for pagination
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil((count || 0) / limit);
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       data: tasks || [],
       pagination: {
@@ -88,17 +89,22 @@ export async function GET(req: NextRequest) {
         total: count || 0,
         totalPages
       }
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Internal Server Error', message: 'Failed to fetch tasks' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: 'Internal Server Error', message: 'Failed to fetch tasks' }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
 // POST /api/tasks - Create new task
-export async function POST(req: NextRequest) {
+export async function POST(req: any) {
   try {
     const supabase = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -109,18 +115,22 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     if (!body.workflow_id || !body.title || !body.executor_type) {
-      return NextResponse.json(
-        { success: false, error: 'Validation Error', message: 'Missing required fields: workflow_id, title, executor_type' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Validation Error', message: 'Missing required fields: workflow_id, title, executor_type' }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Validate executor type
     if (!['AI', 'HIL'].includes(body.executor_type)) {
-      return NextResponse.json(
-        { success: false, error: 'Validation Error', message: 'Invalid executor type' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Validation Error', message: 'Invalid executor type' }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Verify workflow exists
@@ -131,10 +141,12 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (workflowError || !workflow) {
-      return NextResponse.json(
-        { success: false, error: 'Validation Error', message: 'Invalid workflow ID' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Validation Error', message: 'Invalid workflow ID' }
+      ), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Create task
@@ -160,18 +172,25 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: 'Database Error', message: 'Failed to create task' },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify(
+        { success: false, error: 'Database Error', message: 'Failed to create task' }
+      ), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return NextResponse.json({ success: true, data: task });
+    return new Response(JSON.stringify({ success: true, data: task }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Internal Server Error', message: 'Failed to create task' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify(
+      { success: false, error: 'Internal Server Error', message: 'Failed to create task' }
+    ), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 

@@ -1,9 +1,8 @@
-import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@rexera/types';
 
 // Test endpoint to verify database connectivity
-export async function GET(req: NextRequest) {
+export async function GET(req: any) {
   try {
     // Use service role key for direct database access
     const supabase = createClient<Database>(
