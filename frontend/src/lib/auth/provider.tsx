@@ -32,9 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (!user) {
+      console.log('refreshProfile: No user, setting profile to null');
       setProfile(null);
       return;
     }
+
+    console.log('refreshProfile: Fetching profile for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -47,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error fetching user profile:', error);
         setProfile(null);
       } else {
+        console.log('refreshProfile: Profile fetched successfully:', data);
         // Convert null values to undefined to match UserProfile type
         const profile: UserProfile = {
           ...data,
@@ -155,7 +159,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Get initial session
     const getSession = async () => {
+      console.log('getSession: Checking initial session...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('getSession: Session found:', !!session, session?.user?.email);
       setUser(session?.user ?? null);
       setLoading(false);
     };
@@ -184,6 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user && !profile) {
+      console.log('useEffect: User exists but no profile, calling refreshProfile...');
       refreshProfile();
     }
   }, [user]);
