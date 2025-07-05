@@ -1,66 +1,67 @@
 # 03_API_SPECIFICATIONS.md
 
 <!--
-This document provides simplified API specifications for Rexera 2.0 using a unified Resources + Actions + Views + Events pattern that serves both human operators and AI agents through consistent, predictable endpoints.
+This document provides tRPC API specifications for Rexera 2.0 using a unified Resources + Actions + Views + Events pattern that serves both human operators and AI agents through consistent, predictable procedures.
 -->
 
 ## 📋 API Overview
 
-Rexera 2.0 uses a **data-centric API design** where AI agents and human operators manipulate the same core data model through consistent, simple endpoints. The API follows four clear patterns:
+Rexera 2.0 uses a **data-centric tRPC API design** where AI agents and human operators manipulate the same core data model through type-safe, consistent procedures. The API follows four clear patterns:
 
 ### Core Patterns
-- **Resources** - Standard CRUD operations on data entities
+- **Resources** - Standard CRUD operations on data entities via tRPC procedures
 - **Actions** - Atomic operations that coordinate across resources
 - **Views** - Optimized read-only data for dashboards and monitoring
 - **Events** - Real-time updates via WebSocket subscriptions
 
 ### Unified Access
-All endpoints serve both human operators (via frontend) and AI agents (via MCP server), ensuring consistency and simplicity across all interactions.
+All tRPC procedures serve both human operators (via frontend) and AI agents (via MCP server), ensuring consistency and simplicity across all interactions.
 
 ---
 
-## 📋 API Index
+## 📋 tRPC API Index
 
 ### Core Resources (CRUD Operations)
-- **Workflows** - `/api/workflows` - Business process management
-- **Tasks** - `/api/tasks` - Work unit operations  
-- **Communications** - `/api/communications` - Unified messaging system
-- **Documents** - `/api/documents` - File and deliverable management
-- **Counterparties** - `/api/counterparties` - External organization management
+- **Workflows** - `workflows.*` procedures - Business process management
+- **Tasks** - `tasks.*` procedures - Work unit operations
+- **Communications** - `communications.*` procedures - Unified messaging system
+- **Documents** - `documents.*` procedures - File and deliverable management
+- **Counterparties** - `counterparties.*` procedures - External organization management
 
 ### Actions (Coordinated Operations)
-- **Workflow Actions** - `/api/workflows/{id}/actions` - Process control operations
-- **Task Actions** - `/api/tasks/{id}/actions` - Work unit operations
+- **Workflow Actions** - `workflows.executeAction` - Process control operations
+- **Task Actions** - `tasks.executeAction` - Work unit operations
 
 ### Views (Optimized Data Access)
-- **Dashboard** - `/api/views/dashboard` - HIL operator interface data
-- **Performance** - `/api/views/performance` - System and agent metrics
-- **SLA** - `/api/views/sla` - Service level monitoring
-- **Notifications** - `/api/views/notifications` - User alerts and updates
+- **Dashboard** - `views.dashboard` - HIL operator interface data
+- **Performance** - `views.performance` - System and agent metrics
+- **SLA** - `views.sla` - Service level monitoring
+- **Notifications** - `views.notifications` - User alerts and updates
 
 ### Events (Real-time Updates)
-- **Workflow Events** - `/ws/workflows/{id}` - Process state changes
-- **Task Events** - `/ws/tasks/{id}` - Work unit updates
-- **Notification Events** - `/ws/notifications` - User alerts
+- **Workflow Events** - `workflows.subscribe` - Process state changes
+- **Task Events** - `tasks.subscribe` - Work unit updates
+- **Notification Events** - `notifications.subscribe` - User alerts
 
 ---
 
-## API Architecture Overview
+## tRPC API Architecture Overview
 
-Rexera 2.0 uses a **unified data-centric architecture** where all actors (humans and AI agents) interact with the same consistent API patterns:
+Rexera 2.0 uses a **unified data-centric tRPC architecture** where all actors (humans and AI agents) interact with the same consistent, type-safe procedures:
 
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        HIL[HIL Dashboard<br/>Next.js UI]
+        HIL[HIL Dashboard<br/>Next.js 15 + tRPC Client]
         MCP[MCP Server<br/>AI Agent Interface]
     end
     
-    subgraph "API Layer (APIs workspace on Vercel)"
-        RESOURCES[Resources<br/>CRUD Operations]
-        ACTIONS[Actions<br/>Coordinated Operations]
-        VIEWS[Views<br/>Optimized Reads]
-        EVENTS[Events<br/>Real-time Updates]
+    subgraph "tRPC API Layer (Express.js on Vercel)"
+        TRPC[tRPC Router<br/>Type-safe Procedures]
+        RESOURCES[Resources<br/>CRUD Procedures]
+        ACTIONS[Actions<br/>Coordinated Procedures]
+        VIEWS[Views<br/>Optimized Read Procedures]
+        EVENTS[Events<br/>Real-time Subscriptions]
     end
     
     subgraph "Data Layer"
@@ -69,14 +70,13 @@ graph TB
         AGENTS[External AI Agents<br/>10 Specialized Services]
     end
     
-    HIL --> RESOURCES
-    HIL --> ACTIONS
-    HIL --> VIEWS
-    HIL --> EVENTS
+    HIL --> TRPC
+    MCP --> TRPC
     
-    MCP --> RESOURCES
-    MCP --> ACTIONS
-    MCP --> VIEWS
+    TRPC --> RESOURCES
+    TRPC --> ACTIONS
+    TRPC --> VIEWS
+    TRPC --> EVENTS
     
     RESOURCES --> DB
     ACTIONS --> DB
@@ -100,701 +100,1116 @@ Actions coordinate across multiple resources in single operations, reducing comp
 ### 4. **Real-time Coordination**
 Event-driven updates keep all actors synchronized without manual polling or complex state management.
 
-## Request Flow Patterns
+## tRPC Request Flow Patterns
 
 ### Typical Workflow Creation
 ```mermaid
 sequenceDiagram
     participant Client as Client (HIL/MCP)
-    participant API as Next.js API
+    participant tRPC as tRPC Router
     participant DB as Supabase
     participant N8N as n8n Workflow
     participant Agents as AI Agents
 
-    Client->>API: POST /api/workflows
-    API->>DB: Create workflow + initial tasks
-    API->>N8N: Trigger workflow webhook
+    Client->>tRPC: workflows.create(input)
+    tRPC->>DB: Create workflow + initial tasks
+    tRPC->>N8N: Trigger workflow webhook
     N8N->>Agents: Execute first tasks
     N8N->>DB: Update task results
-    DB->>Client: Real-time events (WebSocket)
+    DB->>Client: Real-time events (Subscription)
 ```
 
 ### Task Action Execution
 ```mermaid
 sequenceDiagram
     participant Client as Client (HIL/MCP)
-    participant API as Next.js API
+    participant tRPC as tRPC Router
     participant DB as Supabase
 
-    Client->>API: POST /api/tasks/{id}/actions
-    API->>DB: Update task + workflow + notifications
+    Client->>tRPC: tasks.executeAction(input)
+    tRPC->>DB: Update task + workflow + notifications
     DB->>Client: Real-time events
-    Note over API,DB: Single atomic operation<br/>coordinates multiple resources
+    Note over tRPC,DB: Single atomic procedure<br/>coordinates multiple resources
 ```
 
-## Core Resources (CRUD Operations)
+## Core Resources (tRPC Procedures)
 
-All resources follow standard REST patterns with consistent query parameters and response formats.
+All resources follow tRPC patterns with Zod validation and type-safe inputs/outputs.
 
 ### Workflows
 
-#### GET `/api/workflows`
+#### `workflows.list`
 List workflows with filtering and pagination.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  clientId?: string,           // Filter by client
-  hilId?: string,              // Filter by assigned HIL
-  status?: WorkflowStatus,     // Filter by status  
-  type?: WorkflowType,         // Filter by workflow type
-  createdAfter?: string,       // Filter by creation date
-  createdBefore?: string,      // Filter by creation date
-  include?: string,            // Include related data: "tasks,communications,documents"
-  limit?: number,              // Pagination limit (default: 50)
-  offset?: number              // Pagination offset (default: 0)
-}
+z.object({
+  clientId: z.string().optional(),           // Filter by client
+  hilId: z.string().optional(),              // Filter by assigned HIL
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']).optional(),
+  type: z.enum(['MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF']).optional(),
+  createdAfter: z.string().datetime().optional(),   // Filter by creation date
+  createdBefore: z.string().datetime().optional(),  // Filter by creation date
+  include: z.array(z.enum(['tasks', 'communications', 'documents', 'counterparties'])).optional(),
+  limit: z.number().min(1).max(100).default(50),    // Pagination limit
+  offset: z.number().min(0).default(0)              // Pagination offset
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.workflows.list.useQuery({
+  status: 'IN_PROGRESS',
+  include: ['tasks', 'communications'],
+  limit: 20
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/workflows.list \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
+  -d '{
+    "json": {
+      "status": "IN_PROGRESS",
+      "include": ["tasks", "communications"],
+      "limit": 20
+    }
+  }'
 ```
 
 **Response:**
 ```json
 {
-  "workflows": [
-    {
-      "id": "wf-123",
-      "type": "HOA_ACQUISITION",
-      "status": "IN_PROGRESS", 
-      "clientId": "client-456",
-      "hilId": "hil-789",
-      "payload": {
-        "address": "123 Main St, Anytown, ST 12345",
-        "hoaName": "Sunset Hills HOA"
-      },
-      "progress": {
-        "totalTasks": 12,
-        "completedTasks": 8,
-        "progressPercentage": 67
-      },
-      "slaStatus": "ON_TIME",
-      "createdAt": "2025-06-28T10:00:00Z",
-      "updatedAt": "2025-06-28T14:30:00Z",
-      
-      // Included when ?include=tasks
-      "tasks": [ /* task objects */ ],
-      
-      // Included when ?include=communications  
-      "communications": [ /* communication objects */ ],
-      
-      // Included when ?include=documents
-      "documents": [ /* document objects */ ]
+  "result": {
+    "data": {
+      "json": {
+        "workflows": [
+          {
+            "id": "wf-123",
+            "type": "HOA_ACQUISITION",
+            "status": "IN_PROGRESS",
+            "clientId": "client-456",
+            "hilId": "hil-789",
+            "payload": {
+              "address": "123 Main St, Anytown, ST 12345",
+              "hoaName": "Sunset Hills HOA"
+            },
+            "progress": {
+              "totalTasks": 12,
+              "completedTasks": 8,
+              "progressPercentage": 67
+            },
+            "slaStatus": "ON_TIME",
+            "createdAt": "2025-06-28T10:00:00Z",
+            "updatedAt": "2025-06-28T14:30:00Z",
+            "tasks": [ /* task objects */ ],
+            "communications": [ /* communication objects */ ]
+          }
+        ],
+        "totalCount": 156,
+        "hasMore": true
+      }
     }
-  ],
-  "totalCount": 156,
-  "hasMore": true
-}
-```
-
-#### POST `/api/workflows`
-Create a new workflow.
-
-**Request Body:**
-```json
-{
-  "type": "MUNI_LIEN_SEARCH",
-  "clientId": "client-123",
-  "hilId": "hil-456", 
-  "payload": {
-    "address": "123 Main St, Anytown, ST 12345",
-    "county": "Orange County", 
-    "parcelNumber": "123-456-789",
-    "buyer": "John Doe",
-    "closingDate": "2025-07-15T00:00:00Z"
   }
 }
 ```
 
+#### `workflows.create`
+Create a new workflow.
+
+**Input Schema:**
+```typescript
+z.object({
+  type: z.enum(['MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF']),
+  clientId: z.string(),
+  hilId: z.string(),
+  payload: z.record(z.any())  // Workflow-specific data
+})
+```
+
+**Frontend Usage:**
+```typescript
+const createWorkflow = trpc.workflows.create.useMutation();
+
+await createWorkflow.mutateAsync({
+  type: 'MUNI_LIEN_SEARCH',
+  clientId: 'client-123',
+  hilId: 'hil-456',
+  payload: {
+    address: '123 Main St, Anytown, ST 12345',
+    county: 'Orange County',
+    parcelNumber: '123-456-789',
+    buyer: 'John Doe',
+    closingDate: '2025-07-15T00:00:00Z'
+  }
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/workflows.create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
+  -d '{
+    "json": {
+      "type": "MUNI_LIEN_SEARCH",
+      "clientId": "client-123",
+      "hilId": "hil-456",
+      "payload": {
+        "address": "123 Main St, Anytown, ST 12345",
+        "county": "Orange County",
+        "parcelNumber": "123-456-789",
+        "buyer": "John Doe",
+        "closingDate": "2025-07-15T00:00:00Z"
+      }
+    }
+  }'
+```
+
 **Response:**
 ```json
 {
-  "id": "wf-789",
-  "type": "MUNI_LIEN_SEARCH",
-  "status": "PENDING",
-  "clientId": "client-123",
-  "hilId": "hil-456",
-  "payload": { /* as provided */ },
-  "progress": {
-    "totalTasks": 0,
-    "completedTasks": 0,
-    "progressPercentage": 0
-  },
-  "createdAt": "2025-06-28T15:00:00Z",
-  "updatedAt": "2025-06-28T15:00:00Z"
+  "result": {
+    "data": {
+      "json": {
+        "id": "wf-789",
+        "type": "MUNI_LIEN_SEARCH",
+        "status": "PENDING",
+        "clientId": "client-123",
+        "hilId": "hil-456",
+        "payload": { /* as provided */ },
+        "progress": {
+          "totalTasks": 0,
+          "completedTasks": 0,
+          "progressPercentage": 0
+        },
+        "createdAt": "2025-06-28T15:00:00Z",
+        "updatedAt": "2025-06-28T15:00:00Z"
+      }
+    }
+  }
 }
 ```
 
-#### GET `/api/workflows/{id}`
+#### `workflows.getById`
 Get a specific workflow with optional related data.
 
-**Query Parameters:**
-- `include` (optional): Comma-separated list: `tasks,communications,documents,counterparties`
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string(),
+  include: z.array(z.enum(['tasks', 'communications', 'documents', 'counterparties'])).optional()
+})
+```
 
-**Response:** Single workflow object (same structure as POST response)
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.workflows.getById.useQuery({
+  id: 'wf-123',
+  include: ['tasks', 'communications']
+});
+```
 
-#### PATCH `/api/workflows/{id}`
+#### `workflows.update`
 Update workflow fields.
 
-**Request Body:** Partial workflow object with fields to update
-**Response:** Updated workflow object
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string(),
+  data: z.object({
+    status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']).optional(),
+    hilId: z.string().optional(),
+    payload: z.record(z.any()).optional()
+  })
+})
+```
 
-#### DELETE `/api/workflows/{id}`
+#### `workflows.delete`
 Soft delete a workflow (sets status to CANCELLED).
 
-**Response:** `204 No Content`
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string()
+})
+```
+
+**Response:** `{ success: true }`
 
 ### Tasks
 
-#### GET `/api/tasks`
+#### `tasks.list`
 List tasks with filtering and pagination.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  workflowId?: string,         // Filter by workflow
-  executorId?: string,         // Filter by assigned executor (HIL user)
-  agentName?: string,          // Filter by AI agent
-  status?: TaskStatus,         // Filter by status
-  slaStatus?: SLAStatus,       // Filter by SLA status
-  createdAfter?: string,       // Filter by creation date
-  include?: string,            // Include related data: "workflow,timeline,executions"
-  limit?: number,              // Pagination limit (default: 50)
-  offset?: number              // Pagination offset (default: 0)
-}
+z.object({
+  workflowId: z.string().optional(),         // Filter by workflow
+  executorId: z.string().optional(),         // Filter by assigned executor (HIL user)
+  agentName: z.string().optional(),          // Filter by AI agent
+  status: z.enum(['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED', 'CANCELLED']).optional(),
+  slaStatus: z.enum(['ON_TIME', 'AT_RISK', 'BREACHED']).optional(),
+  createdAfter: z.string().datetime().optional(),
+  include: z.array(z.enum(['workflow', 'timeline', 'executions'])).optional(),
+  limit: z.number().min(1).max(100).default(50),
+  offset: z.number().min(0).default(0)
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.tasks.list.useQuery({
+  workflowId: 'wf-456',
+  status: 'COMPLETED',
+  include: ['workflow', 'timeline'],
+  limit: 20
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/tasks.list \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
+  -d '{
+    "json": {
+      "workflowId": "wf-456",
+      "status": "COMPLETED",
+      "include": ["workflow", "timeline"],
+      "limit": 20
+    }
+  }'
 ```
 
 **Response:**
 ```json
 {
-  "tasks": [
-    {
-      "id": "task-123",
-      "workflowId": "wf-456",
-      "taskType": "research-contact",
-      "executorType": "AI",
-      "executorId": null,
-      "agentName": "Nina",
-      "status": "COMPLETED",
-      "slaStatus": "ON_TIME",
-      "slaDueAt": "2025-06-28T11:00:00Z",
-      "agentInput": {
-        "entityName": "Sunset Hills HOA",
-        "location": "Orange County, CA"
-      },
-      "agentOutput": {
-        "contacts": [
+  "result": {
+    "data": {
+      "json": {
+        "tasks": [
           {
-            "name": "Paradise Property Management",
-            "email": "manager@paradise.com",
-            "phone": "(614) 555-PROP"
+            "id": "task-123",
+            "workflowId": "wf-456",
+            "taskType": "research-contact",
+            "executorType": "AI",
+            "executorId": null,
+            "agentName": "Nina",
+            "status": "COMPLETED",
+            "slaStatus": "ON_TIME",
+            "slaDueAt": "2025-06-28T11:00:00Z",
+            "agentInput": {
+              "entityName": "Sunset Hills HOA",
+              "location": "Orange County, CA"
+            },
+            "agentOutput": {
+              "contacts": [
+                {
+                  "name": "Paradise Property Management",
+                  "email": "manager@paradise.com",
+                  "phone": "(614) 555-PROP"
+                }
+              ]
+            },
+            "result": {
+              "contactsFound": 1,
+              "confidenceScore": 0.92
+            },
+            "priority": "NORMAL",
+            "createdAt": "2025-06-28T10:00:00Z",
+            "updatedAt": "2025-06-28T10:04:40Z"
           }
-        ]
-      },
-      "result": {
-        "contactsFound": 1,
-        "confidenceScore": 0.92
-      },
-      "priority": "NORMAL",
-      "createdAt": "2025-06-28T10:00:00Z",
-      "updatedAt": "2025-06-28T10:04:40Z"
+        ],
+        "totalCount": 89,
+        "hasMore": true
+      }
     }
-  ],
-  "totalCount": 89,
-  "hasMore": true
+  }
 }
 ```
 
-#### POST `/api/tasks`
+#### `tasks.create`
 Create a new task.
 
-**Request Body:**
-```json
-{
-  "workflowId": "wf-456",
-  "taskType": "send-email-request",
-  "executorType": "AI",
-  "agentName": "Mia",
-  "agentInput": {
-    "recipient": "manager@paradise.com",
-    "subject": "HOA Document Request",
-    "template": "hoa_document_request"
-  },
-  "priority": "HIGH",
-  "slaDueAt": "2025-06-28T16:00:00Z"
-}
+**Input Schema:**
+```typescript
+z.object({
+  workflowId: z.string(),
+  taskType: z.string(),
+  executorType: z.enum(['AI', 'HIL']),
+  agentName: z.string().optional(),
+  agentInput: z.record(z.any()).optional(),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
+  slaDueAt: z.string().datetime().optional()
+})
 ```
 
-**Response:** Single task object (same structure as GET response)
+**Frontend Usage:**
+```typescript
+const createTask = trpc.tasks.create.useMutation();
 
-#### GET `/api/tasks/{id}`
+await createTask.mutateAsync({
+  workflowId: 'wf-456',
+  taskType: 'send-email-request',
+  executorType: 'AI',
+  agentName: 'Mia',
+  agentInput: {
+    recipient: 'manager@paradise.com',
+    subject: 'HOA Document Request',
+    template: 'hoa_document_request'
+  },
+  priority: 'HIGH',
+  slaDueAt: '2025-06-28T16:00:00Z'
+});
+```
+
+#### `tasks.getById`
 Get a specific task with optional related data.
 
-**Query Parameters:**
-- `include` (optional): `workflow,timeline,executions`
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string(),
+  include: z.array(z.enum(['workflow', 'timeline', 'executions'])).optional()
+})
+```
 
-#### PATCH `/api/tasks/{id}`
+#### `tasks.update`
 Update task fields.
 
-#### DELETE `/api/tasks/{id}`
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string(),
+  data: z.object({
+    status: z.enum(['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED', 'CANCELLED']).optional(),
+    executorId: z.string().optional(),
+    agentOutput: z.record(z.any()).optional(),
+    result: z.record(z.any()).optional(),
+    priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional()
+  })
+})
+```
+
+#### `tasks.delete`
 Cancel a task (sets status to CANCELLED).
+
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string()
+})
+```
 
 ### Communications
 
-#### GET `/api/communications`
+#### `communications.list`
 List all communications (emails, calls, messages, SMS) with unified filtering.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  workflowId?: string,         // Filter by workflow
-  taskId?: string,             // Filter by task
-  type?: CommunicationType,    // Filter by type: "email", "call", "message", "sms"
-  status?: string,             // Filter by status
-  isClientVisible?: boolean,   // Filter by client visibility
-  createdAfter?: string,       // Filter by date
-  include?: string,            // Include related data: "metadata,attachments"
-  limit?: number,
-  offset?: number
-}
+z.object({
+  workflowId: z.string().optional(),         // Filter by workflow
+  taskId: z.string().optional(),             // Filter by task
+  type: z.enum(['email', 'call', 'message', 'sms']).optional(),
+  status: z.string().optional(),             // Filter by status
+  isClientVisible: z.boolean().optional(),   // Filter by client visibility
+  createdAfter: z.string().datetime().optional(),
+  include: z.array(z.enum(['metadata', 'attachments'])).optional(),
+  limit: z.number().min(1).max(100).default(20),
+  offset: z.number().min(0).default(0)
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.communications.list.useQuery({
+  workflowId: 'wf-456',
+  type: 'email',
+  isClientVisible: true,
+  include: ['attachments'],
+  limit: 20
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/communications.list \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
+  -d '{
+    "json": {
+      "workflowId": "wf-456",
+      "type": "email",
+      "isClientVisible": true,
+      "include": ["attachments"],
+      "limit": 20
+    }
+  }'
 ```
 
 **Response:**
 ```json
 {
-  "communications": [
-    {
-      "id": "comm-123",
-      "workflowId": "wf-456",
-      "taskId": "task-789",
-      "type": "email",
-      "emailThreadId": "thread-abc",
-      "subject": "HOA Document Request Status",
-      "content": "What's the ETA for the HOA documents?",
-      "status": "DELIVERED",
-      "participants": [
-        {
-          "email": "client@example.com",
-          "role": "client",
-          "name": "John Doe"
-        },
-        {
-          "email": "sarah@rexera.com", 
-          "role": "hil",
-          "name": "Sarah Johnson"
-        }
-      ],
-      "priority": "NORMAL",
-      "isClientVisible": true,
-      "sentimentScore": 0.1,
-      "urgencyDetected": false,
-      "readAt": null,
-      "createdAt": "2025-06-28T10:30:00Z"
+  "result": {
+    "data": {
+      "json": {
+        "communications": [
+          {
+            "id": "comm-123",
+            "workflowId": "wf-456",
+            "taskId": "task-789",
+            "type": "email",
+            "emailThreadId": "thread-abc",
+            "subject": "HOA Document Request Status",
+            "content": "What's the ETA for the HOA documents?",
+            "status": "DELIVERED",
+            "participants": [
+              {
+                "email": "client@example.com",
+                "role": "client",
+                "name": "John Doe"
+              },
+              {
+                "email": "sarah@rexera.com",
+                "role": "hil",
+                "name": "Sarah Johnson"
+              }
+            ],
+            "priority": "NORMAL",
+            "isClientVisible": true,
+            "sentimentScore": 0.1,
+            "urgencyDetected": false,
+            "readAt": null,
+            "createdAt": "2025-06-28T10:30:00Z"
+          }
+        ],
+        "totalCount": 45,
+        "hasMore": true
+      }
     }
-  ],
-  "totalCount": 45,
-  "hasMore": true
+  }
 }
 ```
 
-#### POST `/api/communications`
+#### `communications.create`
 Create a new communication.
 
-**Request Body:**
-```json
-{
-  "workflowId": "wf-456",
-  "type": "email",
-  "emailThreadId": "thread-abc",
-  "subject": "HOA Document Update", 
-  "content": "The ETA for HOA documents is 3-5 business days",
-  "participants": [
+**Input Schema:**
+```typescript
+z.object({
+  workflowId: z.string(),
+  type: z.enum(['email', 'call', 'message', 'sms']),
+  emailThreadId: z.string().optional(),
+  subject: z.string().optional(),
+  content: z.string(),
+  participants: z.array(z.object({
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    role: z.enum(['sender', 'recipient', 'client', 'hil', 'counterparty']),
+    name: z.string()
+  })),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
+  isClientVisible: z.boolean().default(true),
+  attachments: z.array(z.object({
+    filename: z.string(),
+    url: z.string().url(),
+    mimeType: z.string()
+  })).optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const createCommunication = trpc.communications.create.useMutation();
+
+await createCommunication.mutateAsync({
+  workflowId: 'wf-456',
+  type: 'email',
+  emailThreadId: 'thread-abc',
+  subject: 'HOA Document Update',
+  content: 'The ETA for HOA documents is 3-5 business days',
+  participants: [
     {
-      "email": "client@example.com",
-      "role": "recipient",
-      "name": "John Doe"
+      email: 'client@example.com',
+      role: 'recipient',
+      name: 'John Doe'
     },
     {
-      "email": "sarah@rexera.com",
-      "role": "sender", 
-      "name": "Sarah Johnson"
+      email: 'sarah@rexera.com',
+      role: 'sender',
+      name: 'Sarah Johnson'
     }
   ],
-  "priority": "NORMAL",
-  "isClientVisible": true,
-  "attachments": [
+  priority: 'NORMAL',
+  isClientVisible: true,
+  attachments: [
     {
-      "filename": "hoa_status_update.pdf",
-      "url": "https://s3.../hoa_status_update.pdf",
-      "mimeType": "application/pdf"
+      filename: 'hoa_status_update.pdf',
+      url: 'https://s3.../hoa_status_update.pdf',
+      mimeType: 'application/pdf'
     }
   ]
-}
+});
 ```
 
 ### Documents
 
-#### GET `/api/documents`
+#### `documents.list`
 List documents with filtering.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  workflowId?: string,         // Filter by workflow
-  taskId?: string,             // Filter by task
-  documentType?: string,       // Filter by type: "WORKING", "DELIVERABLE", "ATTACHMENT"
-  status?: string,             // Filter by status
-  tagId?: string,              // Filter by tag
-  limit?: number,
-  offset?: number
-}
+z.object({
+  workflowId: z.string().optional(),         // Filter by workflow
+  taskId: z.string().optional(),             // Filter by task
+  documentType: z.enum(['WORKING', 'DELIVERABLE', 'ATTACHMENT']).optional(),
+  status: z.string().optional(),             // Filter by status
+  tagId: z.string().optional(),              // Filter by tag
+  limit: z.number().min(1).max(100).default(50),
+  offset: z.number().min(0).default(0)
+})
 ```
 
-#### POST `/api/documents`
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.documents.list.useQuery({
+  workflowId: 'wf-456',
+  documentType: 'DELIVERABLE',
+  status: 'COMPLETED'
+});
+```
+
+#### `documents.create`
 Create/upload a new document.
 
-**Request Body:**
-```json
-{
-  "workflowId": "wf-456",
-  "filename": "hoa_bylaws.pdf",
-  "url": "https://s3.../hoa_bylaws.pdf", 
-  "documentType": "DELIVERABLE",
-  "status": "COMPLETED",
-  "deliverableData": {
-    "property": {
-      "address": "123 Main St, Anytown, ST 12345",
-      "hoaName": "Sunset Hills HOA"
+**Input Schema:**
+```typescript
+z.object({
+  workflowId: z.string(),
+  filename: z.string(),
+  url: z.string().url(),
+  documentType: z.enum(['WORKING', 'DELIVERABLE', 'ATTACHMENT']),
+  status: z.string(),
+  deliverableData: z.record(z.any()).optional(),
+  changeSummary: z.string().optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const createDocument = trpc.documents.create.useMutation();
+
+await createDocument.mutateAsync({
+  workflowId: 'wf-456',
+  filename: 'hoa_bylaws.pdf',
+  url: 'https://s3.../hoa_bylaws.pdf',
+  documentType: 'DELIVERABLE',
+  status: 'COMPLETED',
+  deliverableData: {
+    property: {
+      address: '123 Main St, Anytown, ST 12345',
+      hoaName: 'Sunset Hills HOA'
     },
-    "documentsObtained": [
+    documentsObtained: [
       {
-        "type": "bylaws",
-        "filename": "hoa_bylaws.pdf",
-        "obtainedAt": "2025-06-28T10:30:00Z"
+        type: 'bylaws',
+        filename: 'hoa_bylaws.pdf',
+        obtainedAt: '2025-06-28T10:30:00Z'
       }
     ]
   }
-}
+});
 ```
 
 ### Counterparties
 
-#### GET `/api/counterparties`
+#### `counterparties.list`
 List counterparties (HOAs, lenders, municipalities, etc.).
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  type?: CounterpartyType,     // Filter by type: "hoa", "lender", "municipality", etc.
-  search?: string,             // Search by name or contact info
-  workflowId?: string,         // Filter by workflow association
-  limit?: number,
-  offset?: number
-}
+z.object({
+  type: z.enum(['hoa', 'lender', 'municipality', 'utility', 'tax_authority']).optional(),
+  search: z.string().optional(),             // Search by name or contact info
+  workflowId: z.string().optional(),         // Filter by workflow association
+  limit: z.number().min(1).max(100).default(50),
+  offset: z.number().min(0).default(0)
+})
 ```
 
-#### POST `/api/counterparties`
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.counterparties.list.useQuery({
+  type: 'hoa',
+  search: 'Sunset Hills'
+});
+```
+
+#### `counterparties.create`
 Create a new counterparty.
 
-**Request Body:**
-```json
-{
-  "type": "hoa",
-  "name": "Sunset Hills HOA",
-  "email": "manager@sunsethills.com",
-  "phone": "(555) 123-4567",
-  "address": "123 Management Way, City, ST 12345",
-  "website": "https://sunsethills.com",
-  "notes": "Responsive management company"
-}
+**Input Schema:**
+```typescript
+z.object({
+  type: z.enum(['hoa', 'lender', 'municipality', 'utility', 'tax_authority']),
+  name: z.string(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  website: z.string().url().optional(),
+  notes: z.string().optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const createCounterparty = trpc.counterparties.create.useMutation();
+
+await createCounterparty.mutateAsync({
+  type: 'hoa',
+  name: 'Sunset Hills HOA',
+  email: 'manager@sunsethills.com',
+  phone: '(555) 123-4567',
+  address: '123 Management Way, City, ST 12345',
+  website: 'https://sunsethills.com',
+  notes: 'Responsive management company'
+});
 ```
 
 ---
 
-## Actions (Coordinated Operations)
+## Actions (Coordinated tRPC Procedures)
 
 Actions perform atomic operations that coordinate across multiple resources, ensuring data consistency and triggering appropriate workflows.
 
 ### Workflow Actions
 
-#### POST `/api/workflows/{id}/actions`
+#### `workflows.executeAction`
 Execute coordinated actions on workflows.
 
-**Request Body:**
-```json
-{
-  "action": "start",           // Actions: "start", "pause", "resume", "cancel", "complete"
-  "data": {
-    "reason": "Ready to begin processing",
-    "priority": "HIGH",
-    "notifications": {
-      "notifyClient": true,
-      "notifyTeam": true
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string(),
+  action: z.enum(['start', 'pause', 'resume', 'cancel', 'complete']),
+  data: z.object({
+    reason: z.string().optional(),
+    priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
+    notifications: z.object({
+      notifyClient: z.boolean().optional(),
+      notifyTeam: z.boolean().optional()
+    }).optional()
+  }).optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const executeWorkflowAction = trpc.workflows.executeAction.useMutation();
+
+const result = await executeWorkflowAction.mutateAsync({
+  id: 'wf-456',
+  action: 'start',
+  data: {
+    reason: 'Ready to begin processing',
+    priority: 'HIGH',
+    notifications: {
+      notifyClient: true,
+      notifyTeam: true
     }
   }
-}
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/workflows.executeAction \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
+  -d '{
+    "json": {
+      "id": "wf-456",
+      "action": "start",
+      "data": {
+        "reason": "Ready to begin processing",
+        "priority": "HIGH",
+        "notifications": {
+          "notifyClient": true,
+          "notifyTeam": true
+        }
+      }
+    }
+  }'
 ```
 
 **Response:**
 ```json
 {
-  "success": true,
-  "workflowId": "wf-456",
-  "action": "start",
-  "newStatus": "IN_PROGRESS",
-  "tasksCreated": 8,
-  "n8nExecutionId": "exec-789",
-  "notifications": {
-    "clientNotified": true,
-    "teamNotified": true
-  },
-  "timestamp": "2025-06-28T15:00:00Z"
+  "result": {
+    "data": {
+      "json": {
+        "success": true,
+        "workflowId": "wf-456",
+        "action": "start",
+        "newStatus": "IN_PROGRESS",
+        "tasksCreated": 8,
+        "n8nExecutionId": "exec-789",
+        "notifications": {
+          "clientNotified": true,
+          "teamNotified": true
+        },
+        "timestamp": "2025-06-28T15:00:00Z"
+      }
+    }
+  }
 }
 ```
 
 ### Task Actions
 
-#### POST `/api/tasks/{id}/actions`
+#### `tasks.executeAction`
 Execute coordinated actions on tasks.
 
-**Request Body:**
+**Input Schema:**
+```typescript
+z.object({
+  id: z.string(),
+  action: z.enum(['complete', 'retry', 'escalate', 'assign', 'fail']),
+  data: z.object({
+    result: z.record(z.any()).optional(),
+    reason: z.string().optional(),
+    assignTo: z.string().optional(),
+    coordination: z.object({
+      updateWorkflow: z.boolean().optional(),
+      createFollowupTasks: z.boolean().optional(),
+      notifyTeam: z.boolean().optional()
+    }).optional()
+  }).optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const executeTaskAction = trpc.tasks.executeAction.useMutation();
+
+const result = await executeTaskAction.mutateAsync({
+  id: 'task-123',
+  action: 'complete',
+  data: {
+    result: {
+      contactsFound: 3,
+      confidenceScore: 0.92,
+      nextSteps: ['send-email-request']
+    },
+    coordination: {
+      updateWorkflow: true,
+      createFollowupTasks: true,
+      notifyTeam: true
+    }
+  }
+});
+```
+
+**Response:**
 ```json
 {
-  "action": "complete",        // Actions: "complete", "retry", "escalate", "assign", "fail"
-  "data": {
-    "result": {
-      "contactsFound": 3,
-      "confidenceScore": 0.92,
-      "nextSteps": ["send-email-request"]
-    },
-    "coordination": {
-      "updateWorkflow": true,
-      "createFollowupTasks": true,
-      "notifyTeam": true
+  "result": {
+    "data": {
+      "json": {
+        "success": true,
+        "taskId": "task-123",
+        "action": "complete",
+        "newStatus": "COMPLETED",
+        "workflowUpdated": true,
+        "followupTasksCreated": ["task-124", "task-125"],
+        "notificationsSent": 2,
+        "timestamp": "2025-06-28T10:04:40Z"
+      }
     }
   }
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "taskId": "task-123",
-  "action": "complete",
-  "newStatus": "COMPLETED",
-  "workflowUpdated": true,
-  "followupTasksCreated": ["task-124", "task-125"],
-  "notificationsSent": 2,
-  "timestamp": "2025-06-28T10:04:40Z"
-}
-```
-
 ---
 
-## Views (Optimized Data Access)
+## Views (Optimized tRPC Procedures)
 
 Views provide optimized, read-only access to derived and aggregated data for dashboards and monitoring.
 
 ### Dashboard View
 
-#### GET `/api/views/dashboard`
+#### `views.dashboard`
 Get complete HIL dashboard data in a single request.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  hilId?: string,              // Filter for specific HIL user
-  timeframe?: string,          // Time filter: "today", "week", "month"
-  includeMetrics?: boolean     // Include performance metrics (default: true)
-}
+z.object({
+  hilId: z.string().optional(),              // Filter for specific HIL user
+  timeframe: z.enum(['today', 'week', 'month']).optional(),
+  includeMetrics: z.boolean().default(true)  // Include performance metrics
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.views.dashboard.useQuery({
+  timeframe: 'today',
+  includeMetrics: true
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/views.dashboard \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
+  -d '{
+    "json": {
+      "timeframe": "today",
+      "includeMetrics": true
+    }
+  }'
 ```
 
 **Response:**
 ```json
 {
-  "summary": {
-    "activeWorkflows": 12,
-    "pendingTasks": 8,
-    "overdueItems": 2,
-    "completedToday": 5
-  },
-  "taskQueue": [
-    {
-      "id": "task-123",
-      "workflowId": "wf-456", 
-      "taskType": "review-documents",
-      "priority": "HIGH",
-      "slaStatus": "AT_RISK",
-      "timeRemaining": 1800,
-      "clientName": "ABC Realty",
-      "workflowType": "HOA_ACQUISITION"
+  "result": {
+    "data": {
+      "json": {
+        "summary": {
+          "activeWorkflows": 12,
+          "pendingTasks": 8,
+          "overdueItems": 2,
+          "completedToday": 5
+        },
+        "taskQueue": [
+          {
+            "id": "task-123",
+            "workflowId": "wf-456",
+            "taskType": "review-documents",
+            "priority": "HIGH",
+            "slaStatus": "AT_RISK",
+            "timeRemaining": 1800,
+            "clientName": "ABC Realty",
+            "workflowType": "HOA_ACQUISITION"
+          }
+        ],
+        "workflows": [
+          {
+            "id": "wf-456",
+            "type": "HOA_ACQUISITION",
+            "status": "IN_PROGRESS",
+            "clientName": "ABC Realty",
+            "progress": 67,
+            "slaStatus": "ON_TIME",
+            "lastActivity": "2025-06-28T14:30:00Z"
+          }
+        ],
+        "notifications": [
+          {
+            "id": "notif-789",
+            "type": "SLA_WARNING",
+            "priority": "HIGH",
+            "message": "Task approaching deadline",
+            "workflowId": "wf-456",
+            "createdAt": "2025-06-28T14:45:00Z"
+          }
+        ],
+        "metrics": {
+          "completionRate": 94.2,
+          "avgResponseTime": "3.2 hours",
+          "clientSatisfaction": 4.8
+        }
+      }
     }
-  ],
-  "workflows": [
-    {
-      "id": "wf-456",
-      "type": "HOA_ACQUISITION",
-      "status": "IN_PROGRESS",
-      "clientName": "ABC Realty",
-      "progress": 67,
-      "slaStatus": "ON_TIME",
-      "lastActivity": "2025-06-28T14:30:00Z"
-    }
-  ],
-  "notifications": [
-    {
-      "id": "notif-789",
-      "type": "SLA_WARNING",
-      "priority": "HIGH",
-      "message": "Task approaching deadline",
-      "workflowId": "wf-456",
-      "createdAt": "2025-06-28T14:45:00Z"
-    }
-  ],
-  "metrics": {
-    "completionRate": 94.2,
-    "avgResponseTime": "3.2 hours",
-    "clientSatisfaction": 4.8
   }
 }
 ```
 
 ### Performance View
 
-#### GET `/api/views/performance`
+#### `views.performance`
 Get system and agent performance metrics.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  timeframe?: string,          // "hour", "day", "week", "month"
-  agentName?: string,          // Filter by specific agent
-  workflowType?: string        // Filter by workflow type
-}
+z.object({
+  timeframe: z.enum(['hour', 'day', 'week', 'month']).optional(),
+  agentName: z.string().optional(),          // Filter by specific agent
+  workflowType: z.string().optional()        // Filter by workflow type
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.views.performance.useQuery({
+  timeframe: 'week',
+  agentName: 'Nina'
+});
 ```
 
 **Response:**
 ```json
 {
-  "systemMetrics": {
-    "totalWorkflows": 247,
-    "activeWorkflows": 156,
-    "completedToday": 7,
-    "avgCompletionTime": "4.2 hours",
-    "slaCompliance": 94.2
-  },
-  "agentMetrics": [
-    {
-      "agentName": "Nina",
-      "tasksCompleted": 156,
-      "successRate": 92.5,
-      "avgProcessingTime": "12 seconds",
-      "avgConfidenceScore": 0.89,
-      "costPerTask": 0.15
+  "result": {
+    "data": {
+      "json": {
+        "systemMetrics": {
+          "totalWorkflows": 247,
+          "activeWorkflows": 156,
+          "completedToday": 7,
+          "avgCompletionTime": "4.2 hours",
+          "slaCompliance": 94.2
+        },
+        "agentMetrics": [
+          {
+            "agentName": "Nina",
+            "tasksCompleted": 156,
+            "successRate": 92.5,
+            "avgProcessingTime": "12 seconds",
+            "avgConfidenceScore": 0.89,
+            "costPerTask": 0.15
+          }
+        ],
+        "workflowMetrics": [
+          {
+            "workflowType": "MUNI_LIEN_SEARCH",
+            "totalCount": 89,
+            "avgCompletionTime": "3.2 hours",
+            "successRate": 94.5,
+            "slaCompliance": 96.1
+          }
+        ]
+      }
     }
-  ],
-  "workflowMetrics": [
-    {
-      "workflowType": "MUNI_LIEN_SEARCH",
-      "totalCount": 89,
-      "avgCompletionTime": "3.2 hours",
-      "successRate": 94.5,
-      "slaCompliance": 96.1
-    }
-  ]
+  }
 }
 ```
 
 ### SLA View
 
-#### GET `/api/views/sla`
+#### `views.sla`
 Get comprehensive SLA monitoring data.
+
+**Input Schema:**
+```typescript
+z.object({
+  status: z.enum(['ACTIVE', 'COMPLETED', 'BREACHED', 'PAUSED']).optional(),
+  workflowType: z.string().optional(),
+  agentName: z.string().optional(),
+  alertLevel: z.enum(['GREEN', 'YELLOW', 'ORANGE', 'RED']).optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.views.sla.useQuery({
+  alertLevel: 'RED'
+});
+```
 
 **Response:**
 ```json
 {
-  "summary": {
-    "totalActiveSLAs": 45,
-    "onTime": 38,
-    "atRisk": 5,
-    "breached": 2,
-    "complianceRate": 84.4
-  },
-  "alerts": [
-    {
-      "id": "alert-123",
-      "taskId": "task-456",
-      "workflowId": "wf-789",
-      "alertLevel": "RED", 
-      "message": "SLA breached - task exceeded deadline by 18 minutes",
-      "timeOverdue": 1080,
-      "escalatedTo": "hil-manager-123"
+  "result": {
+    "data": {
+      "json": {
+        "summary": {
+          "totalActiveSLAs": 45,
+          "onTime": 38,
+          "atRisk": 5,
+          "breached": 2,
+          "complianceRate": 84.4
+        },
+        "alerts": [
+          {
+            "id": "alert-123",
+            "taskId": "task-456",
+            "workflowId": "wf-789",
+            "alertLevel": "RED",
+            "message": "SLA breached - task exceeded deadline by 18 minutes",
+            "timeOverdue": 1080,
+            "escalatedTo": "hil-manager-123"
+          }
+        ],
+        "tracking": [
+          {
+            "taskId": "task-789",
+            "workflowId": "wf-456",
+            "agentName": "Rex",
+            "taskType": "portal-access",
+            "dueAt": "2025-06-28T11:00:00Z",
+            "status": "ACTIVE",
+            "timeRemaining": -1080,
+            "riskLevel": "RED"
+          }
+        ]
+      }
     }
-  ],
-  "tracking": [
-    {
-      "taskId": "task-789",
-      "workflowId": "wf-456",
-      "agentName": "Rex",
-      "taskType": "portal-access",
-      "dueAt": "2025-06-28T11:00:00Z",
-      "status": "ACTIVE",
-      "timeRemaining": -1080,
-      "riskLevel": "RED"
-    }
-  ]
+  }
 }
 ```
 
 ### Notifications View
 
-#### GET `/api/views/notifications`
+#### `views.notifications`
 Get user notifications with unread counts and filtering.
 
-**Query Parameters:**
+**Input Schema:**
 ```typescript
-{
-  unreadOnly?: boolean,        // Only unread notifications
-  type?: NotificationType,     // Filter by type
-  priority?: PriorityLevel     // Filter by priority
-}
+z.object({
+  unreadOnly: z.boolean().optional(),        // Only unread notifications
+  type: z.string().optional(),               // Filter by type
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional()
+})
+```
+
+**Frontend Usage:**
+```typescript
+const { data } = await trpc.views.notifications.useQuery({
+  unreadOnly: true,
+  priority: 'HIGH'
+});
 ```
 
 **Response:**
 ```json
 {
-  "notifications": [
-    {
-      "id": "notif-123",
-      "type": "TASK_INTERRUPT",
-      "title": "Task Failed: portal-access",
-      "message": "Rex encountered an error in HOA_ACQUISITION",
-      "priority": "HIGH",
-      "context": {
-        "workflowId": "wf-456",
-        "taskId": "task-789",
-        "agentName": "Rex",
-        "actionUrl": "/workflows/wf-456/tasks/task-789"
-      },
-      "readAt": null,
-      "createdAt": "2025-06-28T10:18:00Z"
-    }
-  ],
-  "counts": {
-    "unreadCount": 12,
-    "urgentCount": 3,
-    "byType": {
-      "TASK_INTERRUPT": 5,
-      "SLA_WARNING": 3,
-      "CLIENT_MESSAGE": 2
+  "result": {
+    "data": {
+      "json": {
+        "notifications": [
+          {
+            "id": "notif-123",
+            "type": "TASK_INTERRUPT",
+            "title": "Task Failed: portal-access",
+            "message": "Rex encountered an error in HOA_ACQUISITION",
+            "priority": "HIGH",
+            "context": {
+              "workflowId": "wf-456",
+              "taskId": "task-789",
+              "agentName": "Rex",
+              "actionUrl": "/workflows/wf-456/tasks/task-789"
+            },
+            "readAt": null,
+            "createdAt": "2025-06-28T10:18:00Z"
+          }
+        ],
+        "counts": {
+          "unreadCount": 12,
+          "urgentCount": 3,
+          "byType": {
+            "TASK_INTERRUPT": 5,
+            "SLA_WARNING": 3,
+            "CLIENT_MESSAGE": 2
+          }
+        }
+      }
     }
   }
 }
@@ -802,14 +1217,34 @@ Get user notifications with unread counts and filtering.
 
 ---
 
-## Events (Real-time Updates)
+## Events (Real-time tRPC Subscriptions)
 
-WebSocket subscriptions for real-time coordination between all actors.
+tRPC subscriptions for real-time coordination between all actors.
 
 ### Workflow Events
 
-#### WebSocket `/ws/workflows/{id}`
+#### `workflows.subscribe`
 Subscribe to real-time workflow updates.
+
+**Input Schema:**
+```typescript
+z.object({
+  workflowId: z.string()
+})
+```
+
+**Frontend Usage:**
+```typescript
+trpc.workflows.subscribe.useSubscription(
+  { workflowId: 'wf-456' },
+  {
+    onData: (event) => {
+      console.log('Workflow event:', event);
+      // Update UI based on event
+    }
+  }
+);
+```
 
 **Event Types:**
 ```typescript
@@ -829,13 +1264,52 @@ interface WorkflowEvent {
 
 ### Task Events
 
-#### WebSocket `/ws/tasks/{id}`
+#### `tasks.subscribe`
 Subscribe to real-time task updates.
+
+**Input Schema:**
+```typescript
+z.object({
+  taskId: z.string()
+})
+```
+
+**Frontend Usage:**
+```typescript
+trpc.tasks.subscribe.useSubscription(
+  { taskId: 'task-123' },
+  {
+    onData: (event) => {
+      console.log('Task event:', event);
+    }
+  }
+);
+```
 
 ### Notification Events
 
-#### WebSocket `/ws/notifications`
+#### `notifications.subscribe`
 Subscribe to real-time user notifications.
+
+**Input Schema:**
+```typescript
+z.object({
+  userId: z.string().optional() // Defaults to current user
+})
+```
+
+**Frontend Usage:**
+```typescript
+trpc.notifications.subscribe.useSubscription(
+  {},
+  {
+    onData: (notification) => {
+      console.log('New notification:', notification);
+      // Show toast or update notification count
+    }
+  }
+);
+```
 
 **Event Example:**
 ```json
@@ -843,7 +1317,7 @@ Subscribe to real-time user notifications.
   "type": "new_notification",
   "notification": {
     "id": "notif-456",
-    "type": "SLA_WARNING", 
+    "type": "SLA_WARNING",
     "title": "Task Approaching Deadline",
     "priority": "HIGH",
     "context": {
@@ -857,132 +1331,157 @@ Subscribe to real-time user notifications.
 
 ---
 
-## TypeScript Interfaces
+## TypeScript Interfaces & tRPC Types
 
 ### Core Resource Types
 
 ```typescript
-// Core workflow types
-interface Workflow {
-  id: string
-  type: 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF'
-  status: 'PENDING' | 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'BLOCKED' | 'COMPLETED'
-  clientId: string
-  hilId: string
-  managerHilId?: string
-  payload: Record<string, any>
-  progress: {
-    totalTasks: number
-    completedTasks: number
-    progressPercentage: number
-  }
-  slaStatus: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
-  createdAt: string
-  updatedAt: string
+// Core workflow types with Zod validation
+const WorkflowSchema = z.object({
+  id: z.string(),
+  type: z.enum(['MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF']),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']),
+  clientId: z.string(),
+  hilId: z.string(),
+  managerHilId: z.string().optional(),
+  payload: z.record(z.any()),
+  progress: z.object({
+    totalTasks: z.number(),
+    completedTasks: z.number(),
+    progressPercentage: z.number()
+  }),
+  slaStatus: z.enum(['ON_TIME', 'AT_RISK', 'BREACHED']),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
   
   // Optional includes
-  tasks?: Task[]
-  communications?: Communication[]
-  documents?: Document[]
-  counterparties?: Counterparty[]
-}
+  tasks: z.array(TaskSchema).optional(),
+  communications: z.array(CommunicationSchema).optional(),
+  documents: z.array(DocumentSchema).optional(),
+  counterparties: z.array(CounterpartySchema).optional()
+});
 
-interface Task {
-  id: string
-  workflowId: string
-  taskType: string
-  executorType: 'AI' | 'HIL'
-  executorId?: string
-  agentName?: string
-  status: 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED'
-  slaStatus: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
-  slaDueAt?: string
-  agentInput?: Record<string, any>
-  agentOutput?: Record<string, any>
-  result?: Record<string, any>
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
-  createdAt: string
-  updatedAt: string
-}
+const TaskSchema = z.object({
+  id: z.string(),
+  workflowId: z.string(),
+  taskType: z.string(),
+  executorType: z.enum(['AI', 'HIL']),
+  executorId: z.string().optional(),
+  agentName: z.string().optional(),
+  status: z.enum(['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED', 'CANCELLED']),
+  slaStatus: z.enum(['ON_TIME', 'AT_RISK', 'BREACHED']),
+  slaDueAt: z.string().datetime().optional(),
+  agentInput: z.record(z.any()).optional(),
+  agentOutput: z.record(z.any()).optional(),
+  result: z.record(z.any()).optional(),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
 
-interface Communication {
-  id: string
-  workflowId: string
-  taskId?: string
-  type: 'email' | 'call' | 'message' | 'sms'
-  emailThreadId?: string
-  subject?: string
-  content: string
-  status: string
-  participants: Participant[]
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
-  isClientVisible: boolean
-  sentimentScore?: number
-  urgencyDetected: boolean
-  readAt?: string
-  createdAt: string
-}
+const CommunicationSchema = z.object({
+  id: z.string(),
+  workflowId: z.string(),
+  taskId: z.string().optional(),
+  type: z.enum(['email', 'call', 'message', 'sms']),
+  emailThreadId: z.string().optional(),
+  subject: z.string().optional(),
+  content: z.string(),
+  status: z.string(),
+  participants: z.array(ParticipantSchema),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
+  isClientVisible: z.boolean(),
+  sentimentScore: z.number().optional(),
+  urgencyDetected: z.boolean(),
+  readAt: z.string().datetime().optional(),
+  createdAt: z.string().datetime()
+});
 
-interface Document {
-  id: string
-  workflowId: string
-  taskId?: string
-  filename: string
-  url: string
-  documentType: 'WORKING' | 'DELIVERABLE' | 'ATTACHMENT'
-  status: string
-  deliverableData?: Record<string, any>
-  version?: number
-  createdAt: string
-  updatedAt: string
-}
+const DocumentSchema = z.object({
+  id: z.string(),
+  workflowId: z.string(),
+  taskId: z.string().optional(),
+  filename: z.string(),
+  url: z.string().url(),
+  documentType: z.enum(['WORKING', 'DELIVERABLE', 'ATTACHMENT']),
+  status: z.string(),
+  deliverableData: z.record(z.any()).optional(),
+  version: z.number().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
 
-interface Counterparty {
-  id: string
-  type: 'hoa' | 'lender' | 'municipality' | 'utility' | 'tax_authority'
-  name: string
-  email?: string
-  phone?: string
-  address?: string
-  website?: string
-  notes?: string
-  createdAt: string
-  updatedAt: string
-}
+const CounterpartySchema = z.object({
+  id: z.string(),
+  type: z.enum(['hoa', 'lender', 'municipality', 'utility', 'tax_authority']),
+  name: z.string(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  website: z.string().url().optional(),
+  notes: z.string().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
+
+// Inferred TypeScript types
+type Workflow = z.infer<typeof WorkflowSchema>;
+type Task = z.infer<typeof TaskSchema>;
+type Communication = z.infer<typeof CommunicationSchema>;
+type Document = z.infer<typeof DocumentSchema>;
+type Counterparty = z.infer<typeof CounterpartySchema>;
 ```
 
-### AI Agent Access
+### AI Agent Access via tRPC
 
-**AI agents use the same unified APIs with intelligent filtering:**
+**AI agents use the same unified tRPC procedures with intelligent filtering:**
 
 #### Agent Authentication
-```http
-Authorization: Bearer <agent-jwt-token>
-X-Agent-Name: mia
-X-Workflow-Scope: wf-123
+```typescript
+// tRPC context includes agent authentication
+const ctx = {
+  user: {
+    id: 'agent-mia',
+    type: 'AI_AGENT',
+    agentName: 'mia',
+    workflowScope: 'wf-123'
+  }
+};
 ```
 
-#### Agent API Usage Examples
+#### Agent tRPC Usage Examples
 ```typescript
-// Agents use existing endpoints with automatic filtering
-GET /api/workflows/wf-123                    // Get workflow context
-GET /api/communications?workflowId=wf-123    // Get workflow communications  
-GET /api/documents?workflowId=wf-123         // Get workflow documents
-GET /api/counterparties?workflowId=wf-123    // Get counterparty info
+// Agents use same procedures with automatic filtering
+const workflow = await trpc.workflows.getById.query({
+  id: 'wf-123'
+}); // Automatically scoped to agent's workflow
+
+const communications = await trpc.communications.list.query({
+  workflowId: 'wf-123'
+}); // Filtered to workflow scope
+
+const documents = await trpc.documents.list.query({
+  workflowId: 'wf-123'
+}); // Only workflow-related documents
+
+const counterparties = await trpc.counterparties.list.query({
+  workflowId: 'wf-123'
+}); // Business contact info only
 ```
 
 #### Smart Response Filtering
-Middleware automatically filters responses based on agent permissions:
+tRPC middleware automatically filters responses based on agent permissions:
 - **Workflow-scoped access** - Only data for assigned workflow
 - **Sanitized responses** - No internal HIL notes or sensitive PII
 - **Context-optimized** - All related data included in responses
-- **Automatic audit logging** - Every agent API call tracked
+- **Automatic audit logging** - Every agent procedure call tracked
+- **Type safety** - Zod validation ensures data integrity
 
 #### Agent Access Control
 ```typescript
-// Agents can access (filtered by middleware):
+// Agents can access (filtered by tRPC middleware):
 - Assigned workflow data and related tasks
-- Communications within their workflow  
+- Communications within their workflow
 - Documents related to current task
 - Counterparty business contact information
 - Workflow contacts for coordination
@@ -996,62 +1495,84 @@ Middleware automatically filters responses based on agent permissions:
 
 ---
 
-### Action Types
+### tRPC Action Types
 
 ```typescript
-interface WorkflowAction {
-  action: 'start' | 'pause' | 'resume' | 'cancel' | 'complete'
-  data: {
-    reason?: string
-    priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
-    notifications?: {
-      notifyClient?: boolean
-      notifyTeam?: boolean
-    }
-  }
-}
+// Workflow action input schema
+const WorkflowActionSchema = z.object({
+  id: z.string(),
+  action: z.enum(['start', 'pause', 'resume', 'cancel', 'complete']),
+  data: z.object({
+    reason: z.string().optional(),
+    priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
+    notifications: z.object({
+      notifyClient: z.boolean().optional(),
+      notifyTeam: z.boolean().optional()
+    }).optional()
+  }).optional()
+});
 
-interface TaskAction {
-  action: 'complete' | 'retry' | 'escalate' | 'assign' | 'fail'
-  data: {
-    result?: Record<string, any>
-    reason?: string
-    assignTo?: string
-    coordination?: {
-      updateWorkflow?: boolean
-      createFollowupTasks?: boolean
-      notifyTeam?: boolean
-    }
-  }
-}
+// Task action input schema
+const TaskActionSchema = z.object({
+  id: z.string(),
+  action: z.enum(['complete', 'retry', 'escalate', 'assign', 'fail']),
+  data: z.object({
+    result: z.record(z.any()).optional(),
+    reason: z.string().optional(),
+    assignTo: z.string().optional(),
+    coordination: z.object({
+      updateWorkflow: z.boolean().optional(),
+      createFollowupTasks: z.boolean().optional(),
+      notifyTeam: z.boolean().optional()
+    }).optional()
+  }).optional()
+});
+
+// Inferred types
+type WorkflowActionInput = z.infer<typeof WorkflowActionSchema>;
+type TaskActionInput = z.infer<typeof TaskActionSchema>;
 ```
 
-### API Response Types
+### tRPC Response Types
 
 ```typescript
-interface ListResponse<T> {
-  [key: string]: T[]  // e.g., "workflows": Workflow[]
-  totalCount: number
-  hasMore: boolean
-}
+// List response schema
+const ListResponseSchema = <T extends z.ZodType>(itemSchema: T) => z.object({
+  items: z.array(itemSchema),
+  totalCount: z.number(),
+  hasMore: z.boolean()
+});
 
-interface ActionResponse {
-  success: boolean
-  action: string
-  newStatus?: string
-  timestamp: string
-  [key: string]: any  // Action-specific fields
-}
+// Action response schema
+const ActionResponseSchema = z.object({
+  success: z.boolean(),
+  action: z.string(),
+  newStatus: z.string().optional(),
+  timestamp: z.string().datetime()
+}).and(z.record(z.any())); // Allow additional action-specific fields
 
-interface ErrorResponse {
-  error: {
-    code: string
-    message: string
-    details?: Record<string, any>
-    timestamp: string
-    requestId: string
-  }
-}
+// tRPC error handling
+const TRPCErrorSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  data: z.object({
+    code: z.string(),
+    httpStatus: z.number(),
+    stack: z.string().optional(),
+    path: z.string(),
+    zodError: z.any().optional()
+  }).optional()
+});
+
+// Inferred types
+type ListResponse<T> = {
+  items: T[];
+  totalCount: number;
+  hasMore: boolean;
+};
+
+type ActionResponse = z.infer<typeof ActionResponseSchema>;
+type TRPCError = z.infer<typeof TRPCErrorSchema>;
 ```
 
 ---
@@ -1064,53 +1585,79 @@ interface ErrorResponse {
   "sub": "<user-uuid>",
   "email": "user@example.com",
   "role": "HIL",
-  "userType": "hil_user", 
+  "userType": "hil_user",
   "companyId": null,
   "iat": 1640995200,
   "exp": 1641081600
 }
 ```
 
-### Request Authentication
-All API requests require a valid JWT token in the Authorization header:
+### tRPC Authentication
+All tRPC procedures require authentication via context:
 
-```http
-Authorization: Bearer <jwt-token>
+```typescript
+// tRPC context with authentication
+const createContext = ({ req, res }: CreateNextContextOptions) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const user = verifyJWT(token);
+  
+  return {
+    user,
+    req,
+    res
+  };
+};
+
+// Protected procedure middleware
+const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
 ```
 
 ### Rate Limiting
-- **Standard endpoints**: 1000 requests/hour per user
-- **View endpoints**: 2000 requests/hour per user (optimized for dashboards)
-- **Action endpoints**: 500 requests/hour per user (write operations)
-- **WebSocket connections**: 100 concurrent connections per user
+- **Query procedures**: 2000 requests/hour per user (optimized for reads)
+- **Mutation procedures**: 500 requests/hour per user (write operations)
+- **Subscription procedures**: 100 concurrent connections per user
+- **Agent procedures**: 10,000 requests/hour per agent (AI workload)
 
 ### Comprehensive Audit Logging
-**All API operations are automatically audited for compliance, debugging, and analytics:**
+**All tRPC operations are automatically audited for compliance, debugging, and analytics:**
 
 ```typescript
-// Every successful API request automatically creates an audit event
-{
-  actor_type: 'human' | 'agent' | 'system',
-  actor_id: user.id,
-  event_type: 'workflow.created', // Generated from endpoint pattern
-  action: 'create', // Derived from HTTP method
-  resource_type: 'workflow', // Extracted from URL path
-  resource_id: response.data.id,
-  workflow_id: request.workflowId,
-  client_id: user.clientId,
-  event_data: {
-    method: 'POST',
-    path: '/api/workflows',
-    ipAddress: req.ip,
-    userAgent: req.headers['user-agent'],
-    requestBody: sanitized_body
+// Every successful tRPC procedure automatically creates an audit event
+const auditMiddleware = middleware(async ({ ctx, path, type, next }) => {
+  const result = await next();
+  
+  if (result.ok) {
+    await createAuditEvent({
+      actor_type: ctx.user.type === 'AI_AGENT' ? 'agent' : 'human',
+      actor_id: ctx.user.id,
+      event_type: `${path.split('.')[0]}.${type}`, // e.g., 'workflows.query'
+      action: type, // 'query', 'mutation', 'subscription'
+      resource_type: path.split('.')[0], // 'workflows', 'tasks', etc.
+      resource_id: result.data?.id,
+      workflow_id: result.data?.workflowId || ctx.workflowScope,
+      client_id: ctx.user.clientId,
+      event_data: {
+        procedure: path,
+        type: type,
+        ipAddress: ctx.req.ip,
+        userAgent: ctx.req.headers['user-agent'],
+        input: sanitizeInput(ctx.input)
+      }
+    });
   }
-}
+  
+  return result;
+});
 ```
 
 **Audit events captured:**
 - **Authentication**: Login/logout with IP and device tracking
-- **Resource operations**: All CRUD operations with before/after state
+- **Procedure calls**: All tRPC queries, mutations, and subscriptions
 - **Action executions**: Workflow and task actions with timing metrics
 - **Document access**: PII-containing file views for compliance
 - **Administrative changes**: User management and system configuration
@@ -1121,67 +1668,112 @@ All audit data is stored in the `audit_events` table for compliance reporting, s
 
 ## Error Handling
 
-### Standard Error Response
+### tRPC Error Response
 ```json
 {
   "error": {
-    "code": "VALIDATION_ERROR",
     "message": "Invalid workflow type specified",
-    "details": {
-      "field": "workflowType",
-      "allowedValues": ["MUNI_LIEN_SEARCH", "HOA_ACQUISITION", "PAYOFF"]
-    },
-    "timestamp": "2025-06-28T10:18:00Z",
-    "requestId": "req-123-456"
+    "code": -32600,
+    "data": {
+      "code": "BAD_REQUEST",
+      "httpStatus": 400,
+      "path": "workflows.create",
+      "zodError": {
+        "fieldErrors": {
+          "type": ["Invalid enum value. Expected 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF'"]
+        }
+      }
+    }
   }
 }
 ```
 
-### HTTP Status Codes
-- `200 OK` - Successful GET, PATCH requests
-- `201 Created` - Successful POST requests
-- `204 No Content` - Successful DELETE requests
-- `400 Bad Request` - Invalid request data
-- `401 Unauthorized` - Missing or invalid authentication
-- `403 Forbidden` - Insufficient permissions
-- `404 Not Found` - Resource not found
-- `422 Unprocessable Entity` - Validation errors
-- `429 Too Many Requests` - Rate limit exceeded
-- `500 Internal Server Error` - Server errors
+### tRPC Error Codes
+- `UNAUTHORIZED` - Missing or invalid authentication
+- `FORBIDDEN` - Insufficient permissions
+- `NOT_FOUND` - Resource not found
+- `BAD_REQUEST` - Invalid input data (Zod validation errors)
+- `CONFLICT` - Resource conflict (e.g., duplicate creation)
+- `PRECONDITION_FAILED` - Business logic validation failed
+- `TOO_MANY_REQUESTS` - Rate limit exceeded
+- `INTERNAL_SERVER_ERROR` - Server errors
+
+### Error Handling in Frontend
+```typescript
+// tRPC error handling with React Query
+const { data, error, isLoading } = trpc.workflows.list.useQuery(
+  { status: 'IN_PROGRESS' },
+  {
+    onError: (error) => {
+      if (error.data?.code === 'UNAUTHORIZED') {
+        router.push('/login');
+      } else if (error.data?.zodError) {
+        // Handle validation errors
+        console.error('Validation errors:', error.data.zodError.fieldErrors);
+      } else {
+        // Handle other errors
+        toast.error(error.message);
+      }
+    }
+  }
+);
+
+// Mutation error handling
+const createWorkflow = trpc.workflows.create.useMutation({
+  onError: (error) => {
+    if (error.data?.code === 'BAD_REQUEST') {
+      // Show validation errors in form
+      setFormErrors(error.data.zodError?.fieldErrors || {});
+    }
+  },
+  onSuccess: () => {
+    toast.success('Workflow created successfully');
+  }
+});
+```
 
 ---
 
-## API Summary & Benefits
+## tRPC API Summary & Benefits
 
-### Simplified Architecture
-This unified API design reduces complexity while maintaining full functionality:
+### Simplified Type-Safe Architecture
+This unified tRPC design reduces complexity while maintaining full functionality:
 
-- **12 Core Endpoints** (vs 102+ in previous design)
+- **Type-Safe Procedures** with end-to-end TypeScript support
 - **4 Clear Patterns** (Resources + Actions + Views + Events)
 - **Unified Access** for both human operators and AI agents
-- **Consistent Query Parameters** across all resources
+- **Zod Validation** across all inputs and outputs
 - **Atomic Actions** that coordinate across multiple resources
 
 ### Developer Experience
-- **Predictable REST patterns** for all resources
-- **Comprehensive TypeScript interfaces** for type safety
-- **Single API calls** replace complex multi-request operations
-- **Real-time coordination** through WebSocket events
-- **Optimized dashboard data** through unified views
+- **End-to-end type safety** from database to frontend
+- **Automatic TypeScript inference** for all procedures
+- **Single procedure calls** replace complex multi-request operations
+- **Real-time coordination** through tRPC subscriptions
+- **Optimized dashboard data** through unified view procedures
+- **Built-in error handling** with structured error responses
 
 ### Performance Benefits
 - **75% fewer API calls** for common operations
-- **Single-request dashboard loading** via `/api/views/dashboard`
-- **Efficient filtering** with standardized query parameters
+- **Single-request dashboard loading** via `views.dashboard`
+- **Efficient filtering** with validated input schemas
 - **Real-time updates** eliminate polling overhead
-- **Optimized database queries** through view endpoints
+- **Optimized database queries** through view procedures
+- **Request/response caching** built into tRPC client
+
+### Type Safety Benefits
+- **Compile-time validation** prevents runtime errors
+- **Automatic API documentation** from TypeScript types
+- **Refactoring safety** with IDE support across full stack
+- **Input validation** with detailed Zod error messages
+- **Response type guarantees** eliminate manual type assertions
 
 ### MCP Server Integration
-The simplified, consistent API patterns make it easy to expose all functionality through an MCP server for AI agent access, ensuring both human operators and AI agents work with the same reliable interface.
+The type-safe, consistent tRPC procedures make it easy to expose all functionality through an MCP server for AI agent access, ensuring both human operators and AI agents work with the same reliable, validated interface.
 
 ---
 
-*This simplified API design provides a clean, predictable interface that serves both human operators and AI agents while dramatically reducing complexity and improving performance.*
+*This tRPC API design provides a clean, type-safe interface that serves both human operators and AI agents while dramatically reducing complexity, improving performance, and ensuring type safety across the entire application stack.*
       },
       "version": 1,
       "createdAt": "2025-06-28T10:35:00Z"

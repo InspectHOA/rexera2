@@ -4,6 +4,7 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from './trpc/router';
 import { createTRPCContext } from './trpc/context';
 import { config } from './config';
+import { restRouter } from './rest';
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.use(
   })
 );
 
+// REST API endpoints
+app.use('/api/rest', restRouter);
+
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
   res.json({
@@ -48,9 +52,6 @@ app.get('/health', (req: Request, res: Response) => {
     environment: config.nodeEnv
   });
 });
-
-// All API endpoints are now handled by tRPC
-// No REST routes needed
 
 // 404 handler
 app.use('*', (req: Request, res: Response) => {
@@ -77,6 +78,14 @@ app.listen(config.port, () => {
   console.log(`📊 Health check: http://localhost:${config.port}/health`);
   console.log(`⚡ tRPC API: http://localhost:${config.port}/api/trpc`);
   console.log(`🔧 Available tRPC routers: workflows, tasks, health, interrupts, agents, activities`);
+  console.log(`🌐 REST API: http://localhost:${config.port}/api/rest`);
+  console.log(`📋 REST endpoints:`);
+  console.log(`   GET    /api/rest/workflows - List workflows`);
+  console.log(`   GET    /api/rest/workflows/:id - Get workflow by ID`);
+  console.log(`   POST   /api/rest/workflows - Create workflow`);
+  console.log(`   GET    /api/rest/tasks - List tasks`);
+  console.log(`   POST   /api/rest/tasks - Create task`);
+  console.log(`   GET    /api/rest/health - Health check`);
 });
 
 export default app;

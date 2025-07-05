@@ -25,15 +25,16 @@ This document provides a comprehensive overview of the Rexera 2.0 project, inclu
 ## Technology Stack
 
 ### Core Technologies
-- **Frontend**: Next.js 14 with TypeScript 5+, Tailwind CSS, shadcn/ui
-- **Backend**: Supabase (PostgreSQL 14+) with Row-Level Security
-- **Workflow Engine**: n8n Cloud Enterprise for orchestration
+- **Frontend**: Next.js 15 with TypeScript 5+, Tailwind CSS, shadcn/ui
+- **Backend**: Express.js with tRPC Router, Supabase (PostgreSQL 14+) with Row-Level Security
+- **API Architecture**: Pure tRPC with end-to-end type safety and Zod validation
 - **Authentication**: Google SSO with JWT token management
-- **Hosting**: Vercel Pro for frontend, Supabase Pro for database
-- **Real-time**: WebSocket connections for live updates
+- **Hosting**: Vercel Pro for both frontend and API, Supabase Pro for database
+- **Real-time**: tRPC subscriptions for live updates
+- **Build System**: PNPM workspaces with Turborepo for monorepo orchestration
 
 ### AI Integration
-- **10 Specialized AI Agents** for comprehensive processing:
+- **Integrated AI Agents** for comprehensive processing (integrated into API layer):
   - Nina 🔍 (Research & Data Discovery)
   - Mia 📧 (Email Communication & Contact Management)
   - Florian 🗣️ (Phone Outreach & Call Handling)
@@ -47,27 +48,34 @@ This document provides a comprehensive overview of the Rexera 2.0 project, inclu
 
 ## Architecture Overview
 
-### Dual-Layer Design
-The platform employs a sophisticated dual-layer architecture:
+### Clean Monorepo Architecture
+The platform employs a clean, type-safe monorepo architecture:
 
-1. **Technical Orchestration Layer (n8n)**
-   - Handles complex workflow logic and agent coordination
-   - Manages external API integrations and data transformations
-   - Provides robust error handling and retry mechanisms
+1. **Frontend Layer (Next.js 15)**
+   - Pure tRPC client with end-to-end type safety
+   - Real-time updates via tRPC subscriptions
+   - Modern React patterns with server components
 
-2. **Business Visibility Layer (PostgreSQL)**
+2. **API Layer (Express.js + tRPC)**
+   - Clean Express.js backend with tRPC router
+   - All AI agent functionality integrated via tRPC procedures
+   - Zod validation schemas for input/output validation
+   - Context-based authentication and authorization
+
+3. **Database Layer (Supabase PostgreSQL)**
    - Stores all business-critical data and relationships
    - Enables real-time reporting and analytics
    - Supports HIL (Human-in-the-Loop) oversight and intervention
 
 ### Key Features
-- **Real-time Coordination**: WebSocket-powered live task updates
+- **End-to-End Type Safety**: tRPC procedures with Zod validation schemas
+- **Real-time Updates**: tRPC subscriptions for live task coordination
 - **SLA Monitoring**: Business hours calculation with multi-level alerting
 - **Email Threading**: Gmail-style conversation management
 - **File Intelligence**: Advanced tagging, categorization, and OCR processing
 - **HIL Dashboard**: Live workflow monitoring with interrupt handling
 - **Client Portal**: Real-time visibility into workflow progress
-- **Modular Architecture**: Separate workspaces for frontend and APIs while maintaining unified deployment
+- **Monorepo Architecture**: Clean separation with shared types and utilities
 
 ## Implementation Phases
 

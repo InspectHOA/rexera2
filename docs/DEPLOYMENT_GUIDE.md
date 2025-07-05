@@ -1,6 +1,6 @@
 # 🚀 Rexera 2.0 Deployment Guide - Complete Vercel Setup
 
-This guide covers deploying the Rexera monorepo to Vercel with **three separate projects**: Frontend, API, and Agents service.
+This guide covers deploying the Rexera monorepo to Vercel with **two separate projects**: Frontend (Next.js 15) and API (Express.js with tRPC).
 
 ## 📋 Prerequisites
 
@@ -15,11 +15,17 @@ This guide covers deploying the Rexera monorepo to Vercel with **three separate 
 
 ```
 rexera2/
-├── frontend/     → Vercel Project 1 (Next.js App)
-├── api/          → Vercel Project 2 (tRPC API)
-├── agents/       → Vercel Project 3 (AI Agents Service)
+├── frontend/     → Vercel Project 1 (Next.js 15 + tRPC Client)
+├── api/          → Vercel Project 2 (Express.js + tRPC Router)
 └── packages/     → Shared code (imported via workspace:*)
 ```
+
+**Key Changes:**
+- **Pure tRPC Architecture**: Complete migration from hybrid REST/tRPC to tRPC-only API
+- **Next.js 15**: Updated from Next.js 14 with enhanced tRPC integration
+- **Clean Express.js Backend**: All Next.js dependencies removed from API layer
+- **Monorepo Structure**: PNPM workspaces with Turborepo for build orchestration
+- **End-to-End Type Safety**: tRPC procedures with Zod validation schemas
 
 ---
 
@@ -46,6 +52,7 @@ git push origin main
    - **Framework:** Next.js (auto-detected)
    - **Build Command:** `npm run build`
    - **Output Directory:** `.next` (default)
+   - **Node.js Version:** 18.x (recommended for Next.js 15)
 
 3. **Deploy** (don't configure env vars yet)
 
@@ -62,26 +69,14 @@ git push origin main
    - **Framework:** Other
    - **Build Command:** `npm run build`
    - **Output Directory:** Leave empty
+   - **Node.js Version:** 18.x
+   - **Functions:** Uses `@vercel/node@5.3.2` runtime
 
 3. **Deploy** (don't configure env vars yet)
 
 **Result:** You'll get a URL like `https://rexera-api.vercel.app`
 
-### ✅ 4. Deploy Agents Project
-
-**Go to Vercel Dashboard → New Project**
-
-1. **Select the same repository**
-2. **Configure project:**
-   - **Project Name:** `rexera-agents`
-   - **Root Directory:** `agents`
-   - **Framework:** Other
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-
-3. **Deploy** (don't configure env vars yet)
-
-**Result:** You'll get a URL like `https://rexera-agents.vercel.app`
+**Note:** The API uses Express.js with tRPC router and is deployed as Vercel serverless functions.
 
 ---
 
@@ -97,8 +92,6 @@ git push origin main
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | Production, Preview, Development |
 | `NEXT_PUBLIC_API_URL` | `https://rexera-api.vercel.app` | Production, Preview |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:3001` | Development |
-| `NEXT_PUBLIC_AGENTS_URL` | `https://rexera-agents.vercel.app` | Production, Preview |
-| `NEXT_PUBLIC_AGENTS_URL` | `http://localhost:3002` | Development |
 | `NEXT_PUBLIC_POSTHOG_KEY` | `your_posthog_key_here` | Production, Preview |
 | `NEXT_PUBLIC_POSTHOG_HOST` | `https://app.posthog.com` | Production, Preview |
 | `NEXTAUTH_SECRET` | `your_nextauth_secret_here` | Production, Preview, Development |
@@ -118,30 +111,15 @@ git push origin main
 | `INTERNAL_API_KEY` | `rexera-internal-api-key-2024` | Production, Preview, Development |
 | `NODE_ENV` | `production` | Production |
 | `NODE_ENV` | `development` | Development |
-| `AGENTS_BASE_URL` | `https://rexera-agents.vercel.app` | Production, Preview |
-| `AGENTS_BASE_URL` | `http://localhost:3002` | Development |
-| `AGENTS_API_KEY` | `your_agents_api_key_here` | Production, Preview, Development |
 | `ENCRYPTION_KEY` | `your_32_character_encryption_key_here` | Production, Preview, Development |
 | `JWT_SECRET` | `your_jwt_secret_here` | Production, Preview, Development |
 | `SENTRY_DSN` | `your_sentry_dsn_here` | Production, Preview |
-
-### 🎯 Agents Environment Variables
-
-**Go to:** Vercel Dashboard → `rexera-agents` → Settings → Environment Variables
-
-| Variable | Value | Environment |
-|----------|-------|-------------|
-| `NODE_ENV` | `production` | Production |
-| `NODE_ENV` | `development` | Development |
-| `SUPABASE_URL` | `https://wmgidablmqotriwlefhq.supabase.co` | Production, Preview, Development |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | Production, Preview, Development |
-| `INTERNAL_API_KEY` | `rexera-internal-api-key-2024` | Production, Preview, Development |
 | `TURBO_TOKEN` | `your_turbo_token_here` | Production, Preview, Development |
 | `TURBO_TEAM` | `your_turbo_team_here` | Production, Preview, Development |
 
-### 🔧 Third-Party Service Variables (Add to relevant projects)
+### 🔧 Third-Party Service Variables (Add to API project)
 
-#### Email Services (API + Agents)
+#### Email Services
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -151,14 +129,14 @@ FROM_EMAIL=noreply@rexera.com
 SENDGRID_API_KEY=your_sendgrid_api_key_here
 ```
 
-#### SMS/Phone Services (Agents)
+#### SMS/Phone Services
 ```env
 TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
 TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
 TWILIO_PHONE_NUMBER=+1234567890
 ```
 
-#### Document Processing (Agents)
+#### Document Processing
 ```env
 GOOGLE_CLOUD_PROJECT_ID=your_gcp_project_id_here
 GOOGLE_CLOUD_PRIVATE_KEY_ID=your_gcp_private_key_id_here
@@ -167,37 +145,39 @@ GOOGLE_CLOUD_CLIENT_EMAIL=your_service_account@your_project.iam.gserviceaccount.
 GOOGLE_CLOUD_CLIENT_ID=your_gcp_client_id_here
 ```
 
-#### Web Scraping (Agents)
+#### Web Scraping
 ```env
 BROWSERLESS_API_KEY=your_browserless_api_key_here
 BROWSERLESS_URL=https://chrome.browserless.io
 ```
 
-#### Financial Services (API + Agents)
+#### Financial Services
 ```env
 STRIPE_PUBLIC_KEY=pk_live_your_stripe_public_key_here
 STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key_here
 STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret_here
 ```
 
+#### AI Services
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+**Note:** All AI agent functionality is now integrated into the API layer via tRPC procedures.
+
 ---
 
 ## 🔄 Update Cross-Service URLs
 
-After all three projects are deployed, update the environment variables with the actual URLs:
+After both projects are deployed, update the environment variables with the actual URLs:
 
 ### Frontend Project
 ```env
 NEXT_PUBLIC_API_URL=https://rexera-api.vercel.app
-NEXT_PUBLIC_AGENTS_URL=https://rexera-agents.vercel.app
 ```
 
-### API Project
-```env
-AGENTS_BASE_URL=https://rexera-agents.vercel.app
-```
-
-**Important:** After updating these URLs, redeploy all projects to pick up the new environment variables.
+**Important:** After updating this URL, redeploy the frontend project to pick up the new environment variable.
 
 ---
 
@@ -210,7 +190,6 @@ Create these files for local development:
 NEXT_PUBLIC_SUPABASE_URL=https://wmgidablmqotriwlefhq.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_AGENTS_URL=http://localhost:3002
 NEXTAUTH_SECRET=your_nextauth_secret_here
 NEXTAUTH_URL=http://localhost:3000
 ```
@@ -220,17 +199,26 @@ NEXTAUTH_URL=http://localhost:3000
 SUPABASE_URL=https://wmgidablmqotriwlefhq.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 INTERNAL_API_KEY=rexera-internal-api-key-2024
-AGENTS_BASE_URL=http://localhost:3002
 NODE_ENV=development
+JWT_SECRET=your_jwt_secret_here
+ENCRYPTION_KEY=your_32_character_encryption_key_here
 ```
 
-### `agents/.env.local`
-```env
-NODE_ENV=development
-SUPABASE_URL=https://wmgidablmqotriwlefhq.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-INTERNAL_API_KEY=rexera-internal-api-key-2024
+### Development Commands
+
+Start both services locally:
+
+```bash
+# Terminal 1 - Start API server
+cd api && npm run dev
+
+# Terminal 2 - Start frontend
+cd frontend && npm run dev
 ```
+
+The services will be available at:
+- **Frontend:** http://localhost:3000
+- **API:** http://localhost:3001
 
 ---
 
@@ -250,9 +238,6 @@ vercel --cwd frontend
 
 # Deploy API
 vercel --cwd api
-
-# Deploy agents
-vercel --cwd agents
 ```
 
 ### Using GitHub Integration (Recommended)
@@ -260,6 +245,22 @@ vercel --cwd agents
 1. **Connect GitHub:** Link your Vercel projects to GitHub branches
 2. **Auto-deploy:** Push to `main` branch triggers production deployment
 3. **Preview deploys:** Push to feature branches creates preview deployments
+
+### Using Turborepo for Build Orchestration
+
+The monorepo uses Turborepo for efficient builds:
+
+```bash
+# Build all projects
+npm run build
+
+# Build specific project
+npm run build --filter=frontend
+npm run build --filter=api
+
+# Development mode
+npm run dev
+```
 
 ---
 
@@ -275,18 +276,27 @@ curl https://rexera-frontend.vercel.app
 
 # API Health
 curl https://rexera-api.vercel.app/api/health
-
-# Agents Health
-curl https://rexera-agents.vercel.app/api/agents/health
 ```
 
-### 2. Cross-Service Communication
+### 2. tRPC API Testing
 
-Test API → Agents communication:
+Test tRPC procedures:
+
 ```bash
-curl -X POST https://rexera-api.vercel.app/api/workflows \
+# Test workflows list
+curl -X POST https://rexera-api.vercel.app/api/trpc/workflows.list \
   -H "Content-Type: application/json" \
-  -d '{"type": "test", "data": {}}'
+  -d '{"json":{"page":1,"limit":10}}'
+
+# Test tasks list
+curl -X POST https://rexera-api.vercel.app/api/trpc/tasks.list \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"page":1,"limit":10}}'
+
+# Test health check via tRPC
+curl -X POST https://rexera-api.vercel.app/api/trpc/health.check \
+  -H "Content-Type: application/json" \
+  -d '{"json":{}}'
 ```
 
 ### 3. Frontend → API Communication
@@ -294,7 +304,23 @@ curl -X POST https://rexera-api.vercel.app/api/workflows \
 Visit your frontend URL and check:
 - ✅ Login functionality
 - ✅ Dashboard loads
-- ✅ API calls work in browser dev tools
+- ✅ tRPC calls work in browser dev tools
+- ✅ Type-safe API communication
+- ✅ Real-time updates (if using tRPC subscriptions)
+
+### 4. Development Testing
+
+For local development testing:
+
+```bash
+# Test local API health
+curl http://localhost:3001/api/health
+
+# Test local tRPC procedures
+curl -X POST http://localhost:3001/api/trpc/workflows.list \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"page":1,"limit":5}}'
+```
 
 ---
 
@@ -365,10 +391,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build projects
+        run: npm run build
+          
       - name: Deploy Frontend
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.ORG_ID }}
@@ -376,42 +414,50 @@ jobs:
           working-directory: ./frontend
           
       - name: Deploy API
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.ORG_ID }}
           vercel-project-id: ${{ secrets.API_PROJECT_ID }}
           working-directory: ./api
-          
-      - name: Deploy Agents
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.ORG_ID }}
-          vercel-project-id: ${{ secrets.AGENTS_PROJECT_ID }}
-          working-directory: ./agents
 ```
+
+### Required GitHub Secrets
+
+Add these secrets to your GitHub repository:
+
+- `VERCEL_TOKEN`: Your Vercel API token
+- `ORG_ID`: Your Vercel organization ID
+- `FRONTEND_PROJECT_ID`: Frontend project ID from Vercel
+- `API_PROJECT_ID`: API project ID from Vercel
 
 ---
 
 ## 📊 Monitoring & Observability
 
 ### Vercel Analytics
-- Enable in each project's settings
+- Enable in both project settings
 - Monitor performance and usage
 
 ### Error Tracking
-- Sentry configured for all three services
+- Sentry configured for both services
 - Real-time error monitoring
 
 ### Logging
 - Vercel function logs
-- Custom logging with LogTail
+- Custom logging with structured output
 
 ### Health Monitoring
 - Automated health checks every 5 minutes
-- Agent monitoring every 2 minutes
+- tRPC procedure monitoring
+- Database connection monitoring
 - Daily cleanup jobs
+
+### Performance Monitoring
+- Next.js 15 performance metrics
+- tRPC procedure execution times
+- Database query performance
+- Real-time error tracking
 
 ---
 
@@ -419,8 +465,14 @@ jobs:
 
 Your Rexera system is now deployed with:
 
-- **Frontend:** `https://rexera-frontend.vercel.app`
-- **API:** `https://rexera-api.vercel.app`
-- **Agents:** `https://rexera-agents.vercel.app`
+- **Frontend:** `https://rexera-frontend.vercel.app` (Next.js 15 + tRPC Client)
+- **API:** `https://rexera-api.vercel.app` (Express.js + tRPC Router)
 
-All three services are connected and ready to handle real estate workflows! 🏠✨
+Both services are connected with end-to-end type safety and ready to handle real estate workflows! 🏠✨
+
+### Key Benefits of This Architecture:
+- **Type Safety**: End-to-end TypeScript with tRPC
+- **Performance**: Next.js 15 optimizations and efficient API calls
+- **Scalability**: Serverless deployment on Vercel
+- **Developer Experience**: Hot reloading, type checking, and modern tooling
+- **Maintainability**: Clean separation of concerns and monorepo structure

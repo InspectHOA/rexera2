@@ -19,8 +19,8 @@ graph TB
     end
     
     subgraph "Frontend Layer (Vercel)"
-        UI[Next.js 14 App]
-        API[API Routes (APIs workspace)]
+        UI[Next.js 15 App]
+        API[tRPC API Routes]
         MW[Auth Middleware]
     end
     
@@ -159,12 +159,12 @@ graph TD
 - **Audit Trails** for compliance and debugging
 
 ### API Layer
-- **12 Unified Endpoints** with Resources + Actions + Views + Events pattern
-- **Flexible Include Parameters** for optimized data loading
+- **Pure tRPC Procedures** with type-safe client-server communication
+- **Flexible Input Schemas** with Zod validation for optimized data loading
 - **WebSocket Subscriptions** for real-time updates
 - **Webhook Endpoints** for external system notifications
 - **Authentication Middleware** with JWT token validation
-- **Type-Safe Interfaces** with consistent response formats
+- **End-to-End Type Safety** with shared TypeScript types
 
 ## System Integration Patterns
 
@@ -255,17 +255,18 @@ sequenceDiagram
 
 ## Technology Stack Decisions
 
-### Frontend Layer: Next.js 14
+### Frontend Layer: Next.js 15
 
-**Why Next.js 14 was chosen:**
+**Why Next.js 15 was chosen:**
 - **App Router Architecture**: Modern file-based routing with server components for optimal performance
 - **Server-Side Rendering (SSR)**: Critical for HIL dashboard performance with large datasets
 - **Real-time Capabilities**: Native WebSocket support for live workflow updates
-- **TypeScript Integration**: Full type safety across frontend and API layers
+- **TypeScript Integration**: Full type safety across frontend and API layers with enhanced tRPC integration
 - **Vercel Deployment**: Seamless CI/CD with automatic scaling and edge optimization
 - **Component Architecture**: Reusable UI elements for consistent user experience
 - **State Management**: Zustand integration for complex workflow state handling
 - **Authentication**: Native integration with Supabase Auth for secure access control
+- **Pure tRPC Integration**: End-to-end type safety with tRPC client
 
 **Key Features:**
 - Server-Side Rendering for optimal performance

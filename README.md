@@ -8,8 +8,8 @@ A scalable, maintainable monorepo for AI-powered real estate workflow automation
 
 This architecture uses a modern monorepo approach with multiple specialized services:
 
-- **Frontend Service**: Next.js 14 with App Router for user interface
-- **API Service**: Express.js server with tRPC for type-safe APIs
+- **Frontend Service**: Next.js 15 with App Router for user interface
+- **API Service**: Clean Express.js server with pure tRPC for type-safe APIs
 - **AI Agents Service**: Specialized AI agents for real estate tasks
 - **Workflows Service**: Workflow orchestration and automation
 - **Shared Packages**: Common types, schemas, and utilities
@@ -20,9 +20,9 @@ This architecture uses a modern monorepo approach with multiple specialized serv
 ### Architecture Diagram
 
 ```
-┌─────────────────┐    tRPC/HTTP      ┌─────────────────┐
+┌─────────────────┐    Pure tRPC      ┌─────────────────┐
 │   Frontend      │ ──────────────► │   API Server    │
-│   (Next.js 14)  │                  │ (Express+tRPC)  │
+│   (Next.js 15)  │                  │ (Express+tRPC)  │
 │   Port 3000     │                  │   Port 3002     │
 └─────────────────┘                  └─────────────────┘
          │                                     │
@@ -41,7 +41,7 @@ This architecture uses a modern monorepo approach with multiple specialized serv
 ### Technology Stack
 
 **Frontend:**
-- Next.js 14 with App Router
+- Next.js 15 with App Router
 - TypeScript for type safety
 - Tailwind CSS + Radix UI for styling
 - Supabase for authentication and real-time data
@@ -49,7 +49,7 @@ This architecture uses a modern monorepo approach with multiple specialized serv
 - tRPC for type-safe API calls
 
 **API:**
-- Express.js server with tRPC
+- Clean Express.js server with pure tRPC
 - TypeScript for consistency
 - Supabase for database operations
 - CORS for cross-origin requests
@@ -315,7 +315,7 @@ This will start:
    
    Expected output:
    ```
-   ▲ Next.js 14.0.3
+   ▲ Next.js 15.0.3
    - Local:        http://localhost:3000
    - Ready in 2.1s
    ```
@@ -334,7 +334,7 @@ This will start:
 - Frontend: http://localhost:3000
 - API Health: http://localhost:3002/health
 - API tRPC: http://localhost:3002/api/trpc
-- API Workflows: http://localhost:3002/api/workflows
+- tRPC Workflows: http://localhost:3002/api/trpc/workflows.list
 
 ### Port Configuration
 
@@ -378,10 +378,10 @@ pnpm dev
 
 ### API Architecture
 
-The API uses a hybrid approach:
+The API uses a pure tRPC approach:
 - **tRPC**: Type-safe API calls at `/api/trpc`
-- **REST**: Traditional REST endpoints for external integrations
-- **Express**: Underlying server framework
+- **Express**: Clean underlying server framework
+- **No REST**: All endpoints migrated to tRPC procedures
 
 ### Health Check
 
@@ -421,146 +421,258 @@ const { data: workflows } = trpc.workflows.list.useQuery({
 const createWorkflow = trpc.workflows.create.useMutation();
 ```
 
-### Workflows API
+### Workflows tRPC Procedures
 
 #### List Workflows
 
-**GET** `/api/workflows`
+**tRPC Procedure**: `workflows.list`
 
-Query Parameters:
-- `status` (optional): Filter by workflow status
-- `limit` (optional): Number of results (default: 50)
-- `offset` (optional): Pagination offset
+Input Schema:
+```typescript
+{
+  status?: string;     // Filter by workflow status
+  limit?: number;      // Number of results (default: 50)
+  page?: number;       // Page number for pagination
+}
+```
 
+**Frontend Usage:**
+```typescript
+const { data: workflows } = trpc.workflows.list.useQuery({
+  status: 'active',
+  limit: 10,
+  page: 1
+});
+```
+
+**cURL Example:**
 ```bash
-curl "http://localhost:3002/api/workflows?status=active&limit=10"
+curl -X POST http://localhost:3002/api/trpc/workflows.list \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"status":"active","limit":10,"page":1}}'
 ```
 
 Response:
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "wf_123",
-      "title": "HOA Document Processing",
-      "status": "active",
-      "created_at": "2024-01-15T10:00:00.000Z",
-      "updated_at": "2024-01-15T10:30:00.000Z",
-      "tasks_count": 5,
-      "completed_tasks": 2
+  "result": {
+    "data": {
+      "json": {
+        "workflows": [
+          {
+            "id": "wf_123",
+            "title": "HOA Document Processing",
+            "status": "active",
+            "created_at": "2024-01-15T10:00:00.000Z",
+            "updated_at": "2024-01-15T10:30:00.000Z",
+            "tasks_count": 5,
+            "completed_tasks": 2
+          }
+        ],
+        "pagination": {
+          "total": 25,
+          "limit": 10,
+          "page": 1,
+          "has_more": true
+        }
+      }
     }
-  ],
-  "pagination": {
-    "total": 25,
-    "limit": 10,
-    "offset": 0,
-    "has_more": true
   }
 }
 ```
 
 #### Create Workflow
 
-**POST** `/api/workflows`
+**tRPC Procedure**: `workflows.create`
 
-Request Body:
-```json
+Input Schema:
+```typescript
 {
-  "title": "New Workflow",
-  "description": "Workflow description",
-  "type": "hoa_acquisition"
+  title: string;
+  description?: string;
+  type: "hoa_acquisition" | "lien_processing" | "payoff_request";
 }
+```
+
+**Frontend Usage:**
+```typescript
+const createWorkflow = trpc.workflows.create.useMutation();
+
+await createWorkflow.mutateAsync({
+  title: "New Workflow",
+  description: "Workflow description",
+  type: "hoa_acquisition"
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/workflows.create \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"title":"New Workflow","description":"Workflow description","type":"hoa_acquisition"}}'
 ```
 
 Response:
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "wf_456",
-    "title": "New Workflow",
-    "status": "pending",
-    "created_at": "2024-01-15T11:00:00.000Z"
+  "result": {
+    "data": {
+      "json": {
+        "id": "wf_456",
+        "title": "New Workflow",
+        "status": "pending",
+        "created_at": "2024-01-15T11:00:00.000Z"
+      }
+    }
   }
 }
 ```
 
 #### Get Specific Workflow
 
-**GET** `/api/workflows/:id`
+**tRPC Procedure**: `workflows.getById`
 
+Input Schema:
+```typescript
+{
+  id: string;
+}
+```
+
+**Frontend Usage:**
+```typescript
+const { data: workflow } = trpc.workflows.getById.useQuery({
+  id: "wf_123"
+});
+```
+
+**cURL Example:**
 ```bash
-curl http://localhost:3002/api/workflows/wf_123
+curl -X POST http://localhost:3002/api/trpc/workflows.getById \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"id":"wf_123"}}'
 ```
 
 Response:
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "wf_123",
-    "title": "HOA Document Processing",
-    "description": "Processing HOA financial documents",
-    "status": "active",
-    "tasks": [
-      {
-        "id": "task_789",
-        "title": "Document Upload",
-        "status": "completed",
-        "assigned_agent": "mia"
+  "result": {
+    "data": {
+      "json": {
+        "id": "wf_123",
+        "title": "HOA Document Processing",
+        "description": "Processing HOA financial documents",
+        "status": "active",
+        "tasks": [
+          {
+            "id": "task_789",
+            "title": "Document Upload",
+            "status": "completed",
+            "assigned_agent": "mia"
+          }
+        ]
       }
-    ]
+    }
   }
 }
 ```
 
-### Tasks API
+### Tasks tRPC Procedures
 
 #### List Tasks
 
-**GET** `/api/tasks`
+**tRPC Procedure**: `tasks.list`
 
-Query Parameters:
-- `workflow_id` (optional): Filter by workflow
-- `status` (optional): Filter by task status
-- `assigned_agent` (optional): Filter by agent
+Input Schema:
+```typescript
+{
+  workflow_id?: string;     // Filter by workflow
+  status?: string;          // Filter by task status
+  assigned_agent?: string;  // Filter by agent
+  limit?: number;           // Number of results (default: 50)
+  page?: number;            // Page number for pagination
+}
+```
 
+**Frontend Usage:**
+```typescript
+const { data: tasks } = trpc.tasks.list.useQuery({
+  workflow_id: 'wf_123',
+  status: 'pending',
+  limit: 10,
+  page: 1
+});
+```
+
+**cURL Example:**
 ```bash
-curl "http://localhost:3002/api/tasks?workflow_id=wf_123&status=pending"
+curl -X POST http://localhost:3002/api/trpc/tasks.list \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"workflow_id":"wf_123","status":"pending","limit":10}}'
 ```
 
 Response:
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "task_789",
-      "workflow_id": "wf_123",
-      "title": "Review Documents",
-      "description": "Review uploaded HOA documents",
-      "status": "pending",
-      "assigned_agent": "mia",
-      "created_at": "2024-01-15T10:15:00.000Z",
-      "due_date": "2024-01-16T10:15:00.000Z"
+  "result": {
+    "data": {
+      "json": {
+        "tasks": [
+          {
+            "id": "task_789",
+            "workflow_id": "wf_123",
+            "title": "Review Documents",
+            "description": "Review uploaded HOA documents",
+            "status": "pending",
+            "assigned_agent": "mia",
+            "created_at": "2024-01-15T10:15:00.000Z",
+            "due_date": "2024-01-16T10:15:00.000Z"
+          }
+        ],
+        "pagination": {
+          "total": 15,
+          "limit": 10,
+          "page": 1,
+          "has_more": true
+        }
+      }
     }
-  ]
+  }
 }
 ```
 
 #### Create Task
 
-**POST** `/api/tasks`
+**tRPC Procedure**: `tasks.create`
 
-Request Body:
-```json
+Input Schema:
+```typescript
 {
-  "workflow_id": "wf_123",
-  "title": "New Task",
-  "description": "Task description",
-  "assigned_agent": "mia"
+  workflow_id: string;
+  title: string;
+  description?: string;
+  assigned_agent?: string;
+  due_date?: string;
 }
+```
+
+**Frontend Usage:**
+```typescript
+const createTask = trpc.tasks.create.useMutation();
+
+await createTask.mutateAsync({
+  workflow_id: "wf_123",
+  title: "New Task",
+  description: "Task description",
+  assigned_agent: "mia"
+});
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3002/api/trpc/tasks.create \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"workflow_id":"wf_123","title":"New Task","description":"Task description","assigned_agent":"mia"}}'
 ```
 
 ### Error Handling
@@ -707,36 +819,61 @@ Each service has its own `vercel.json` configuration file:
 
 ### Deployment Steps
 
+#### Option 1: Individual Service Deployment
+
 1. **Deploy API First**
    ```bash
    cd api
-   vercel
+   vercel --prod
    ```
 
-2. **Deploy Agents Service**
-   ```bash
-   cd agents
-   vercel
-   ```
-
-3. **Deploy Frontend**
+2. **Deploy Frontend (with API URL)**
    ```bash
    cd frontend
-   vercel
+   # Set API URL environment variable
+   vercel env add NEXT_PUBLIC_API_URL production
+   vercel --prod
    ```
 
-4. **Deploy Workflows (if applicable)**
+3. **Deploy Agents Service**
+   ```bash
+   cd agents
+   vercel --prod
+   ```
+
+4. **Deploy Workflows Service**
    ```bash
    cd workflows
-   vercel
+   vercel --prod
    ```
 
-### Alternative: Turborepo Deployment
+#### Option 2: Monorepo Deployment with Turborepo
 
 ```bash
-# Deploy all services using Turborepo
-pnpm run deploy:staging  # For staging
-pnpm run deploy:prod     # For production
+# Build all services first
+pnpm run build
+
+# Deploy using Turborepo pipeline
+pnpm run deploy:staging  # For staging environment
+pnpm run deploy:prod     # For production environment
+
+# Or deploy specific services
+pnpm run deploy:api      # Deploy API only
+pnpm run deploy:frontend # Deploy frontend only
+```
+
+#### Option 3: Vercel Monorepo (Recommended)
+
+Configure Vercel to deploy from monorepo root with proper build settings:
+
+```bash
+# Deploy entire monorepo with Vercel
+vercel --prod
+
+# Vercel will automatically detect:
+# - Frontend service at /frontend
+# - API service at /api
+# - Proper build commands from package.json
 ```
 
 ### Environment Variables in Vercel
@@ -859,14 +996,18 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-**REST API (External integrations):**
+**tRPC API (External integrations):**
 ```bash
 # Development
-curl http://localhost:3002/api/workflows
+curl -X POST http://localhost:3002/api/trpc/workflows.list \
+  -H "Content-Type: application/json" \
+  -d '{"json":{"limit":10}}'
 
 # Production
-curl https://rexera-api.vercel.app/api/workflows \
-  -H "Authorization: Bearer your-api-key"
+curl -X POST https://rexera-api.vercel.app/api/trpc/workflows.list \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{"json":{"limit":10}}'
 ```
 
 **Supported Integrations:**
@@ -993,7 +1134,9 @@ pnpm --filter @rexera/frontend dev
    curl http://localhost:3002/health
    
    # tRPC Health
-   curl http://localhost:3002/api/trpc/health.check
+   curl -X POST http://localhost:3002/api/trpc/health.check \
+     -H "Content-Type: application/json" \
+     -d '{"json":{}}'
    
    # Frontend
    curl http://localhost:3000

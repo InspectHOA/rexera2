@@ -8,94 +8,85 @@ This document provides comprehensive environment variable configuration for Rexe
 
 Rexera 2.0 requires environment variables across **multiple services** and **deployment environments**:
 
-- **Next.js Frontend** - Client and server-side configuration
+- **Next.js 15 Frontend** - Client and server-side configuration with tRPC client
+- **Express.js API** - tRPC router with integrated AI agents
 - **Supabase Database** - Authentication and database connection
-- **n8n Workflows** - Agent endpoints and webhook configuration
-- **AI Agents** - Service URLs and API keys
 - **External Services** - Google OAuth, monitoring, and analytics
 
 ### Environment Files Structure
 
 ```bash
-rexera2-frontend/
-├── .env.example          # Template with all variables
-├── .env.local           # Local development (gitignored)
-├── .env.development     # Development environment
-├── .env.staging         # Staging environment  
-├── .env.production      # Production environment (secure vault)
-└── .env.test           # Testing environment
+rexera2/
+├── frontend/
+│   ├── .env.example          # Frontend template
+│   ├── .env.local           # Local development (gitignored)
+│   └── .env.production      # Production environment
+├── api/
+│   ├── .env.example          # API template
+│   ├── .env.local           # Local development (gitignored)
+│   └── .env.production      # Production environment
+└── packages/                 # Shared configuration
 ```
 
 ## Core Service Configuration
 
-### Supabase Database
+### Frontend Environment Variables
 
 ```bash
-# Supabase Configuration
+# Frontend (Next.js 15) Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_API_URL=https://rexera-api.vercel.app
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_URL=https://rexera-frontend.vercel.app
+```
+
+**Security Notes:**
+- `NEXT_PUBLIC_*` variables are exposed to the client
+- `NEXTAUTH_SECRET` is server-side only for authentication
+
+### API Environment Variables
+
+```bash
+# API (Express.js + tRPC) Configuration
+SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_JWT_SECRET=your-jwt-secret-key
+INTERNAL_API_KEY=rexera-internal-api-key-2024
+NODE_ENV=production
+JWT_SECRET=your_jwt_secret_here
+ENCRYPTION_KEY=your_32_character_encryption_key_here
 
 # Database Connection (for direct access)
 DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
 ```
 
 **Security Notes:**
-- `NEXT_PUBLIC_*` variables are exposed to the client
-- `SUPABASE_SERVICE_ROLE_KEY` is server-side only
-- `SUPABASE_JWT_SECRET` used for token verification
+- All API variables are server-side only
+- `SUPABASE_SERVICE_ROLE_KEY` provides admin database access
+- `INTERNAL_API_KEY` for internal service communication
 
-### n8n Workflow Engine
-
-```bash
-# n8n Integration
-NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
-N8N_API_KEY=your_n8n_enterprise_api_key
-N8N_INSTANCE_URL=https://rexera.app.n8n.cloud
-
-# Webhook Endpoints
-N8N_PAYOFF_WEBHOOK=/webhook/payoff
-N8N_HOA_WEBHOOK=/webhook/hoa
-N8N_LIEN_WEBHOOK=/webhook/lien
-```
-
-**Usage:**
-- Webhook URLs for triggering workflows
-- API key for n8n management operations
-- Instance URL for workflow administration
-
-### AI Agent Endpoints
+### AI Agent Integration
 
 ```bash
-# AI Agent URLs (Production)
-NEXT_PUBLIC_NINA_AGENT_URL=https://api.rexera-agents.com/nina
-NEXT_PUBLIC_MIA_AGENT_URL=https://api.rexera-agents.com/mia
-NEXT_PUBLIC_FLORIAN_AGENT_URL=https://api.rexera-agents.com/florian
-NEXT_PUBLIC_REX_AGENT_URL=https://api.rexera-agents.com/rex
-NEXT_PUBLIC_IRIS_AGENT_URL=https://api.rexera-agents.com/iris
-NEXT_PUBLIC_RIA_AGENT_URL=https://api.rexera-agents.com/ria
-NEXT_PUBLIC_KOSHA_AGENT_URL=https://api.rexera-agents.com/kosha
-NEXT_PUBLIC_CASSY_AGENT_URL=https://api.rexera-agents.com/cassy
-NEXT_PUBLIC_MAX_AGENT_URL=https://api.rexera-agents.com/max
-NEXT_PUBLIC_COREY_AGENT_URL=https://api.rexera-agents.com/corey
-
-# Agent Authentication
-AGENT_API_KEY=your_agent_api_key
+# AI Services (integrated into API layer)
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 AGENT_TIMEOUT_MS=30000
 ```
 
-**Agent Descriptions:**
-- **Nina** 🔍 - Research and data gathering
-- **Mia** 📧 - Email communication
-- **Florian** 📞 - Phone communication
-- **Rex** 🌐 - Web portal automation
-- **Iris** 📄 - Document processing
-- **Ria** 👩‍💼 - Client relationship management
-- **Kosha** 💰 - Financial operations
-- **Cassy** ✅ - Quality assurance
-- **Max** 🤖 - IVR system interaction
-- **Corey** 🏢 - HOA specialist
+**Agent Integration:**
+All AI agents are now integrated into the API layer via tRPC procedures:
+- **Nina** 🔍 - Research and data gathering (`agents.nina.*`)
+- **Mia** 📧 - Email communication (`agents.mia.*`)
+- **Florian** 📞 - Phone communication (`agents.florian.*`)
+- **Rex** 🌐 - Web portal automation (`agents.rex.*`)
+- **Iris** 📄 - Document processing (`agents.iris.*`)
+- **Ria** 👩‍💼 - Client relationship management (`agents.ria.*`)
+- **Kosha** 💰 - Financial operations (`agents.kosha.*`)
+- **Cassy** ✅ - Quality assurance (`agents.cassy.*`)
+- **Max** 🤖 - IVR system interaction (`agents.max.*`)
+- **Corey** 🏢 - HOA specialist (`agents.corey.*`)
 
 ## Authentication & Security
 
@@ -117,15 +108,13 @@ REFRESH_TOKEN_EXPIRES_IN=7d
 
 ```bash
 # Site Configuration
-NEXT_PUBLIC_SITE_URL=https://app.rexera.com
-NEXT_PUBLIC_API_URL=https://app.rexera.com/api
-NEXT_PUBLIC_WS_URL=wss://app.rexera.com/ws
+NEXT_PUBLIC_SITE_URL=https://rexera-frontend.vercel.app
+NEXT_PUBLIC_API_URL=https://rexera-api.vercel.app
 
-# Domain Configuration
+# Domain Configuration (if using custom domains)
 NEXT_PUBLIC_DOMAIN=rexera.com
 NEXT_PUBLIC_SUBDOMAIN_APP=app
-NEXT_PUBLIC_SUBDOMAIN_WORKFLOWS=workflows
-NEXT_PUBLIC_SUBDOMAIN_DB=db
+NEXT_PUBLIC_SUBDOMAIN_API=api
 ```
 
 ## Feature Flags & Configuration
@@ -138,19 +127,21 @@ NEXT_PUBLIC_ENABLE_REAL_TIME=true
 NEXT_PUBLIC_ENABLE_BETA_FEATURES=false
 NEXT_PUBLIC_ENABLE_DEBUG_MODE=false
 NEXT_PUBLIC_ENABLE_ANALYTICS=true
-NEXT_PUBLIC_ENABLE_UNIFIED_API=true
 
 # Performance Configuration
 NEXT_PUBLIC_MAX_CONCURRENT_WORKFLOWS=100
 NEXT_PUBLIC_MAX_FILE_SIZE_MB=50
 NEXT_PUBLIC_REQUEST_TIMEOUT_MS=30000
-NEXT_PUBLIC_WEBSOCKET_RECONNECT_ATTEMPTS=5
-NEXT_PUBLIC_API_BATCH_SIZE=50
+NEXT_PUBLIC_TRPC_BATCH_SIZE=50
 
 # UI Configuration
 NEXT_PUBLIC_DEFAULT_THEME=light
 NEXT_PUBLIC_ENABLE_DARK_MODE=true
 NEXT_PUBLIC_PAGINATION_SIZE=20
+
+# tRPC Configuration
+NEXT_PUBLIC_TRPC_BATCH_ENABLED=true
+NEXT_PUBLIC_TRPC_SUBSCRIPTION_ENABLED=true
 ```
 
 ### Business Configuration
@@ -225,25 +216,44 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 ### Development Environment
 
+#### Frontend (.env.local)
 ```bash
-# .env.development
 NODE_ENV=development
 NEXT_PUBLIC_APP_ENV=development
 
-# Local Services
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_N8N_WEBHOOK_URL=http://localhost:5678/webhook
+# Local API Connection
+NEXT_PUBLIC_API_URL=http://localhost:3001
 
-# Agent URLs (Local/Staging)
-NEXT_PUBLIC_NINA_AGENT_URL=http://localhost:3001/nina
-NEXT_PUBLIC_MIA_AGENT_URL=http://localhost:3002/mia
-# ... other agents
+# Supabase (can use local or remote)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Authentication
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_URL=http://localhost:3000
 
 # Debug Configuration
 NEXT_PUBLIC_ENABLE_DEBUG_MODE=true
 NEXT_PUBLIC_LOG_LEVEL=debug
-NEXT_PUBLIC_ENABLE_MOCK_AGENTS=true
-NEXT_PUBLIC_ENABLE_UNIFIED_API_MODE=true
+```
+
+#### API (.env.local)
+```bash
+NODE_ENV=development
+
+# Database
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+
+# Internal Configuration
+INTERNAL_API_KEY=rexera-internal-api-key-2024
+JWT_SECRET=your_jwt_secret_here
+ENCRYPTION_KEY=your_32_character_encryption_key_here
+
+# AI Services
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
 ### Staging Environment
@@ -269,24 +279,46 @@ NEXT_PUBLIC_MAX_CONCURRENT_WORKFLOWS=10
 
 ### Production Environment
 
+#### Frontend Production
 ```bash
-# .env.production
 NODE_ENV=production
 NEXT_PUBLIC_APP_ENV=production
 
 # Production Services
 NEXT_PUBLIC_SUPABASE_URL=https://rexera-prod.supabase.co
-NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
-NEXT_PUBLIC_SITE_URL=https://app.rexera.com
+NEXT_PUBLIC_API_URL=https://rexera-api.vercel.app
+NEXT_PUBLIC_SITE_URL=https://rexera-frontend.vercel.app
 
-# Production Agent URLs
-NEXT_PUBLIC_NINA_AGENT_URL=https://api.rexera-agents.com/nina
-# ... other production agents
+# Authentication
+NEXTAUTH_SECRET=your_production_nextauth_secret
+NEXTAUTH_URL=https://rexera-frontend.vercel.app
 
 # Production Configuration
 NEXT_PUBLIC_ENABLE_DEBUG_MODE=false
 NEXT_PUBLIC_ENABLE_BETA_FEATURES=false
 NEXT_PUBLIC_MAX_CONCURRENT_WORKFLOWS=100
+```
+
+#### API Production
+```bash
+NODE_ENV=production
+
+# Database
+SUPABASE_URL=https://rexera-prod.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_production_service_role_key
+SUPABASE_JWT_SECRET=your_production_jwt_secret
+
+# Security
+INTERNAL_API_KEY=your_production_internal_api_key
+JWT_SECRET=your_production_jwt_secret
+ENCRYPTION_KEY=your_production_encryption_key
+
+# AI Services
+OPENAI_API_KEY=your_production_openai_key
+ANTHROPIC_API_KEY=your_production_anthropic_key
+
+# Monitoring
+SENTRY_DSN=your_sentry_dsn
 ```
 
 ## Security Best Practices
@@ -436,55 +468,27 @@ COPY .env.example .env.example
 RUN npm run build
 ```
 
-### Environment File Template
+### Environment File Templates
+
+#### Frontend (.env.example)
 
 ```bash
-# .env.example - Template for all environments
-# Copy to .env.local and fill in actual values
-
 # =============================================================================
-# CORE SERVICES
+# FRONTEND ENVIRONMENT VARIABLES
 # =============================================================================
 
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-SUPABASE_JWT_SECRET=your_jwt_secret
 
-# n8n Workflow Engine
-NEXT_PUBLIC_N8N_WEBHOOK_URL=https://workflows.rexera.com/webhook
-N8N_API_KEY=your_n8n_api_key
+# API Configuration
+NEXT_PUBLIC_API_URL=https://rexera-api.vercel.app
 
-# =============================================================================
-# AI AGENTS
-# =============================================================================
+# Authentication
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_URL=https://rexera-frontend.vercel.app
 
-NEXT_PUBLIC_NINA_AGENT_URL=https://api.rexera-agents.com/nina
-NEXT_PUBLIC_MIA_AGENT_URL=https://api.rexera-agents.com/mia
-NEXT_PUBLIC_FLORIAN_AGENT_URL=https://api.rexera-agents.com/florian
-NEXT_PUBLIC_REX_AGENT_URL=https://api.rexera-agents.com/rex
-NEXT_PUBLIC_IRIS_AGENT_URL=https://api.rexera-agents.com/iris
-NEXT_PUBLIC_RIA_AGENT_URL=https://api.rexera-agents.com/ria
-NEXT_PUBLIC_KOSHA_AGENT_URL=https://api.rexera-agents.com/kosha
-NEXT_PUBLIC_CASSY_AGENT_URL=https://api.rexera-agents.com/cassy
-NEXT_PUBLIC_MAX_AGENT_URL=https://api.rexera-agents.com/max
-NEXT_PUBLIC_COREY_AGENT_URL=https://api.rexera-agents.com/corey
-AGENT_API_KEY=your_agent_api_key
-
-# =============================================================================
-# AUTHENTICATION
-# =============================================================================
-
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-JWT_SECRET=your_jwt_secret_minimum_32_characters
-
-# =============================================================================
-# APPLICATION CONFIGURATION
-# =============================================================================
-
-NEXT_PUBLIC_SITE_URL=https://app.rexera.com
+# Application Configuration
 NEXT_PUBLIC_APP_ENV=production
 NODE_ENV=production
 
@@ -494,22 +498,54 @@ NEXT_PUBLIC_ENABLE_BETA_FEATURES=false
 NEXT_PUBLIC_ENABLE_DEBUG_MODE=false
 NEXT_PUBLIC_MAX_CONCURRENT_WORKFLOWS=100
 
-# =============================================================================
-# EXTERNAL SERVICES (Optional)
-# =============================================================================
+# tRPC Configuration
+NEXT_PUBLIC_TRPC_BATCH_ENABLED=true
+NEXT_PUBLIC_TRPC_SUBSCRIPTION_ENABLED=true
 
-# Analytics & Monitoring
+# Analytics & Monitoring (Optional)
 NEXT_PUBLIC_ANALYTICS_ID=your_analytics_id
-SENTRY_DSN=your_sentry_dsn
+```
 
-# Communication
-SLACK_WEBHOOK_URL=your_slack_webhook_url
+#### API (.env.example)
+
+```bash
+# =============================================================================
+# API ENVIRONMENT VARIABLES
+# =============================================================================
+
+# Database Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+
+# Security
+INTERNAL_API_KEY=rexera-internal-api-key-2024
+JWT_SECRET=your_jwt_secret_here
+ENCRYPTION_KEY=your_32_character_encryption_key_here
+
+# Application Configuration
+NODE_ENV=production
+
+# AI Services
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# External Services (Optional)
+SENTRY_DSN=your_sentry_dsn
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@rexera.com
+SMTP_PASSWORD=your_app_password
 FROM_EMAIL=noreply@rexera.com
 
-# File Storage
+# File Storage (Optional)
 AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_S3_BUCKET=rexera-documents
+
+# Build System (Optional)
+TURBO_TOKEN=your_turbo_token_here
+TURBO_TEAM=your_turbo_team_here
 ```
 
 ---
