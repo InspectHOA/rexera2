@@ -43,6 +43,15 @@ export const config = {
   api: {
     baseUrl: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 3002}`,
     version: 'v1',
+  },
+
+  // n8n Integration Configuration
+  n8n: {
+    apiKey: process.env.N8N_API_KEY || '',
+    baseUrl: process.env.N8N_BASE_URL || 'http://localhost:5678',
+    webhookUrl: process.env.N8N_WEBHOOK_URL || '',
+    webhookSecret: process.env.N8N_WEBHOOK_SECRET || '',
+    payoffWorkflowId: process.env.N8N_PAYOFF_WORKFLOW_ID || '',
   }
 };
 

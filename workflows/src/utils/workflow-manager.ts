@@ -1,0 +1,322 @@
+/**
+ * n8n Workflow Management Utilities
+ * 
+ * TypeScript utilities for managing n8n workflows programmatically
+ * Leverages the existing API utilities for consistency
+ */
+
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+
+// Export types for use in other modules
+export type N8nWorkflow = {
+  id?: string;
+  name: string;
+  nodes: any[];
+  connections: any;
+  active: boolean;
+  settings?: any;
+  meta?: any;
+  tags?: Array<{ name: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type N8nExecution = {
+  id: string;
+  finished: boolean;
+  status: string;
+  startedAt: string;
+  stoppedAt?: string;
+  workflowId: string;
+};
+
+// Configuration interface
+export interface N8nConfig {
+  apiKey: string;
+  baseUrl: string;
+  payoffWorkflowId?: string;
+}
+
+/**
+ * n8n API Client for workflow management
+ */
+export class WorkflowManager {
+  private config: N8nConfig;
+
+  constructor(config: N8nConfig) {
+    this.config = config;
+    this.validateConfig();
+  }
+
+  private validateConfig(): void {
+    if (!this.config.apiKey) {
+      throw new Error('N8N_API_KEY is required');
+    }
+    if (!this.config.baseUrl) {
+      throw new Error('N8N_BASE_URL is required');
+    }
+  }
+
+  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${this.config.baseUrl}/api/v1${endpoint}`;
+    
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+      'X-N8N-API-KEY': this.config.apiKey,
+    };
+
+    try {
+      console.log(`n8n API Request: ${options.method || 'GET'} ${url}`);
+      
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          ...options.headers,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        throw new Error(`n8n API error: ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json() as T;
+      console.log(`n8n API Response: ${response.status}`);
+      return data;
+    } catch (error) {
+      console.error('n8n API request failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all workflows
+   */
+  async getAllWorkflows(): Promise<N8nWorkflow[]> {
+    const response = await this.apiRequest<{ data: N8nWorkflow[] }>('/workflows');
+    return response.data;
+  }
+
+  /**
+   * Get workflow by ID
+   */
+  async getWorkflow(workflowId: string): Promise<N8nWorkflow> {
+    return await this.apiRequest<N8nWorkflow>(`/workflows/${workflowId}`);
+  }
+
+  /**
+   * Create workflow from JSON data
+   */
+  async createWorkflow(workflowData: Omit<N8nWorkflow, 'id' | 'createdAt' | 'updatedAt'>): Promise<N8nWorkflow> {
+    const importData = {
+      ...workflowData,
+      active: false // Import as inactive by default
+    };
+    
+    return await this.apiRequest<N8nWorkflow>('/workflows', {
+      method: 'POST',
+      body: JSON.stringify(importData),
+    });
+  }
+
+  /**
+   * Import workflow from JSON file
+   */
+  async importWorkflow(jsonFilePath: string): Promise<N8nWorkflow> {
+    console.log(`Importing workflow from ${jsonFilePath}...`);
+    
+    if (!existsSync(jsonFilePath)) {
+      throw new Error(`Workflow file not found: ${jsonFilePath}`);
+    }
+    
+    const workflowData = JSON.parse(readFileSync(jsonFilePath, 'utf8'));
+    
+    // Remove ID and timestamps for import
+    const { id, createdAt, updatedAt, ...importData } = workflowData;
+    
+    const result = await this.createWorkflow(importData);
+    console.log(`✅ Workflow imported successfully! ID: ${result.id}`);
+    return result;
+  }
+
+  /**
+   * Export workflow to JSON file
+   */
+  async exportWorkflow(workflowId: string, outputPath: string): Promise<N8nWorkflow> {
+    console.log(`Exporting workflow ${workflowId}...`);
+    
+    const workflow = await this.getWorkflow(workflowId);
+    
+    // Remove sensitive data
+    const { id, createdAt, updatedAt, ...exportData } = workflow;
+    
+    // Ensure output directory exists
+    const outputDir = dirname(outputPath);
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true });
+    }
+    
+    writeFileSync(outputPath, JSON.stringify(exportData, null, 2));
+    console.log(`✅ Workflow exported to ${outputPath}`);
+    
+    return exportData as N8nWorkflow;
+  }
+
+  /**
+   * Delete workflow
+   */
+  async deleteWorkflow(workflowId: string): Promise<void> {
+    await this.apiRequest(`/workflows/${workflowId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Activate/deactivate workflow
+   */
+  async toggleWorkflow(workflowId: string, active: boolean = true): Promise<N8nWorkflow> {
+    console.log(`${active ? 'Activating' : 'Deactivating'} workflow ${workflowId}...`);
+    
+    const result = await this.apiRequest<N8nWorkflow>(`/workflows/${workflowId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active }),
+    });
+    
+    console.log(`✅ Workflow ${active ? 'activated' : 'deactivated'} successfully!`);
+    return result;
+  }
+
+  /**
+   * Find workflow by name
+   */
+  async findWorkflowByName(name: string): Promise<N8nWorkflow | undefined> {
+    const workflows = await this.getAllWorkflows();
+    return workflows.find(workflow => workflow.name === name);
+  }
+
+  /**
+   * Get workflow executions
+   */
+  async getWorkflowExecutions(workflowId: string, limit: number = 10): Promise<N8nExecution[]> {
+    const response = await this.apiRequest<{ data: N8nExecution[] }>('/executions', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    // Filter by workflowId and limit
+    return response.data
+      .filter(exec => exec.workflowId === workflowId)
+      .slice(0, limit);
+  }
+
+  /**
+   * Test n8n connection
+   */
+  async testConnection(): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log('Testing n8n connection...');
+      
+      // Test with a simple workflow list
+      await this.apiRequest('/workflows?limit=1');
+      
+      console.log('n8n connection test successful');
+      return { success: true, message: 'Connection successful' };
+    } catch (error) {
+      console.error('n8n connection test failed:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Trigger workflow via webhook
+   */
+  async triggerWorkflowWebhook(webhookPath: string, data: any): Promise<any> {
+    const webhookUrl = `${this.config.baseUrl}/webhook/${webhookPath}`;
+    
+    console.log(`Triggering workflow webhook: ${webhookUrl}`);
+    
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Webhook trigger failed: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+}
+
+/**
+ * Create workflow manager instance from environment variables
+ */
+export function createWorkflowManager(): WorkflowManager {
+  const config: N8nConfig = {
+    apiKey: process.env.N8N_API_KEY || '',
+    baseUrl: process.env.N8N_BASE_URL || 'https://rexera2.app.n8n.cloud',
+    payoffWorkflowId: process.env.N8N_PAYOFF_WORKFLOW_ID,
+  };
+
+  return new WorkflowManager(config);
+}
+
+/**
+ * Utility functions for common operations
+ */
+export const workflowUtils = {
+  /**
+   * Import payoff workflow from JSON file
+   */
+  async importPayoffWorkflow(manager: WorkflowManager): Promise<N8nWorkflow> {
+    const workflowPath = join(__dirname, '../../n8n-workflows/real-estate/payoff-request.json');
+    return await manager.importWorkflow(workflowPath);
+  },
+
+  /**
+   * Test payoff workflow with sample data
+   */
+  async testPayoffWorkflow(manager: WorkflowManager, testData?: any): Promise<any> {
+    const sampleData = testData || {
+      workflowId: `test-${Date.now()}`,
+      borrower: {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        phone: '+1-555-0123'
+      },
+      property: {
+        address: '123 Main St, Anytown, CA 90210',
+        apn: '1234-567-890',
+        loanNumber: 'LOAN-2024-001'
+      },
+      lender: {
+        name: 'First National Bank',
+        communication_preference: 'email'
+      },
+      metadata: {
+        source: 'test_script',
+        timestamp: new Date().toISOString(),
+        test_mode: true
+      }
+    };
+
+    return await manager.triggerWorkflowWebhook('payoff-request', sampleData);
+  }
+};

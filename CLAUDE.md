@@ -77,12 +77,48 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 This project uses a **Turbo + pnpm** monorepo setup for optimal performance and developer experience.
 
 ### Technology Stack
-- **🏗️ Monorepo**: Turborepo for task orchestration and caching
-- **📦 Package Manager**: pnpm for fast, efficient dependency management
-- **⚡ Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS
-- **🔒 Validation**: Zod for runtime type safety and API validation
-- **🗄️ Database**: Supabase PostgreSQL with Row-Level Security
-- **🎨 UI**: shadcn/ui components with Radix primitives
+
+**🏗️ Architecture & Build System**
+- **Monorepo**: Turborepo for task orchestration and caching
+- **Package Manager**: pnpm for fast, efficient dependency management
+- **Platform**: AI-powered real estate workflow automation with dual-layer architecture (n8n Cloud + PostgreSQL)
+
+**🎨 Frontend Stack**
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui + Radix UI primitives
+- **State Management**: Zustand + TanStack Query
+- **Data Fetching**: tRPC + TanStack React Query
+- **Theming**: next-themes for dark/light mode
+
+**⚡ Backend API Stack**
+- **Runtime**: Node.js with Express
+- **Language**: TypeScript
+- **API Architecture**: tRPC + REST endpoints
+- **Validation**: Zod schemas for runtime type safety
+- **Authentication**: JWT with Google SSO (jose library)
+- **Middleware**: CORS, custom auth middleware
+
+**🗄️ Database & Infrastructure**
+- **Database**: Supabase PostgreSQL with Row-Level Security (RLS)
+- **Real-time**: Supabase subscriptions + WebSocket connections
+- **Workflow Engine**: n8n Cloud for orchestration
+- **Deployment**: Vercel for frontend and API
+- **File Storage**: Supabase storage for document management
+
+**🤖 AI & Automation**
+- **AI Agents**: 10 specialized agents with HTTP API integration
+- **Workflow Types**: 3 core workflows (Municipal Lien Search, HOA Acquisition, Payoff Request)
+- **Communication**: Standardized JSON request/response format
+- **Error Handling**: Automatic retry with exponential backoff, HIL escalation
+
+**🔧 Development & Testing Tools**
+- **Build System**: Turborepo with intelligent caching
+- **Testing**: Jest (unit/integration) + Playwright (E2E)
+- **Code Quality**: ESLint + Prettier
+- **Type Safety**: Strict TypeScript with custom type packages
+- **Development**: Hot reload, concurrent dev servers
 
 ### Workspace Structure
 ```
@@ -98,8 +134,11 @@ This project uses a **Turbo + pnpm** monorepo setup for optimal performance and 
 
 ### Package Management
 - **Workspace Dependencies**: Use `workspace:*` for internal packages
-- **Script Execution**: Use `pnpm --filter <package>` for workspace-specific commands
+- **Script Execution**: Use `pnpm --filter <package>` for workspace-specific commands  
 - **Caching**: Turbo handles build caching and dependency graphs
+- **Package Structure**:
+  - `@rexera/types` - Shared enums, utilities, external service interfaces
+  - `@rexera/schemas` - Zod validation schemas for all API endpoints
 
 ## Authentication & Security
 
@@ -116,12 +155,192 @@ The system uses WebSocket connections for live updates:
 - HIL notifications and alerts
 - Cross-workflow coordination events
 
-## Integration Patterns
+## Integration Patterns & Workflow Execution
 
-**AI Agents**: External HTTP APIs with standardized JSON request/response format
-**Webhooks**: n8n workflows triggered by external system events
-**Database Sync**: n8n workflows update PostgreSQL at each step for business visibility
-**Error Handling**: Automatic retry with exponential backoff, HIL escalation on failure
+### **Dual-Layer Workflow Execution Pattern**
+
+Rexera implements a sophisticated dual-layer architecture where **n8n Cloud orchestrates technical execution** while **PostgreSQL maintains business state** for real-time visibility and reporting.
+
+### **Complete Workflow Example: Mortgage Payoff Request**
+
+#### **1. Workflow Initiation**
+```typescript
+// Frontend creates workflow via tRPC
+const workflow = await trpc.workflows.create.mutate({
+  workflow_type: 'PAYOFF',
+  client_id: 'client-123',
+  title: 'Payoff Request - 123 Main St',
+  metadata: {
+    property: { address: '123 Main St', loanNumber: 'LOAN-2024-001' },
+    borrower: { name: 'John Doe', email: 'john.doe@example.com' }
+  }
+});
+
+// Automatically triggers n8n workflow
+await triggerN8nPayoffWorkflow({
+  rexeraWorkflowId: workflow.id,
+  workflowType: 'PAYOFF',
+  metadata: workflow.metadata
+});
+```
+
+#### **2. Agent Orchestration in n8n**
+```json
+// n8n workflow nodes call AI agents sequentially
+{
+  "nodes": [
+    {
+      "name": "Nina Research",
+      "type": "httpRequest",
+      "url": "/api/agents/nina/execute",
+      "body": {
+        "taskType": "identify_lender_contact",
+        "payload": { "loanNumber": "LOAN-2024-001" }
+      }
+    },
+    {
+      "name": "Communication Switch",
+      "type": "switch",
+      "conditions": [
+        { "if": "phone_preferred", "route": "Florian Phone Call" },
+        { "if": "ivr_system", "route": "Max IVR Navigation" }
+      ]
+    },
+    {
+      "name": "Florian Phone Call",
+      "url": "/api/agents/florian/execute",
+      "body": { "taskType": "request_payoff_statement" }
+    },
+    {
+      "name": "Iris Email Monitor",
+      "url": "/api/agents/iris/execute", 
+      "body": { "taskType": "monitor_payoff_email" }
+    },
+    {
+      "name": "Cassy Validation",
+      "url": "/api/agents/cassy/execute",
+      "body": { "taskType": "validate_payoff_statement" }
+    }
+  ]
+}
+```
+
+#### **3. Real-Time Database Synchronization**
+```typescript
+// n8n sends webhooks to sync PostgreSQL state
+router.post('/api/webhook/n8n', async (req) => {
+  const event = validateWebhookEvent(req.body);
+  
+  switch (event.eventType) {
+    case 'workflow_started':
+      await supabase.from('workflows').update({
+        n8n_execution_id: event.executionId,
+        status: 'IN_PROGRESS'
+      }).eq('id', event.data.rexeraWorkflowId);
+      
+    case 'agent_task_completed':
+      await supabase.from('tasks').update({
+        status: 'COMPLETED',
+        metadata: { agent_result: event.data.result }
+      }).eq('id', event.data.taskId);
+      
+    case 'workflow_completed':
+      await supabase.from('workflows').update({
+        status: 'COMPLETED',
+        metadata: { payoffAmount: '$284,567.89' }
+      }).eq('id', event.data.rexeraWorkflowId);
+  }
+});
+```
+
+#### **4. Error Handling & HIL Escalation**
+```typescript
+// Automatic error escalation to Human-in-the-Loop
+case 'error_occurred':
+  await supabase.from('workflows').update({
+    status: 'BLOCKED',  // Triggers HIL dashboard alert
+    metadata: {
+      n8n_error: event.data.error,
+      n8n_error_node: event.data.nodeId,
+      escalation_reason: 'Agent task failed - requires manual intervention'
+    }
+  });
+```
+
+### **Core Integration Patterns**
+
+**🔄 Workflow Triggering**: tRPC creates PostgreSQL record → triggers n8n via API → links with `n8n_execution_id`
+
+**📡 Real-Time Sync**: n8n webhooks → PostgreSQL updates → Supabase real-time → Frontend updates
+
+**🤖 Agent Coordination**: n8n orchestrates 10 specialized AI agents via HTTP APIs with standardized JSON payloads
+
+**⚠️ Error Handling**: n8n errors → PostgreSQL BLOCKED status → HIL dashboard alerts → Manual intervention
+
+**📊 Business Reporting**: All execution data flows to PostgreSQL for analytics, SLA tracking, and cross-workflow coordination
+
+### **n8n Workflow Development Process**
+
+#### **1. Environment Setup**
+```bash
+N8N_API_KEY=your_api_key
+N8N_BASE_URL=https://rexera2.app.n8n.cloud
+N8N_PAYOFF_WORKFLOW_ID=workflow-id
+```
+
+#### **2. Workflow Creation & Management**
+```bash
+# Import workflow from JSON
+npm run workflow:import-payoff
+
+# Test workflow with sample data  
+npm run workflow:test-payoff
+
+# Activate workflow in n8n
+npm run workflow -- activate <workflow-id>
+
+# Monitor executions
+npm run workflow -- executions <workflow-id>
+```
+
+#### **3. Workflow JSON Structure**
+```json
+{
+  "name": "Mortgage Payoff Request Workflow",
+  "nodes": [
+    {
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": { "path": "payoff-request" }
+    },
+    {
+      "name": "Agent HTTP Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "={{ $json.rexeraApiUrl }}/api/agents/nina/execute",
+        "body": { "taskType": "research_task", "payload": "={{ $json }}" }
+      }
+    },
+    {
+      "name": "Update Database",
+      "type": "n8n-nodes-base.httpRequest", 
+      "parameters": {
+        "url": "={{ $json.rexeraApiUrl }}/api/webhook/n8n",
+        "body": {
+          "eventType": "agent_task_completed",
+          "data": { "result": "={{ $json }}" }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [["Agent HTTP Call"]] },
+    "Agent HTTP Call": { "main": [["Update Database"]] }
+  }
+}
+```
+
+This architecture enables **complex multi-agent workflows** with **real-time business visibility**, **automatic error handling**, and **seamless human intervention** when needed.
 
 ## Development Guidelines & Patterns
 

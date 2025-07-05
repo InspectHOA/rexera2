@@ -86,6 +86,10 @@ app.listen(config.port, () => {
   console.log(`   GET    /api/rest/tasks - List tasks`);
   console.log(`   POST   /api/rest/tasks - Create task`);
   console.log(`   GET    /api/rest/health - Health check`);
+  console.log(`   POST   /api/rest/webhooks/n8n - n8n webhook endpoint`);
+  console.log(`   GET    /api/rest/test-n8n - Test n8n integration`);
+  console.log(`   GET    /api/rest/test-n8n/config - n8n configuration status`);
+  console.log(`   GET    /api/rest/test-n8n/connection - Test n8n connection`);
 });
 
 export default app;

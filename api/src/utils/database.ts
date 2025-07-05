@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@rexera/types';
+import type { Database } from '../../../supabase/types';
 import { config } from '../config';
 
 // Create Supabase client with service role for server-side operations

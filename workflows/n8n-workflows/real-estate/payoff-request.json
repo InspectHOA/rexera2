@@ -1,0 +1,552 @@
+{
+  "name": "Payoff Request Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payoff-request",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Payoff Request Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "payoff-request-webhook"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/nina/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "identify_lender_contact"
+            },
+            {
+              "name": "description",
+              "value": "Research lender contact information and communication preferences"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "nina-lender-research",
+      "name": "Nina: Identify Lender Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.communication_preference }}",
+              "rightValue": "ivr",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              }
+            },
+            {
+              "leftValue": "={{ $json.communication_preference }}",
+              "rightValue": "phone",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "fallbackOutput": 2
+      },
+      "id": "communication-switch",
+      "name": "Communication Method Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/max/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "send_payoff_request"
+            },
+            {
+              "name": "method",
+              "value": "IVR_SYSTEM"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "max-ivr-request",
+      "name": "Max: IVR Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/florian/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "send_payoff_request"
+            },
+            {
+              "name": "method",
+              "value": "PHONE_CALL"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "florian-phone-request",
+      "name": "Florian: Phone Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/mia/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "send_payoff_request"
+            },
+            {
+              "name": "method",
+              "value": "EMAIL"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "mia-email-request",
+      "name": "Mia: Email Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "unit": "hours",
+        "amount": 168,
+        "resume": "webhook",
+        "webhookSuffix": "payoff-response"
+      },
+      "id": "wait-for-response",
+      "name": "Wait for Lender Response",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/iris/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "extract_payoff_data"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "iris-extract-data",
+      "name": "Iris: Extract Payoff Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/kosha/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "generate_invoice"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "kosha-generate-invoice",
+      "name": "Kosha: Generate Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/ria/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "update_crm_record"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "ria-update-crm",
+      "name": "Ria: Update CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/mia/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "notify_client"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "mia-notify-client",
+      "name": "Mia: Notify Client",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "workflow-response",
+      "name": "Workflow Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2220, 300]
+    }
+  ],
+  "connections": {
+    "Payoff Request Trigger": {
+      "main": [
+        [
+          {
+            "node": "Nina: Identify Lender Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nina: Identify Lender Contact": {
+      "main": [
+        [
+          {
+            "node": "Communication Method Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Communication Method Switch": {
+      "main": [
+        [
+          {
+            "node": "Max: IVR Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Florian: Phone Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mia: Email Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Max: IVR Request": {
+      "main": [
+        [
+          {
+            "node": "Wait for Lender Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Florian: Phone Request": {
+      "main": [
+        [
+          {
+            "node": "Wait for Lender Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mia: Email Request": {
+      "main": [
+        [
+          {
+            "node": "Wait for Lender Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Lender Response": {
+      "main": [
+        [
+          {
+            "node": "Iris: Extract Payoff Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iris: Extract Payoff Data": {
+      "main": [
+        [
+          {
+            "node": "Kosha: Generate Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kosha: Generate Invoice": {
+      "main": [
+        [
+          {
+            "node": "Ria: Update CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ria: Update CRM": {
+      "main": [
+        [
+          {
+            "node": "Mia: Notify Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mia: Notify Client": {
+      "main": [
+        [
+          {
+            "node": "Workflow Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "payoff-request-workflow",
+  "tags": [
+    {
+      "createdAt": "2025-01-07T16:32:00.000Z",
+      "updatedAt": "2025-01-07T16:32:00.000Z",
+      "id": "payoff",
+      "name": "payoff"
+    },
+    {
+      "createdAt": "2025-01-07T16:32:00.000Z",
+      "updatedAt": "2025-01-07T16:32:00.000Z",
+      "id": "mortgage",
+      "name": "mortgage"
+    },
+    {
+      "createdAt": "2025-01-07T16:32:00.000Z",
+      "updatedAt": "2025-01-07T16:32:00.000Z",
+      "id": "real-estate",
+      "name": "real-estate"
+    }
+  ]
+}

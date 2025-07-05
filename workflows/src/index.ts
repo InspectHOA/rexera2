@@ -1,12 +1,14 @@
 /**
- * Rexera 2.0 n8n Workflow Definitions
- * Contains workflow templates and configuration for the orchestration layer
+ * Rexera Workflows Package
+ * 
+ * TypeScript utilities for n8n workflow management
  */
 
-export * from './workflows/municipal-lien-search';
-export * from './workflows/hoa-acquisition';
-export * from './workflows/payoff-request';
-export * from './shared/workflow-nodes';
-export * from './shared/webhook-handlers';
-export * from './shared/workflow-utils';
-export * from './validation/workflow-validator';
+export { WorkflowManager, createWorkflowManager, workflowUtils } from './utils/workflow-manager';
+
+// Re-export types for convenience
+export type {
+  N8nWorkflow,
+  N8nExecution,
+  N8nConfig
+} from './utils/workflow-manager';

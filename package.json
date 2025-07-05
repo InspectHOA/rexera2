@@ -26,7 +26,8 @@
     "setup:repos": "turbo run setup",
     "db:migrate": "cd supabase && npx supabase db push",
     "db:seed": "cd supabase && npx supabase db seed",
-    "workflows:deploy": "cd workflows && npm run deploy",
+    "workflows:validate": "cd workflows && npm run validate",
+    "workflows:backup": "cd workflows && npm run backup",
     "agents:test": "cd agents && npm run test",
     "e2e": "playwright test"
   },

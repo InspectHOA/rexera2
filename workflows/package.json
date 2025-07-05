@@ -2,30 +2,34 @@
   "name": "@rexera/workflows",
   "version": "1.0.0",
   "description": "n8n workflow definitions for Rexera 2.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
     "setup": "npm install",
-    "export": "node scripts/export-workflows.js",
-    "import": "node scripts/import-workflows.js",
-    "validate": "node scripts/validate-workflows.js"
-  },
-  "dependencies": {
-    "@rexera/types": "workspace:*",
-    "@rexera/agents": "workspace:*",
-    "n8n-workflow": "^1.0.0",
-    "axios": "^1.6.0"
+    "build": "tsc",
+    "clean": "rm -rf dist n8n-workflows/*.backup.json",
+    "workflow": "npx tsx src/cli/workflow-cli.ts",
+    "workflow:list": "npx tsx src/cli/workflow-cli.ts list",
+    "workflow:test": "npx tsx src/cli/workflow-cli.ts test",
+    "workflow:validate": "npx tsx src/cli/workflow-cli.ts validate",
+    "workflow:backup": "npx tsx src/cli/workflow-cli.ts backup",
+    "workflow:test-payoff": "npx tsx src/cli/workflow-cli.ts test-payoff",
+    "workflow:import-payoff": "npx tsx src/cli/workflow-cli.ts import-payoff"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "typescript": "^5.2.0",
-    "@types/node": "^20.0.0"
+    "tsx": "^4.0.0"
   },
   "files": [
-    "dist",
-    "workflows"
+    "n8n-workflows",
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "n8n",
+    "workflows",
+    "automation",
+    "real-estate",
+    "rexera"
   ]
 }
