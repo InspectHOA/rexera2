@@ -6,17 +6,14 @@ This directory contains n8n workflow definitions and management utilities for Re
 
 ```
 workflows/
-├── n8n-workflows/          # n8n workflow JSON files
-│   ├── real-estate/        # Real estate specific workflows
-│   ├── communication/      # Communication workflows
-│   ├── templates/          # Workflow templates
-│   └── utilities/          # Utility workflows
-├── src/                    # TypeScript source code
-│   ├── utils/              # Workflow management utilities
-│   ├── cli/                # Command-line interface
-│   └── index.ts            # Main exports
-├── scripts/                # Legacy JavaScript scripts
-└── docs/                   # Workflow documentation
+├── definitions/            # n8n workflow JSON files
+│   └── payoff-request.json # Mortgage payoff workflow
+├── utils/                  # Workflow management utilities
+│   └── workflow-manager.ts # Core n8n API client
+├── cli/                    # Command-line interface
+│   └── workflow-cli.ts     # CLI commands
+├── index.ts                # Main exports
+└── README.md               # Documentation
 ```
 
 ## TypeScript Utilities

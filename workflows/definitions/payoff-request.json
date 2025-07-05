@@ -17,13 +17,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/nina/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/nina/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -96,13 +96,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/max/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/max/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -136,13 +136,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/florian/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/florian/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -176,13 +176,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/mia/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/mia/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -229,13 +229,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/iris/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/iris/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -265,13 +265,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/kosha/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/kosha/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -301,13 +301,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/ria/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/ria/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -337,13 +337,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Payoff Request Trigger').first().json.rexeraApiUrl }}/api/agents/mia/execute",
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/mia/execute",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $('Payoff Request Trigger').first().json.apiKey }}"
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
             },
             {
               "name": "Content-Type",
