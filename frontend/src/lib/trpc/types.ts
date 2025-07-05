@@ -1,6 +1,5 @@
-// Use a type-only import that works with the actual API router structure
-// This avoids build-time dependency issues while maintaining type safety
-
+// Simplified AppRouter type that works with tRPC React client
+// This ensures compatibility with Vercel build environment
 export interface AppRouter {
   workflows: {
     list: any;
