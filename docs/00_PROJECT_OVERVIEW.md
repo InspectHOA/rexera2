@@ -27,7 +27,7 @@ This document provides a comprehensive overview of the Rexera 2.0 project, inclu
 ### Core Technologies
 - **Frontend**: Next.js 15 with TypeScript 5+, Tailwind CSS, shadcn/ui
 - **Backend**: Express.js with tRPC Router, Supabase (PostgreSQL 14+) with Row-Level Security
-- **API Architecture**: Pure tRPC with end-to-end type safety and Zod validation
+- **API Architecture**: Hybrid tRPC + REST with end-to-end type safety and Zod validation - frontend uses tRPC, external systems use REST endpoints that call tRPC procedures
 - **Authentication**: Google SSO with JWT token management
 - **Hosting**: Vercel Pro for both frontend and API, Supabase Pro for database
 - **Real-time**: tRPC subscriptions for live updates

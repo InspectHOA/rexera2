@@ -159,7 +159,9 @@ graph TD
 - **Audit Trails** for compliance and debugging
 
 ### API Layer
-- **Pure tRPC Procedures** with type-safe client-server communication
+- **Hybrid tRPC + REST API Layer** with type-safe client-server communication
+- **tRPC Procedures** for frontend communication with full type safety
+- **REST Endpoints** for external system integration calling tRPC procedures internally
 - **Flexible Input Schemas** with Zod validation for optimized data loading
 - **WebSocket Subscriptions** for real-time updates
 - **Webhook Endpoints** for external system notifications
@@ -266,7 +268,7 @@ sequenceDiagram
 - **Component Architecture**: Reusable UI elements for consistent user experience
 - **State Management**: Zustand integration for complex workflow state handling
 - **Authentication**: Native integration with Supabase Auth for secure access control
-- **Pure tRPC Integration**: End-to-end type safety with tRPC client
+- **Hybrid tRPC + REST Integration**: End-to-end type safety with tRPC client for frontend, REST endpoints for external systems
 
 **Key Features:**
 - Server-Side Rendering for optimal performance
@@ -940,13 +942,13 @@ graph TB
 This system architecture document is part of a comprehensive design documentation suite. For detailed information on specific aspects of the system, refer to:
 
 - **[Project Overview](00_PROJECT_OVERVIEW.md)** - High-level project goals and requirements
-- **[Database Schema](02_DB_SCHEMA.md)** - Detailed database design and relationships  
+- **[Database Schema](02_DATABASE_SCHEMA.md)** - Detailed database design and relationships
 - **[API Specifications](03_API_SPECIFICATIONS.md)** - 12 unified endpoints with simplified architecture
 - **[Authentication](04_AUTHENTICATION.md)** - Security implementation details
 - **[AI Agents](05_AI_AGENTS.md)** - Individual agent specifications and capabilities
 - **[Workflows](06_WORKFLOWS.md)** - Business process automation details
 - **[UI Components](07_UI_COMPONENTS.md)** - Frontend component architecture
-- **[Environment Variables](08_ENV_VARS.md)** - Configuration management
+- **[Environment Variables](08_ENVIRONMENT_VARIABLES.md)** - Configuration management
 - **[Deployment Plan](09_DEPLOYMENT_PLAN.md)** - Production deployment strategy
 - **[Test Plan](10_TEST_PLAN.md)** - Quality assurance and testing strategy
 - **[Features](11_FEATURES.md)** - Advanced feature specifications

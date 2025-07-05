@@ -47,10 +47,10 @@ The Email Threading System provides Gmail-style email conversation management fo
 ### Technical Architecture
 
 #### Database Schema
-**Note:** All database schema definitions for the Email Threading System are centralized in [`design-docs/02_DB_SCHEMA.md`](02_DB_SCHEMA.md). The email threading system uses the following simplified tables:
+**Note:** All database schema definitions for the Email Threading System are centralized in [`design-docs/02_DATABASE_SCHEMA.md`](02_DATABASE_SCHEMA.md). The email threading system uses the following simplified tables:
 
-- **[`emails`](02_DB_SCHEMA.md)** - Simplified email table with essential threading support: thread_id, in_reply_to, email_status, and direction fields
-- **[`email_threads`](02_DB_SCHEMA.md)** - Simplified conversation grouping with subject, status, priority, and visibility controls
+- **[`emails`](02_DATABASE_SCHEMA.md)** - Simplified email table with essential threading support: thread_id, in_reply_to, email_status, and direction fields
+- **[`email_threads`](02_DATABASE_SCHEMA.md)** - Simplified conversation grouping with subject, status, priority, and visibility controls
 
 **Key Simplifications:**
 - Removed redundant fields (conversation_id, references array, delivery_status JSONB)
@@ -104,11 +104,18 @@ async function threadEmail(email: EmailMessage): Promise<EmailThread> {
 
 ### API Integration
 
-#### Core Endpoints
-- `GET /api/workflows/[id]/email-threads` - Returns paginated list of email threads for a workflow
-- `GET /api/email-threads/[id]/messages` - Returns complete conversation history for a thread
-- `POST /api/email-threads/[id]/reply` - Sends a reply maintaining conversation continuity
-- `POST /api/email-threads/create` - Starts a new email conversation thread
+#### Core Endpoints (Hybrid tRPC + REST)
+**Frontend (tRPC):**
+- `trpc.workflows.getEmailThreads.query({ workflowId })` - Returns paginated list of email threads
+- `trpc.emailThreads.getMessages.query({ threadId })` - Returns complete conversation history
+- `trpc.emailThreads.reply.mutate({ threadId, message })` - Sends a reply maintaining continuity
+- `trpc.emailThreads.create.mutate({ workflowId, subject, message })` - Starts a new thread
+
+**External Systems (REST):**
+- `GET /api/rest/workflows/[id]/email-threads` - Returns paginated list of email threads for a workflow
+- `GET /api/rest/email-threads/[id]/messages` - Returns complete conversation history for a thread
+- `POST /api/rest/email-threads/[id]/reply` - Sends a reply maintaining conversation continuity
+- `POST /api/rest/email-threads/create` - Starts a new email conversation thread
 
 #### Real-Time Updates
 WebSocket integration for live thread updates with subscription-based messaging for immediate notification delivery.
@@ -188,11 +195,18 @@ The notification system uses a single table:
 - `read_at`: Timestamp when marked as read
 - `created_at`: Creation timestamp
 
-#### API Endpoints
-- `GET /api/notifications` - Fetch notifications with filtering
-- `GET /api/notifications/unread-count` - Get unread count for badges
-- `POST /api/notifications/{id}/mark-read` - Mark notification as read
-- `POST /api/notifications/mark-all-read` - Bulk mark as read
+#### API Endpoints (Hybrid tRPC + REST)
+**Frontend (tRPC):**
+- `trpc.notifications.list.query({ filter })` - Fetch notifications with filtering
+- `trpc.notifications.getUnreadCount.query()` - Get unread count for badges
+- `trpc.notifications.markRead.mutate({ id })` - Mark notification as read
+- `trpc.notifications.markAllRead.mutate()` - Bulk mark as read
+
+**External Systems (REST):**
+- `GET /api/rest/notifications` - Fetch notifications with filtering
+- `GET /api/rest/notifications/unread-count` - Get unread count for badges
+- `POST /api/rest/notifications/{id}/mark-read` - Mark notification as read
+- `POST /api/rest/notifications/mark-all-read` - Bulk mark as read
 
 #### WebSocket Integration
 Real-time notification delivery via WebSocket connection with automatic client-side display and unread count updates.
@@ -345,15 +359,15 @@ The SLA Monitoring and Alerts System provides comprehensive Service Level Agreem
 ### Technical Architecture
 
 #### Database Schema
-**Note:** All database schema definitions for the SLA Monitoring System are centralized in [`design-docs/02_DB_SCHEMA.md`](02_DB_SCHEMA.md). The SLA system uses the following tables:
+**Note:** All database schema definitions for the SLA Monitoring System are centralized in [`design-docs/02_DATABASE_SCHEMA.md`](02_DATABASE_SCHEMA.md). The SLA system uses the following tables:
 
-- **[`sla_definitions`](02_DB_SCHEMA.md)** - Predefined SLA timeframes for each agent and task type
-- **[`sla_tracking`](02_DB_SCHEMA.md)** - Real-time monitoring of task SLA status with business hours calculation
-- **[`sla_alerts`](02_DB_SCHEMA.md)** - Multi-level alert system with escalation support
-- **[`sla_performance_metrics`](02_DB_SCHEMA.md)** - Historical performance tracking and compliance rates
-- **[`business_hours_config`](02_DB_SCHEMA.md)** - Business hours configuration for accurate SLA calculation
-- **[`business_holidays`](02_DB_SCHEMA.md)** - Holiday calendar excluded from SLA calculations
-- **[`sla_escalation_rules`](02_DB_SCHEMA.md)** - Automatic escalation configuration
+- **[`sla_definitions`](02_DATABASE_SCHEMA.md)** - Predefined SLA timeframes for each agent and task type
+- **[`sla_tracking`](02_DATABASE_SCHEMA.md)** - Real-time monitoring of task SLA status with business hours calculation
+- **[`sla_alerts`](02_DATABASE_SCHEMA.md)** - Multi-level alert system with escalation support
+- **[`sla_performance_metrics`](02_DATABASE_SCHEMA.md)** - Historical performance tracking and compliance rates
+- **[`business_hours_config`](02_DATABASE_SCHEMA.md)** - Business hours configuration for accurate SLA calculation
+- **[`business_holidays`](02_DATABASE_SCHEMA.md)** - Holiday calendar excluded from SLA calculations
+- **[`sla_escalation_rules`](02_DATABASE_SCHEMA.md)** - Automatic escalation configuration
 
 #### Business Hours Calculation
 - **Standard Business Hours**: 9:00 AM - 5:00 PM EST, Monday-Friday

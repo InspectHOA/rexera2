@@ -43,7 +43,7 @@ Rexera 2.0 transforms real estate transaction processing through intelligent aut
 ### Core System Design
 - **[`00_PROJECT_OVERVIEW.md`](00_PROJECT_OVERVIEW.md)** - Project vision, business objectives, technology stack, and implementation phases
 - **[`01_SYSTEM_ARCHITECTURE.md`](01_SYSTEM_ARCHITECTURE.md)** - Dual-layer architecture with n8n orchestration and PostgreSQL business visibility
-- **[`02_DB_SCHEMA.md`](02_DB_SCHEMA.md)** - Complete PostgreSQL schema with 35+ tables, relationships, and performance optimization
+- **[`02_DATABASE_SCHEMA.md`](02_DATABASE_SCHEMA.md)** - Complete PostgreSQL schema with 35+ tables, relationships, and performance optimization
 
 ### API & Integration
 - **[`03_API_SPECIFICATIONS.md`](03_API_SPECIFICATIONS.md)** - REST endpoints, webhook APIs, and real-time communication patterns
@@ -52,13 +52,13 @@ Rexera 2.0 transforms real estate transaction processing through intelligent aut
 ### AI Agents & Workflows
 - **[`05_AI_AGENTS.md`](05_AI_AGENTS.md)** - 10 specialized AI agents with capabilities and coordination patterns
 - **[`06_WORKFLOWS.md`](06_WORKFLOWS.md)** - 3 core workflow types with execution patterns and SLA monitoring
-- **[`06A_HOA_WORKFLOW.json`](06A_HOA_WORKFLOW.json)** - HOA acquisition workflow definition with task sequences
-- **[`06B_LIEN_WORKFLOW.json`](06B_LIEN_WORKFLOW.json)** - Municipal lien search workflow with parallel execution
-- **[`06C_PAYOFF_WORKFLOW.json`](06C_PAYOFF_WORKFLOW.json)** - Payoff request workflow with conditional logic
+- **[`06A_WORKFLOW_HOA.json`](06A_WORKFLOW_HOA.json)** - HOA acquisition workflow definition with task sequences
+- **[`06B_WORKFLOW_LIEN.json`](06B_WORKFLOW_LIEN.json)** - Municipal lien search workflow with parallel execution
+- **[`06C_WORKFLOW_PAYOFF.json`](06C_WORKFLOW_PAYOFF.json)** - Payoff request workflow with conditional logic
 
 ### Frontend & Configuration
 - **[`07_UI_COMPONENTS.md`](07_UI_COMPONENTS.md)** - HIL Dashboard, agent interfaces, and real-time interaction patterns
-- **[`08_ENV_VARS.md`](08_ENV_VARS.md)** - Environment variables for all services across development, staging, and production
+- **[`08_ENVIRONMENT_VARIABLES.md`](08_ENVIRONMENT_VARIABLES.md)** - Environment variables for all services across development, staging, and production
 
 ### Operations & Quality
 - **[`09_DEPLOYMENT_PLAN.md`](09_DEPLOYMENT_PLAN.md)** - Infrastructure setup, CI/CD pipelines, and production readiness procedures
@@ -70,7 +70,7 @@ Rexera 2.0 transforms real estate transaction processing through intelligent aut
 - **[`13_AUDIT_SYSTEM.md`](13_AUDIT_SYSTEM.md)** - Universal audit system for compliance, debugging, and analytics
 
 ### Implementation Guide
-- **[`14_BUILD_PLAN.md`](14_BUILD_PLAN.md)** - Complete implementation checklist with 6 phases and 200+ tasks
+- **[`15_DEPLOYMENT_GUIDE.md`](15_DEPLOYMENT_GUIDE.md)** - Complete deployment guide and production readiness procedures
 
 ## 🏗️ System Overview
 
@@ -244,11 +244,11 @@ graph LR
 
 1. **📖 Understand the Vision** - [`00_PROJECT_OVERVIEW.md`](00_PROJECT_OVERVIEW.md)
 2. **🏗️ Study Architecture** - [`01_SYSTEM_ARCHITECTURE.md`](01_SYSTEM_ARCHITECTURE.md) 
-3. **🗄️ Review Database Design** - [`02_DB_SCHEMA.md`](02_DB_SCHEMA.md)
+3. **🗄️ Review Database Design** - [`02_DATABASE_SCHEMA.md`](02_DATABASE_SCHEMA.md)
 4. **🔌 Examine API Contracts** - [`03_API_SPECIFICATIONS.md`](03_API_SPECIFICATIONS.md)
 
 #### **Deployment Preparation**
-1. **⚙️ Environment Planning** - [`08_ENV_VARS.md`](08_ENV_VARS.md)
+1. **⚙️ Environment Planning** - [`08_ENVIRONMENT_VARIABLES.md`](08_ENVIRONMENT_VARIABLES.md)
 2. **🚀 Deployment Strategy** - [`09_DEPLOYMENT_PLAN.md`](09_DEPLOYMENT_PLAN.md)
 3. **🧪 Testing Framework** - [`10_TEST_PLAN.md`](10_TEST_PLAN.md)
 

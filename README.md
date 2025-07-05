@@ -9,7 +9,7 @@ A scalable, maintainable monorepo for AI-powered real estate workflow automation
 This architecture uses a modern monorepo approach with multiple specialized services:
 
 - **Frontend Service**: Next.js 15 with App Router for user interface
-- **API Service**: Clean Express.js server with pure tRPC for type-safe APIs
+- **API Service**: Clean Express.js server with hybrid tRPC + REST API architecture
 - **AI Agents Service**: Specialized AI agents for real estate tasks
 - **Workflows Service**: Workflow orchestration and automation
 - **Shared Packages**: Common types, schemas, and utilities
@@ -20,16 +20,16 @@ This architecture uses a modern monorepo approach with multiple specialized serv
 ### Architecture Diagram
 
 ```
-┌─────────────────┐    Pure tRPC      ┌─────────────────┐
-│   Frontend      │ ──────────────► │   API Server    │
-│   (Next.js 15)  │                  │ (Express+tRPC)  │
-│   Port 3000     │                  │   Port 3002     │
-└─────────────────┘                  └─────────────────┘
-         │                                     │
-         │                                     │
-         ▼                                     ▼
+┌─────────────────┐    tRPC (Frontend) ┌─────────────────┐
+│   Frontend      │ ──────────────────► │   API Server    │
+│   (Next.js 15)  │                     │ (Express+tRPC)  │
+│   Port 3000     │                     │   Port 3002     │
+└─────────────────┘                     └─────────────────┘
+                                                 │
+                                                 │ REST (External)
+                                                 ▼
 ┌─────────────────┐                  ┌─────────────────┐
-│   AI Agents     │                  │   Workflows     │
+│   AI Agents     │ ◄────REST────────┤   Workflows     │
 │   Service       │                  │   Service       │
 │   (Vercel)      │                  │   (Automation)  │
 └─────────────────┘                  └─────────────────┘
@@ -49,7 +49,9 @@ This architecture uses a modern monorepo approach with multiple specialized serv
 - tRPC for type-safe API calls
 
 **API:**
-- Clean Express.js server with pure tRPC
+- Clean Express.js server with hybrid tRPC + REST architecture
+- tRPC for type-safe frontend communication
+- REST endpoints for external system integration
 - TypeScript for consistency
 - Supabase for database operations
 - CORS for cross-origin requests
@@ -90,10 +92,11 @@ This architecture uses a modern monorepo approach with multiple specialized serv
 │   ├── 📁 public/            ← Static assets (logos, images)
 │   ├── vercel.json           ← Vercel deployment configuration
 │   └── package.json          ← Frontend dependencies
-├── 📁 api/                   ← Express API Server with tRPC
+├── 📁 api/                   ← Express API Server with Hybrid tRPC + REST
 │   ├── 📁 src/               ← API source code
 │   │   ├── server.ts         ← Express server entry point
 │   │   ├── 📁 trpc/          ← tRPC router and context
+│   │   ├── 📁 rest/          ← REST API wrapper layer
 │   │   ├── 📁 health/        ← Health check endpoints
 │   │   ├── 📁 tasks/         ← Task management APIs
 │   │   ├── 📁 workflows/     ← Workflow management APIs
@@ -378,10 +381,11 @@ pnpm dev
 
 ### API Architecture
 
-The API uses a pure tRPC approach:
-- **tRPC**: Type-safe API calls at `/api/trpc`
+The API uses a hybrid tRPC + REST approach:
+- **tRPC**: Type-safe API calls at `/api/trpc` (frontend communication)
+- **REST**: RESTful endpoints at `/api/rest/*` (external system integration)
 - **Express**: Clean underlying server framework
-- **No REST**: All endpoints migrated to tRPC procedures
+- **Single Source of Truth**: REST endpoints call tRPC procedures internally
 
 ### Health Check
 
@@ -401,7 +405,7 @@ Response:
 }
 ```
 
-### tRPC API
+### tRPC API (Frontend Communication)
 
 **Endpoint**: `/api/trpc`
 
@@ -996,7 +1000,19 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-**tRPC API (External integrations):**
+**REST API (External integrations):**
+```bash
+# Development
+curl -X GET http://localhost:3002/api/rest/workflows?limit=10 \
+  -H "Content-Type: application/json"
+
+# Production
+curl -X GET https://rexera-api.vercel.app/api/rest/workflows?limit=10 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key"
+```
+
+**tRPC API (Direct access):**
 ```bash
 # Development
 curl -X POST http://localhost:3002/api/trpc/workflows.list \
@@ -1187,8 +1203,10 @@ pnpm --filter @rexera/frontend dev
    - Enable strict TypeScript settings
 
 3. **API Development**
-   - Use tRPC for internal APIs
-   - Provide REST endpoints for external integrations
+   - Use tRPC for frontend communication (type-safe)
+   - Use REST endpoints for external system integration
+   - Maintain single source of truth in tRPC procedures
+   - REST endpoints call tRPC procedures internally
    - Implement proper error handling
    - Use consistent response formats
 

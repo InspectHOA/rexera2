@@ -6,7 +6,7 @@ This document provides comprehensive API usage examples for Rexera 2.0's unified
 
 ## API Examples Overview
 
-This document demonstrates how to use Rexera 2.0's **unified API architecture** with real-world examples. The simplified 12-endpoint design reduces complexity while maintaining full functionality through consistent patterns.
+This document demonstrates how to use Rexera 2.0's **hybrid tRPC + REST API architecture** with real-world examples. The frontend uses tRPC for type-safe communication, while external systems can access the same functionality through REST endpoints that internally call tRPC procedures. The simplified design reduces complexity while maintaining full functionality through consistent patterns.
 
 ### API Architecture Pattern
 

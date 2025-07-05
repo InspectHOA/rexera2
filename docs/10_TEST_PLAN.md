@@ -15,7 +15,7 @@ graph TB
     subgraph "Testing Layers"
         subgraph "Unit Testing"
             UT1[Component Tests<br/>Jest + RTL]
-            UT2[API Route Tests<br/>Next.js Testing]
+            UT2[API Tests<br/>tRPC + REST Testing]
             UT3[Schema Validation<br/>Zod Testing]
         end
         
@@ -73,21 +73,47 @@ describe('WorkflowDashboard', () => {
 })
 ```
 
-#### 1.2 API Route Testing
+#### 1.2 Hybrid API Testing (tRPC + REST)
 ```typescript
 // __tests__/api/workflows.test.ts
+import { createTRPCMsw } from 'msw-trpc'
+import { appRouter } from '@/server/api/root'
 import { createMocks } from 'node-mocks-http'
-import handler from '@/pages/api/workflows'
 import { prismaMock } from '@/test-utils/prisma-mock'
 
-describe('/api/workflows', () => {
-  it('creates workflow successfully', async () => {
+describe('Workflow API (tRPC + REST)', () => {
+  // Test tRPC procedure directly
+  it('creates workflow via tRPC procedure', async () => {
+    const caller = appRouter.createCaller({
+      session: { user: { id: 'test-user' } },
+      db: prismaMock
+    })
+
+    prismaMock.workflows.create.mockResolvedValue({
+      id: 'test-workflow-id',
+      type: 'PAYOFF_REQUEST',
+      status: 'PENDING'
+    })
+
+    const result = await caller.workflows.create({
+      type: 'PAYOFF_REQUEST',
+      clientId: 'test-client-id',
+      payload: { propertyAddress: '123 Test St' }
+    })
+    
+    expect(result.id).toBe('test-workflow-id')
+    expect(result.type).toBe('PAYOFF_REQUEST')
+  })
+
+  // Test REST endpoint that calls tRPC procedure
+  it('creates workflow via REST endpoint', async () => {
     const { req, res } = createMocks({
       method: 'POST',
+      url: '/api/rest/workflows',
       body: {
         type: 'PAYOFF_REQUEST',
         clientId: 'test-client-id',
-        payload: { /* valid payload */ }
+        payload: { propertyAddress: '123 Test St' }
       }
     })
 
@@ -419,8 +445,8 @@ export let options = {
 }
 
 export default function() {
-  // Test workflow creation endpoint
-  let response = http.post('https://app.rexera.com/api/workflows', {
+  // Test workflow creation endpoint (REST)
+  let response = http.post('https://app.rexera.com/api/rest/workflows', {
     type: 'PAYOFF_REQUEST',
     clientId: 'test-client-id',
     payload: {
@@ -439,10 +465,10 @@ export default function() {
     'response time < 2s': (r) => r.timings.duration < 2000,
   })
 
-  // Test workflow status endpoint
+  // Test workflow status endpoint (REST)
   if (response.status === 201) {
     let workflowId = response.json('id')
-    let statusResponse = http.get(`https://app.rexera.com/api/workflows/${workflowId}`)
+    let statusResponse = http.get(`https://app.rexera.com/api/rest/workflows/${workflowId}`)
     
     check(statusResponse, {
       'status retrieved successfully': (r) => r.status === 200,

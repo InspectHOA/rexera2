@@ -21,7 +21,7 @@ rexera2/
 ```
 
 **Key Changes:**
-- **Pure tRPC Architecture**: Complete migration from hybrid REST/tRPC to tRPC-only API
+- **Hybrid tRPC + REST Architecture**: Frontend uses tRPC for type-safe communication, while external systems can access the same functionality through REST endpoints that internally call tRPC procedures
 - **Next.js 15**: Updated from Next.js 14 with enhanced tRPC integration
 - **Clean Express.js Backend**: All Next.js dependencies removed from API layer
 - **Monorepo Structure**: PNPM workspaces with Turborepo for build orchestration

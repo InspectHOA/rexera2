@@ -87,7 +87,7 @@ supabase projects api-keys --project-ref your-project-ref
 #### 2.2 Schema Deployment
 ```sql
 -- Deploy complete schema (418 lines)
--- From design-docs/02_DB_SCHEMA.md
+-- From design-docs/02_DATABASE_SCHEMA.md
 -- 35+ tables with relationships and indexes
 
 -- Key tables:
@@ -149,9 +149,9 @@ N8N_METRICS_ENABLED=true
 #### 3.2 Workflow Import Order
 ```bash
 # 1. Import workflow definitions (JSON)
-n8n import:workflow --input=design-docs/06A_HOA_WORKFLOW.json
-n8n import:workflow --input=design-docs/06B_LIEN_WORKFLOW.json  
-n8n import:workflow --input=design-docs/06C_PAYOFF_WORKFLOW.json
+n8n import:workflow --input=design-docs/06A_WORKFLOW_HOA.json
+n8n import:workflow --input=design-docs/06B_WORKFLOW_LIEN.json  
+n8n import:workflow --input=design-docs/06C_WORKFLOW_PAYOFF.json
 
 # 2. Configure agent endpoints
 # Via n8n GUI → Credentials → HTTP Request Auth
@@ -185,8 +185,8 @@ vercel domains verify app.rexera.com
 
 #### 4.2 Environment Variables
 ```bash
-# Production environment (from design-docs/08_ENV_VARS.md)
-# These apply to the unified frontend+apis deployment
+# Production environment (from design-docs/08_ENVIRONMENT_VARIABLES.md)
+# These apply to the unified frontend+hybrid tRPC+REST APIs deployment
 vercel env add NEXT_PUBLIC_SUPABASE_URL production
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
 vercel env add SUPABASE_SERVICE_ROLE_KEY production
@@ -215,7 +215,7 @@ module.exports = {
 }
 ```
 
-**Note**: The APIs workspace deploys as serverless functions alongside the frontend in a single Vercel application. API routes from the `apis/` workspace are automatically routed via the `vercel.json` configuration to maintain the unified deployment model while enabling modular development.
+**Note**: The APIs workspace deploys as serverless functions alongside the frontend in a single Vercel application. The hybrid tRPC + REST API routes from the `api/` workspace are automatically routed via the `vercel.json` configuration to maintain the unified deployment model while enabling modular development. Frontend uses tRPC for type-safe communication, while external systems can access REST endpoints that internally call the same tRPC procedures.
 
 ### Phase 5: Monitoring & Observability (Week 5)
 

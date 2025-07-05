@@ -6,7 +6,7 @@ This document provides tRPC API specifications for Rexera 2.0 using a unified Re
 
 ## 📋 API Overview
 
-Rexera 2.0 uses a **data-centric tRPC API design** where AI agents and human operators manipulate the same core data model through type-safe, consistent procedures. The API follows four clear patterns:
+Rexera 2.0 uses a **hybrid tRPC + REST API design** where AI agents and human operators manipulate the same core data model through type-safe, consistent procedures. The frontend uses tRPC for type-safe communication, while external systems can access the same functionality through REST endpoints that internally call tRPC procedures. The API follows four clear patterns:
 
 ### Core Patterns
 - **Resources** - Standard CRUD operations on data entities via tRPC procedures

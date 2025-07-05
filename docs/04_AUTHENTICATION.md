@@ -544,8 +544,8 @@ export function canAccessWorkflow(userRole: UserRole, userId: string, workflow: 
 ## Security Best Practices
 
 ### API Security
-- **JWT Validation**: All API routes validate JWT tokens
-- **Rate Limiting**: 1000 requests/hour per user for REST APIs
+- **JWT Validation**: All API routes validate JWT tokens (both tRPC and REST endpoints)
+- **Rate Limiting**: 1000 requests/hour per user for both tRPC and REST APIs
 - **CORS Configuration**: Restricted to allowed origins
 - **Input Validation**: All inputs validated and sanitized
 - **SQL Injection Prevention**: Parameterized queries only

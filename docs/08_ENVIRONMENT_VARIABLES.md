@@ -1,4 +1,4 @@
-# 08_ENV_VARS.md
+# 08_ENVIRONMENT_VARIABLES.md
 
 <!-- 
 This document provides comprehensive environment variable configuration for Rexera 2.0, including development, staging, and production environments across all services.
@@ -9,7 +9,7 @@ This document provides comprehensive environment variable configuration for Rexe
 Rexera 2.0 requires environment variables across **multiple services** and **deployment environments**:
 
 - **Next.js 15 Frontend** - Client and server-side configuration with tRPC client
-- **Express.js API** - tRPC router with integrated AI agents
+- **Express.js API** - Hybrid tRPC + REST API with integrated AI agents
 - **Supabase Database** - Authentication and database connection
 - **External Services** - Google OAuth, monitoring, and analytics
 
@@ -48,7 +48,7 @@ NEXTAUTH_URL=https://rexera-frontend.vercel.app
 ### API Environment Variables
 
 ```bash
-# API (Express.js + tRPC) Configuration
+# API (Express.js + Hybrid tRPC + REST) Configuration
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_JWT_SECRET=your-jwt-secret-key
@@ -76,7 +76,7 @@ AGENT_TIMEOUT_MS=30000
 ```
 
 **Agent Integration:**
-All AI agents are now integrated into the API layer via tRPC procedures:
+All AI agents are integrated into the API layer via tRPC procedures, with REST endpoints available for external systems:
 - **Nina** 🔍 - Research and data gathering (`agents.nina.*`)
 - **Mia** 📧 - Email communication (`agents.mia.*`)
 - **Florian** 📞 - Phone communication (`agents.florian.*`)

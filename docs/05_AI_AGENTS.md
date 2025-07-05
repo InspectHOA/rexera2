@@ -638,7 +638,12 @@ interface AgentResponse {
 
 ### Automatic Audit Integration
 
-**Every agent execution is automatically tracked in the audit system:**
+**Every agent execution is automatically tracked in the audit system via our hybrid tRPC + REST API:**
+
+**Integration Options:**
+- **Internal Agents**: Use tRPC procedures for type-safe communication
+- **External Agents**: Use REST endpoints for standard HTTP integration
+- **Both approaches**: Call the same underlying business logic for consistency
 
 ```typescript
 // Agent SDK Base Class (implements audit logging)
