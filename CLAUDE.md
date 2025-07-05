@@ -48,9 +48,9 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 
 ### Key Components
 
-**Frontend (frontend/)**: Next.js 14 application with TypeScript, Tailwind CSS, and shadcn/ui components. Features real-time dashboard updates via WebSocket connections. UI-focused with no API routes.
+**Frontend (frontend/)**: Next.js 14 application with TypeScript, Tailwind CSS, and shadcn/ui components. Features real-time dashboard updates via Supabase subscriptions. UI-focused with no API routes.
 
-**API (api/)**: Standalone API service providing all endpoints for workflows, agents, tasks, and communications. Deployed separately on Vercel.
+**API (serverless-api/)**: Vercel serverless functions providing REST endpoints for workflows, agents, tasks, and communications. Built with Zod validation and type safety.
 
 **Database (supabase/)**: Supabase PostgreSQL setup with Row-Level Security, migrations, and configuration. Contains comprehensive schema for workflows, tasks, agents, and business entities.
 
@@ -89,20 +89,20 @@ This project uses a **Turbo + pnpm** monorepo setup for optimal performance and 
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui + Radix UI primitives
 - **State Management**: Zustand + TanStack Query
-- **Data Fetching**: tRPC + TanStack React Query
+- **Data Fetching**: REST API + TanStack React Query
 - **Theming**: next-themes for dark/light mode
 
 **⚡ Backend API Stack**
-- **Runtime**: Node.js with Express
+- **Runtime**: Vercel serverless functions
 - **Language**: TypeScript
-- **API Architecture**: tRPC + REST endpoints
+- **API Architecture**: REST endpoints with Zod validation
 - **Validation**: Zod schemas for runtime type safety
-- **Authentication**: JWT with Google SSO (jose library)
-- **Middleware**: CORS, custom auth middleware
+- **Authentication**: Supabase Auth with Row Level Security
+- **Deployment**: Vercel edge functions with auto-scaling
 
 **🗄️ Database & Infrastructure**
 - **Database**: Supabase PostgreSQL with Row-Level Security (RLS)
-- **Real-time**: Supabase subscriptions + WebSocket connections
+- **Real-time**: Supabase subscriptions for live updates
 - **Workflow Engine**: n8n Cloud for orchestration
 - **Deployment**: Vercel for frontend and API
 - **File Storage**: Supabase storage for document management
@@ -123,7 +123,7 @@ This project uses a **Turbo + pnpm** monorepo setup for optimal performance and 
 ### Workspace Structure
 ```
 ├── frontend/           # Next.js 14 application
-├── api/               # Standalone API service  
+├── serverless-api/     # Vercel serverless functions  
 ├── agents/            # AI agent integration system
 ├── workflows/         # n8n workflow definitions
 ├── supabase/          # Database schema and migrations
@@ -157,15 +157,40 @@ The system uses WebSocket connections for live updates:
 
 ## Integration Patterns & Workflow Execution
 
-### **Dual-Layer Workflow Execution Pattern**
+### **Simple n8n Workflow Architecture**
 
-Rexera implements a sophisticated dual-layer architecture where **n8n Cloud orchestrates technical execution** while **PostgreSQL maintains business state** for real-time visibility and reporting.
+Rexera implements a **3-step workflow architecture** where **n8n workflows self-manage task creation and tracking** while **PostgreSQL maintains complete business state** for real-time visibility.
+
+#### **Core Architecture: 3-Step Process**
+
+1. **Workflow Triggered** → First n8n node creates all predefined tasks in database
+2. **Each Execution Node** → Updates corresponding task status (start/complete)  
+3. **Dynamic Events** → Trigger separate micro-workflows that create their own tasks
+
+#### **Workflow Types**
+
+**Main Workflows (Self-Contained)**:
+- `payoff-request` - Creates 4 tasks, executes agents, tracks completion
+- `hoa-acquisition` - Creates 3 tasks, orchestrates HOA research
+- `municipal-lien-search` - Creates 5 tasks, handles government searches
+
+**Micro-Workflows (Event-Driven)**:
+- `reply-to-lender` - Handle incoming lender emails
+- `reply-to-client` - Process client communications  
+- `escalate-to-hil` - Human-in-the-loop interventions
+
+#### **Key Benefits**
+
+✅ **Maximum Simplicity** - Tasks defined directly in workflow JSON
+✅ **Zero Code Changes** - New workflows just need JSON modifications
+✅ **Self-Contained** - Each workflow manages its own task lifecycle
+✅ **Clear Separation** - Main workflows vs micro-workflows for events
 
 ### **Complete Workflow Example: Mortgage Payoff Request**
 
-#### **1. Workflow Initiation**
+#### **1. Simple Workflow Creation**
 ```typescript
-// Frontend creates workflow via tRPC
+// Frontend creates workflow record only
 const workflow = await trpc.workflows.create.mutate({
   workflow_type: 'PAYOFF',
   client_id: 'client-123',
@@ -176,80 +201,144 @@ const workflow = await trpc.workflows.create.mutate({
   }
 });
 
-// Automatically triggers n8n workflow
-await triggerN8nPayoffWorkflow({
-  rexeraWorkflowId: workflow.id,
-  workflowType: 'PAYOFF',
+// Trigger n8n workflow - tasks will be created by n8n itself
+await triggerN8nWorkflow('payoff-request', {
+  workflow_id: workflow.id,
   metadata: workflow.metadata
 });
 ```
 
-#### **2. Agent Orchestration in n8n**
+#### **2. Self-Contained n8n Workflow**
 ```json
-// n8n workflow nodes call AI agents sequentially
+// payoff-request.json - Workflow creates and manages its own tasks
 {
+  "name": "Payoff Request Workflow",
   "nodes": [
     {
-      "name": "Nina Research",
+      "name": "Create All Tasks",
       "type": "httpRequest",
-      "url": "/api/agents/nina/execute",
+      "url": "={{ $env.REXERA_API_URL }}/api/rest/workflows/{{ $json.workflow_id }}/initialize-tasks",
+      "method": "POST",
       "body": {
-        "taskType": "identify_lender_contact",
-        "payload": { "loanNumber": "LOAN-2024-001" }
+        "tasks": [
+          { "title": "Research Lender Contact", "agent": "nina", "node_id": "nina-research" },
+          { "title": "Submit Payoff Request", "agent": "dynamic", "node_id": "communication-switch" },
+          { "title": "Process Lender Response", "agent": "iris", "node_id": "iris-extract" },
+          { "title": "Generate Invoice", "agent": "kosha", "node_id": "kosha-invoice" }
+        ]
       }
     },
     {
-      "name": "Communication Switch",
-      "type": "switch",
-      "conditions": [
-        { "if": "phone_preferred", "route": "Florian Phone Call" },
-        { "if": "ivr_system", "route": "Max IVR Navigation" }
-      ]
+      "name": "Start Task: Nina Research",
+      "type": "httpRequest",
+      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/nina-research/start",
+      "body": { "workflow_id": "{{ $json.workflow_id }}" }
     },
     {
-      "name": "Florian Phone Call",
-      "url": "/api/agents/florian/execute",
-      "body": { "taskType": "request_payoff_statement" }
+      "name": "Nina: Identify Lender Contact",
+      "type": "httpRequest", 
+      "url": "={{ $env.REXERA_API_URL }}/api/agents/nina/execute",
+      "body": { "taskType": "identify_lender_contact" }
     },
     {
-      "name": "Iris Email Monitor",
-      "url": "/api/agents/iris/execute", 
-      "body": { "taskType": "monitor_payoff_email" }
+      "name": "Complete Task: Nina Research",
+      "type": "httpRequest",
+      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/nina-research/complete",
+      "body": { "workflow_id": "{{ $json.workflow_id }}" }
     },
     {
-      "name": "Cassy Validation",
-      "url": "/api/agents/cassy/execute",
-      "body": { "taskType": "validate_payoff_statement" }
+      "name": "Communication Method Switch",
+      "type": "switch"
     }
   ]
 }
 ```
 
-#### **3. Real-Time Database Synchronization**
+#### **3. Micro-Workflow for Dynamic Events**
+```json
+// reply-to-lender.json - Self-contained email response workflow
+{
+  "name": "Reply to Lender Email", 
+  "nodes": [
+    {
+      "name": "Incoming Email Trigger",
+      "type": "webhook",
+      "path": "reply-to-lender"
+    },
+    {
+      "name": "Create Dynamic Task",
+      "type": "httpRequest", 
+      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks",
+      "method": "POST",
+      "body": {
+        "workflow_id": "{{ $json.workflow_id }}",
+        "title": "Reply to Lender Email",
+        "executor_type": "AI",
+        "metadata": { "trigger": "incoming_email", "agent": "mia" }
+      }
+    },
+    {
+      "name": "Mia: Process Email Response",
+      "type": "httpRequest",
+      "url": "={{ $env.REXERA_API_URL }}/api/agents/mia/execute",
+      "body": { "taskType": "process_lender_email" }
+    },
+    {
+      "name": "Complete Dynamic Task",
+      "type": "httpRequest",
+      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/{{ $('Create Dynamic Task').item.json.id }}/complete"
+    }
+  ]
+}
+```
+
+#### **4. Simple API Integration**
 ```typescript
-// n8n sends webhooks to sync PostgreSQL state
-router.post('/api/webhook/n8n', async (req) => {
-  const event = validateWebhookEvent(req.body);
+// Just 2 API endpoints needed for all task management
+
+// Initialize workflow tasks
+router.post('/api/rest/workflows/:id/initialize-tasks', async (req) => {
+  const { tasks } = req.body;
+  const workflowId = req.params.id;
   
-  switch (event.eventType) {
-    case 'workflow_started':
-      await supabase.from('workflows').update({
-        n8n_execution_id: event.executionId,
-        status: 'IN_PROGRESS'
-      }).eq('id', event.data.rexeraWorkflowId);
-      
-    case 'agent_task_completed':
-      await supabase.from('tasks').update({
-        status: 'COMPLETED',
-        metadata: { agent_result: event.data.result }
-      }).eq('id', event.data.taskId);
-      
-    case 'workflow_completed':
-      await supabase.from('workflows').update({
-        status: 'COMPLETED',
-        metadata: { payoffAmount: '$284,567.89' }
-      }).eq('id', event.data.rexeraWorkflowId);
-  }
+  const tasksToCreate = tasks.map(task => ({
+    workflow_id: workflowId,
+    title: task.title,
+    executor_type: 'AI',
+    metadata: { 
+      node_id: task.node_id, 
+      agent: task.agent 
+    }
+  }));
+  
+  await supabase.from('tasks').insert(tasksToCreate);
+});
+
+// Update task by node (used by all workflows)
+router.put('/api/rest/tasks/by-node/:node_id/:action', async (req) => {
+  const { node_id, action } = req.params;
+  const { workflow_id } = req.body;
+  
+  const updates = action === 'start' 
+    ? { status: 'IN_PROGRESS' }
+    : { status: 'COMPLETED', completed_at: new Date().toISOString() };
+    
+  await supabase.from('tasks')
+    .update(updates)
+    .match({ 
+      workflow_id,
+      'metadata->node_id': node_id 
+    });
+});
+
+// External events trigger micro-workflows directly
+router.post('/api/rest/incoming-email', async (req) => {
+  const { workflow_id, email_data } = req.body;
+  
+  await fetch(`${process.env.N8N_BASE_URL}/webhook/reply-to-lender`, {
+    method: 'POST',
+    body: JSON.stringify({ workflow_id, email_data })
+  });
 });
 ```
 

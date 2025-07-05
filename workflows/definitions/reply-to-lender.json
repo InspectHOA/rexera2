@@ -1,0 +1,268 @@
+{
+  "name": "Reply to Lender Email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reply-to-lender",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "email-trigger",
+      "name": "Incoming Email Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "reply-to-lender-webhook"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "workflow_id",
+              "value": "={{ $json.workflow_id }}"
+            },
+            {
+              "name": "title",
+              "value": "Reply to Lender Email"
+            },
+            {
+              "name": "executor_type",
+              "value": "AI"
+            },
+            {
+              "name": "metadata",
+              "value": "{\"trigger\": \"incoming_email\", \"agent\": \"mia\", \"email_from\": \"{{ $json.email_data.from }}\", \"email_subject\": \"{{ $json.email_data.subject }}\"}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "create-dynamic-task",
+      "name": "Create Dynamic Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/agents/mia/execute",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskType",
+              "value": "process_lender_email"
+            },
+            {
+              "name": "description",
+              "value": "Process and respond to incoming lender email"
+            },
+            {
+              "name": "payload",
+              "value": "={{ $('Incoming Email Trigger').item.json.email_data }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "mia-process-email",
+      "name": "Mia: Process Email Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/{{ $('Create Dynamic Task').item.json.id }}/complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "result",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      },
+      "id": "complete-dynamic-task",
+      "name": "Complete Dynamic Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_BASE_URL }}/webhook/payoff-response",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email_processed",
+              "value": "true"
+            },
+            {
+              "name": "lender_data",
+              "value": "={{ $('Mia: Process Email Response').item.json }}"
+            },
+            {
+              "name": "workflow_id",
+              "value": "={{ $('Incoming Email Trigger').item.json.workflow_id }}"
+            }
+          ]
+        }
+      },
+      "id": "resume-main-workflow",
+      "name": "Resume Main Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"task_id\": $('Create Dynamic Task').item.json.id, \"email_processed\": true } }}"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Incoming Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create Dynamic Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Dynamic Task": {
+      "main": [
+        [
+          {
+            "node": "Mia: Process Email Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mia: Process Email Response": {
+      "main": [
+        [
+          {
+            "node": "Complete Dynamic Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Dynamic Task": {
+      "main": [
+        [
+          {
+            "node": "Resume Main Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Main Workflow": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "reply-to-lender-workflow",
+  "tags": [
+    {
+      "createdAt": "2025-01-07T16:32:00.000Z",
+      "updatedAt": "2025-01-07T16:32:00.000Z",
+      "id": "email",
+      "name": "email"
+    },
+    {
+      "createdAt": "2025-01-07T16:32:00.000Z",
+      "updatedAt": "2025-01-07T16:32:00.000Z",
+      "id": "micro-workflow",
+      "name": "micro-workflow"
+    }
+  ]
+}

@@ -13,12 +13,18 @@
     "workflow:validate": "npx tsx cli/workflow-cli.ts validate",
     "workflow:backup": "npx tsx cli/workflow-cli.ts backup",
     "workflow:test-payoff": "npx tsx cli/workflow-cli.ts test-payoff",
-    "workflow:import-payoff": "npx tsx cli/workflow-cli.ts import-payoff"
+    "workflow:import-payoff": "npx tsx cli/workflow-cli.ts import-payoff",
+    "deploy:workflows": "ts-node scripts/deploy-unified-workflows.ts",
+    "deploy:payoff-v2": "ts-node scripts/deploy-payoff-v2.ts",
+    "deploy:payoff-v1": "ts-node scripts/deploy-payoff-v1-to-rexera2.ts",
+    "deploy:test-payoff": "ts-node scripts/deploy-test-payoff.ts",
+    "test:integration": "ts-node scripts/test-integration.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.2.0",
-    "tsx": "^4.0.0"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.0.0",
+    "typescript": "^5.2.0"
   },
   "files": [
     "definitions",
