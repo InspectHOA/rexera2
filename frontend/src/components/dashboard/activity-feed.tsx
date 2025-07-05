@@ -22,14 +22,23 @@ export function ActivityFeed() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/activities');
+        // Use tRPC endpoint instead of REST
+        const response = await fetch('/api/trpc/activities.list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            json: { limit: 15 }
+          })
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        setActivities(data.activities || []);
+        setActivities(data.result?.data?.activities || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
         setError(errorMessage);

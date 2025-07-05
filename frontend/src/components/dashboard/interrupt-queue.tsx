@@ -8,7 +8,7 @@ interface InterruptItem {
   workflow_id: string;
   task_title: string;
   interrupt_reason: string;
-  priority: 'CRITICAL' | 'HIGH' | 'NORMAL';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   created_at: string;
   workflow_type: string;
 }
@@ -24,14 +24,23 @@ export function InterruptQueue() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/interrupts');
+        // Use tRPC endpoint instead of REST
+        const response = await fetch('/api/trpc/interrupts.list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            json: { limit: 10 }
+          })
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to fetch interrupts: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        setInterrupts(data.interrupts || []);
+        setInterrupts(data.result?.data?.interrupts || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load interrupt queue';
         setError(errorMessage);

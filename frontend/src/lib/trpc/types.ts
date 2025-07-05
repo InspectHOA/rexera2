@@ -13,4 +13,19 @@ export interface AppRouter {
   health: {
     check: any;
   };
+  interrupts: {
+    list: any;
+    byId: any;
+    resolve: any;
+  };
+  agents: {
+    list: any;
+    byId: any;
+    performance: any;
+  };
+  activities: {
+    list: any;
+    byId: any;
+    summary: any;
+  };
 }

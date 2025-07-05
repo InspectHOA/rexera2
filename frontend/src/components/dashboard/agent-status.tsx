@@ -22,14 +22,23 @@ export function AgentStatus() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/agents');
+        // Use tRPC endpoint instead of REST
+        const response = await fetch('/api/trpc/agents.list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            json: { is_active: true, limit: 20 }
+          })
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        setAgents(data.data || []);
+        setAgents(data.result?.data?.data || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load agent status';
         setError(errorMessage);
