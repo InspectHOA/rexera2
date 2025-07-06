@@ -58,17 +58,6 @@ Rexera 2.0 is an AI-powered real estate workflow automation platform with a soph
 
 **Workflows (workflows/)**: n8n workflow definitions and validation scripts for orchestrating AI agent coordination.
 
-**Agents (agents/)**: Integration system for 10 specialized AI agents:
-- Nina 🔍 (Research & Data Discovery)
-- Mia 📧 (Email Communication)
-- Florian 🗣️ (Phone Outreach)
-- Rex 🌐 (Web Portal Navigation)
-- Iris 📄 (Document Processing)
-- Ria 🤝 (Support & Coordination)
-- Kosha 💰 (Financial Analysis)
-- Cassy ✓ (Quality Assurance)
-- Max 📞 (IVR Navigation)
-- Corey 🏢 (HOA Specialized Analysis)
 
 **Types & Schemas (packages/)**: Organized type system with clear separation:
 - `packages/types/` - Shared enums, utility types, external service interfaces
@@ -110,7 +99,7 @@ This project uses a **Turbo + pnpm** monorepo setup for optimal performance and 
 - **File Storage**: Supabase storage for document management
 
 **🤖 AI & Automation**
-- **AI Agents**: 10 specialized agents with HTTP API integration
+- **Workflow Engine**: n8n Cloud for orchestration
 - **Workflow Types**: 3 core workflows (Municipal Lien Search, HOA Acquisition, Payoff Request)
 - **Communication**: Standardized JSON request/response format
 - **Error Handling**: Automatic retry with exponential backoff, HIL escalation
@@ -126,7 +115,6 @@ This project uses a **Turbo + pnpm** monorepo setup for optimal performance and 
 ```
 ├── frontend/           # Next.js 14 application
 ├── serverless-api/     # Vercel serverless functions  
-├── agents/            # AI agent integration system
 ├── workflows/         # n8n workflow definitions
 ├── supabase/          # Database schema and migrations
 └── packages/

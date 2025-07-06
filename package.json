@@ -8,7 +8,6 @@
     "serverless-api",
     "workflows",
     "packages/types",
-    "agents",
     "packages/schemas"
   ],
   "scripts": {
@@ -28,7 +27,6 @@
     "db:seed": "pnpm supabase db seed",
     "workflows:validate": "cd workflows && npm run validate",
     "workflows:backup": "cd workflows && npm run backup",
-    "agents:test": "cd agents && npm run test",
     "e2e": "playwright test"
   },
   "devDependencies": {

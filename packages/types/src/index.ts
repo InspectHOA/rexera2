@@ -27,11 +27,6 @@ export * from './external';
 // =====================================================
 // TODO: These should gradually move to @rexera/schemas as Zod schemas
 
-// Database entity types (should become Zod schemas)
-export * from './database';
-
-// API types (should become Zod schemas) 
-export * from './api';
 
 // Agent types (should become Zod schemas)
 export * from './agents';
