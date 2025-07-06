@@ -7,7 +7,7 @@ This document provides a comprehensive guide to deploying, configuring, testing,
 The application is a monorepo deployed as two separate projects on Vercel:
 
 *   **`rexera-frontend`**: The Next.js 15 frontend application, located in the `/frontend` directory.
-*   **`rexera-api`**: The REST API running on Vercel Serverless Functions, located in the `/api` directory.
+*   **`rexera-api`**: The REST API running on Vercel Serverless Functions, located in the `/serverless-api` directory.
 
 These projects are deployed independently but are designed to work together. The frontend communicates with the backend via standard REST API calls.
 
@@ -27,7 +27,7 @@ Proper environment variable setup is critical. Variables are managed in Vercel f
 | `NEXTAUTH_URL` | `http://localhost:3000` | `https://rexera-frontend.vercel.app` |
 | `NEXTAUTH_SECRET` | (generate a secret) | (generate a secret) |
 
-#### API (`/api`)
+#### API (`/serverless-api`)
 
 | Variable | Local Value (`.env.local`) | Production Value (Vercel) |
 | :--- | :--- | :--- |

@@ -2769,14 +2769,189 @@
                         
                         <!-- Parallel/Dynamic Tasks -->
                         <div class="parallel-tasks">
-                            <div class="parallel-title">Parallel Tasks</div>
+                            <div class="parallel-title">Parallel Tasks (21 Active)</div>
+                            
+                            <!-- Urgent Priority Tasks -->
+                            <div class="task-item parallel" onclick="selectTask('hoa-email-response')" data-task="hoa-email-response" style="border-left: 3px solid var(--critical);">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">URGENT: HOA Email Response Required</div>
+                                    <div class="task-meta">📧 Mia • Dynamic • Processing email</div>
+                                </div>
+                                <div class="task-sla late">URGENT</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('portal-auth-failure')" data-task="portal-auth-failure" style="border-left: 3px solid var(--critical);">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">URGENT: Portal Authentication Failed</div>
+                                    <div class="task-meta">🌐 Rex → Florian • Escalating to human</div>
+                                </div>
+                                <div class="task-sla late">ESCALATING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('wire-instructions')" data-task="wire-instructions" style="border-left: 3px solid var(--critical);">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">URGENT: Wire Instructions Changed</div>
+                                    <div class="task-meta">💰 Nina • Security verification required</div>
+                                </div>
+                                <div class="task-sla warning">VERIFYING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('sla-breach-alert')" data-task="sla-breach-alert" style="border-left: 3px solid var(--critical);">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">URGENT: SLA Breach Alert</div>
+                                    <div class="task-meta">⚠️ System • Portal task overdue 40 min</div>
+                                </div>
+                                <div class="task-sla late">ALERTING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('fraud-detection')" data-task="fraud-detection" style="border-left: 3px solid var(--critical);">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">URGENT: Fraud Detection Alert</div>
+                                    <div class="task-meta">🛡️ Nina • Suspicious wire pattern detected</div>
+                                </div>
+                                <div class="task-sla warning">ANALYZING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('client-escalation')" data-task="client-escalation" style="border-left: 3px solid var(--critical);">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">URGENT: Client Escalation</div>
+                                    <div class="task-meta">📞 Ria • Client demanding manager call</div>
+                                </div>
+                                <div class="task-sla late">ESCALATING</div>
+                            </div>
+                            
+                            <!-- Normal Priority Tasks -->
+                            <div class="task-item parallel" onclick="selectTask('document-upload')" data-task="document-upload">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Document Upload Detected</div>
+                                    <div class="task-meta">📄 Iris • OCR processing updated statement</div>
+                                </div>
+                                <div class="task-sla warning">OCR RUNNING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('webhook-update')" data-task="webhook-update">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Webhook: Title Company Status Update</div>
+                                    <div class="task-meta">📡 Kosha • Closing date change notification</div>
+                                </div>
+                                <div class="task-sla warning">PARSING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('phone-transcription')" data-task="phone-transcription">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Phone Call Transcription</div>
+                                    <div class="task-meta">📞 Max • Incoming call from FNB</div>
+                                </div>
+                                <div class="task-sla on-time">TRANSCRIBING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('backup-lender-search')" data-task="backup-lender-search">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Backup Lender Search</div>
+                                    <div class="task-meta">🔍 Nina • Finding alternative contacts</div>
+                                </div>
+                                <div class="task-sla on-time">SEARCHING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('document-conflict')" data-task="document-conflict">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Document Version Conflict</div>
+                                    <div class="task-meta">📄 Iris • $267.13 difference detected</div>
+                                </div>
+                                <div class="task-sla warning">ANALYZING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('document-backup')" data-task="document-backup">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Document Backup & Archive</div>
+                                    <div class="task-meta">💾 System • Securing critical files</div>
+                                </div>
+                                <div class="task-sla on-time">BACKING UP</div>
+                            </div>
+                            
+                            <!-- Background Tasks -->
                             <div class="task-item parallel active" onclick="selectTask('client-communication')" data-task="client-communication">
                                 <div class="task-status completed"></div>
                                 <div class="task-details">
                                     <div class="task-name">Client Communication</div>
-                                    <div class="task-meta">👩‍💼 Ria • Dynamic • 3 messages handled</div>
+                                    <div class="task-meta">👩‍💼 Ria • Dynamic • 6 messages handled</div>
                                 </div>
                                 <div class="task-sla on-time">ACTIVE</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('quality-check')" data-task="quality-check">
+                                <div class="task-status awaiting-review"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Automated Quality Check</div>
+                                    <div class="task-meta">🔍 Cassy • Background validation 73%</div>
+                                </div>
+                                <div class="task-sla on-time">RUNNING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('compliance-monitoring')" data-task="compliance-monitoring">
+                                <div class="task-status completed"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Compliance Monitoring</div>
+                                    <div class="task-meta">📋 Corey • TRID deadlines on track</div>
+                                </div>
+                                <div class="task-sla on-time">ACTIVE</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('email-monitoring')" data-task="email-monitoring">
+                                <div class="task-status completed"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Email Thread Monitoring</div>
+                                    <div class="task-meta">📧 Mia • 4 threads, 1 new HOA message</div>
+                                </div>
+                                <div class="task-sla on-time">ACTIVE</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('cost-calculation')" data-task="cost-calculation">
+                                <div class="task-status completed"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Real-time Cost Calculation</div>
+                                    <div class="task-meta">💰 Kosha • Current total: $187.25</div>
+                                </div>
+                                <div class="task-sla on-time">CALCULATING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('social-media-monitoring')" data-task="social-media-monitoring">
+                                <div class="task-status completed"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Social Media Monitoring</div>
+                                    <div class="task-meta">👁️ Ria • 1 positive LinkedIn mention</div>
+                                </div>
+                                <div class="task-sla on-time">SCANNING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('weather-monitoring')" data-task="weather-monitoring">
+                                <div class="task-status completed"></div>
+                                <div class="task-details">
+                                    <div class="task-name">Weather Impact Monitoring</div>
+                                    <div class="task-meta">🌦️ Corey • Clear skies for closing day</div>
+                                </div>
+                                <div class="task-sla on-time">TRACKING</div>
+                            </div>
+                            
+                            <div class="task-item parallel" onclick="selectTask('api-health-check')" data-task="api-health-check">
+                                <div class="task-status completed"></div>
+                                <div class="task-details">
+                                    <div class="task-name">API Health Monitoring</div>
+                                    <div class="task-meta">🔧 System • All APIs healthy, 180ms avg</div>
+                                </div>
+                                <div class="task-sla on-time">HEALTHY</div>
                             </div>
                         </div>
                     </div>
@@ -4429,6 +4604,373 @@ This task will automatically start once CRM update is completed.`,
                     data: 'Task has not started. Waiting for CRM Update to complete successfully.'
                 },
                 dependencies: ['update-crm']
+            },
+            'hoa-email-response': {
+                name: 'URGENT: HOA Email Response Required',
+                agent: '📧 Mia',
+                status: 'PROCESSING',
+                completed_at: 'In Progress',
+                sla_status: 'PROCESSING',
+                duration: 'Real-time',
+                assigned_to: 'Mia (Email Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered by incoming HOA email requiring immediate attention and response.',
+                logs: `[14:45] Email received from hoa@pinemeadows.com
+[14:45] Subject: "Updated HOA documents attached for 123 Oak Street"
+[14:46] Auto-triggered Mia for email analysis
+[14:46] Analyzing email content and attachments
+[14:47] Determining response requirements...`,
+                result: {
+                    status: 'PROCESSING',
+                    data: 'Email analysis in progress. Determining appropriate response to HOA document update.'
+                },
+                can_open_agent: true,
+                agent_modal: 'mia'
+            },
+            'document-upload': {
+                name: 'Document Upload Detected',
+                agent: '📄 Iris',
+                status: 'PROCESSING',
+                completed_at: 'In Progress',
+                sla_status: 'OCR RUNNING',
+                duration: 'Real-time',
+                assigned_to: 'Iris (Document Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered by document upload detection requiring OCR processing.',
+                logs: `[14:30] Document upload detected: updated_payoff_statement.pdf
+[14:30] File size: 2.8 MB, Format: PDF
+[14:31] Auto-triggered Iris for OCR processing
+[14:31] Starting advanced OCR analysis
+[14:32] Processing document structure...`,
+                result: {
+                    status: 'PROCESSING',
+                    data: 'OCR processing in progress for uploaded payoff statement document.'
+                },
+                can_open_agent: true,
+                agent_modal: 'iris'
+            },
+            'portal-auth-failure': {
+                name: 'URGENT: Lender Portal Authentication Failed',
+                agent: '🌐 Rex → Florian',
+                status: 'ESCALATING',
+                completed_at: 'In Progress',
+                sla_status: 'ESCALATING',
+                duration: 'Real-time',
+                assigned_to: 'Rex (Web Agent) → Florian (Human Specialist)',
+                description: 'Dynamic task triggered by portal authentication failure requiring human intervention.',
+                logs: `[14:15] Portal authentication failed for Rex
+[14:15] Auto-triggered escalation workflow
+[14:16] Assigning to Florian for manual intervention
+[14:16] Preparing credential update procedures
+[14:17] Escalation in progress...`,
+                result: {
+                    status: 'ESCALATING',
+                    data: 'Authentication failure escalated to human specialist for credential update.'
+                },
+                can_open_agent: true,
+                agent_modal: 'rex'
+            },
+            'webhook-update': {
+                name: 'Webhook: Title Company Status Update',
+                agent: '📡 Kosha',
+                status: 'PROCESSING',
+                completed_at: 'In Progress',
+                sla_status: 'PARSING',
+                duration: 'Real-time',
+                assigned_to: 'Kosha (Integration Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered by webhook from title company with status update.',
+                logs: `[14:20] Webhook received from Sunshine Title API
+[14:20] Payload: Closing date change notification
+[14:21] Auto-triggered Kosha for webhook processing
+[14:21] Parsing webhook data structure
+[14:22] Validating closing date change...`,
+                result: {
+                    status: 'PROCESSING',
+                    data: 'Processing webhook notification about closing date change to January 3rd, 2025.'
+                }
+            },
+            'quality-check': {
+                name: 'Automated Quality Check',
+                agent: '🔍 Cassy',
+                status: 'RUNNING',
+                completed_at: 'In Progress',
+                sla_status: 'RUNNING',
+                duration: 'Background process',
+                assigned_to: 'Cassy (QA Agent) - Background process',
+                description: 'Continuous background quality validation of payoff statement accuracy.',
+                logs: `[13:45] Background quality check initiated
+[13:46] Validating payoff statement data
+[13:50] Cross-referencing with loan records
+[14:00] Checking calculation accuracy
+[14:15] 73% validation complete - No issues found`,
+                result: {
+                    status: 'RUNNING',
+                    data: 'Background quality validation 73% complete. No accuracy issues detected so far.'
+                }
+            },
+            'phone-transcription': {
+                name: 'Phone Call Transcription',
+                agent: '📞 Max',
+                status: 'TRANSCRIBING',
+                completed_at: 'In Progress',
+                sla_status: 'TRANSCRIBING',
+                duration: 'Real-time',
+                assigned_to: 'Max (Voice Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered by incoming phone call requiring real-time transcription.',
+                logs: `[14:35] Incoming call detected from (800) 555-0123
+[14:35] Caller ID: First National Bank
+[14:36] Auto-triggered Max for call transcription
+[14:36] Real-time transcription started
+[14:37] Processing audio stream...`,
+                result: {
+                    status: 'TRANSCRIBING',
+                    data: 'Real-time transcription active for incoming call from First National Bank.'
+                }
+            },
+            'compliance-monitoring': {
+                name: 'Compliance Monitoring',
+                agent: '📋 Corey',
+                status: 'ACTIVE',
+                completed_at: 'Continuous',
+                sla_status: 'ACTIVE',
+                duration: 'All day',
+                assigned_to: 'Corey (Compliance Agent) - Continuous monitoring',
+                description: 'Continuous monitoring of TRID compliance deadlines and state-specific requirements.',
+                logs: `[09:00] Compliance monitoring started
+[09:01] TRID deadline tracking active
+[10:00] State requirement validation
+[12:00] Midday compliance check - All on track
+[14:00] Afternoon deadline review - No issues`,
+                result: {
+                    status: 'ACTIVE',
+                    data: 'All TRID deadlines and state requirements on track. Continuous monitoring active.'
+                }
+            },
+            'wire-instructions': {
+                name: 'URGENT: Wire Instructions Changed',
+                agent: '💰 Nina',
+                status: 'VERIFYING',
+                completed_at: 'In Progress',
+                sla_status: 'VERIFYING',
+                duration: 'Real-time',
+                assigned_to: 'Nina (Research Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered by updated wire instructions requiring security verification.',
+                logs: `[14:50] Email with updated wire instructions received
+[14:50] From: buyer's agent with new banking details
+[14:51] Auto-triggered Nina for fraud detection
+[14:51] Running security verification protocols
+[14:52] Analyzing instruction authenticity...`,
+                result: {
+                    status: 'VERIFYING',
+                    data: 'Security verification in progress for updated wire instructions. Fraud detection protocols active.'
+                }
+            },
+            'document-conflict': {
+                name: 'Document Version Conflict',
+                agent: '📄 Iris',
+                status: 'ANALYZING',
+                completed_at: 'In Progress',
+                sla_status: 'ANALYZING',
+                duration: 'Real-time',
+                assigned_to: 'Iris (Document Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered by conflicting payoff amounts between original and uploaded documents.',
+                logs: `[14:32] Document conflict detected between versions
+[14:32] Original amount: $247,856.32, New amount: $248,123.45
+[14:33] Auto-triggered Iris for conflict analysis
+[14:33] Comparing document timestamps and sources
+[14:34] Analyzing discrepancy patterns...`,
+                result: {
+                    status: 'ANALYZING',
+                    data: 'Analyzing conflicting payoff amounts between document versions. Difference of $267.13 detected.'
+                }
+            },
+            'email-monitoring': {
+                name: 'Email Thread Monitoring',
+                agent: '📧 Mia',
+                status: 'ACTIVE',
+                completed_at: 'Continuous',
+                sla_status: 'ACTIVE',
+                duration: 'Background process',
+                assigned_to: 'Mia (Email Agent) - Continuous monitoring',
+                description: 'Continuous monitoring of 4 active email threads for responses and new communications.',
+                logs: `[09:00] Email monitoring started for workflow
+[14:30] Thread 1: Lender communication - Last activity 1:30 PM
+[14:35] Thread 2: HOA correspondence - New message 2:45 PM
+[14:40] Thread 3: Title company updates - Active
+[14:45] Thread 4: Client inquiries - Monitoring`,
+                result: {
+                    status: 'ACTIVE',
+                    data: 'Monitoring 4 active email threads. 1 new message detected in HOA thread requiring attention.'
+                }
+            },
+            'sla-breach-alert': {
+                name: 'URGENT: SLA Breach Alert',
+                agent: '⚠️ System',
+                status: 'ALERTING',
+                completed_at: 'In Progress',
+                sla_status: 'ALERTING',
+                duration: 'Real-time',
+                assigned_to: 'System Alert - Dynamic trigger',
+                description: 'Dynamic alert triggered by SLA breach on portal access task requiring immediate attention.',
+                logs: `[14:55] SLA breach detected for portal access task
+[14:55] Task overdue by 40 minutes
+[14:55] Auto-triggered escalation alert
+[14:56] Notifying HIL team and managers
+[14:56] Escalation protocols activated`,
+                result: {
+                    status: 'ALERTING',
+                    data: 'SLA breach alert active. Portal access task overdue by 40 minutes. HIL team notified.'
+                }
+            },
+            'backup-lender-search': {
+                name: 'Backup Lender Search',
+                agent: '🔍 Nina',
+                status: 'SEARCHING',
+                completed_at: 'In Progress',
+                sla_status: 'SEARCHING',
+                duration: 'Real-time',
+                assigned_to: 'Nina (Research Agent) - Dynamic trigger',
+                description: 'Dynamic task triggered to find alternative lender contacts due to portal access failure.',
+                logs: `[14:20] Portal access failure triggered backup search
+[14:21] Searching alternative contact methods
+[14:25] Found backup phone number: (800) 555-0124
+[14:30] Located secondary email: backup@fnb.com
+[14:35] Researching branch office contacts...`,
+                result: {
+                    status: 'SEARCHING',
+                    data: 'Found 2 alternative contact methods. Continuing search for additional backup options.'
+                }
+            },
+            'cost-calculation': {
+                name: 'Real-time Cost Calculation',
+                agent: '💰 Kosha',
+                status: 'CALCULATING',
+                completed_at: 'Continuous',
+                sla_status: 'CALCULATING',
+                duration: 'Background process',
+                assigned_to: 'Kosha (Finance Agent) - Background process',
+                description: 'Continuous real-time calculation of workflow costs and billable time tracking.',
+                logs: `[09:00] Cost tracking initiated for workflow
+[12:00] Midday cost update: $125.50
+[14:00] Agent time costs updated
+[14:30] Document processing costs added
+[14:45] Current total: $187.25`,
+                result: {
+                    status: 'CALCULATING',
+                    data: 'Real-time cost tracking active. Current workflow cost: $187.25. Updating continuously.'
+                }
+            },
+            'social-media-monitoring': {
+                name: 'Social Media Monitoring',
+                agent: '👁️ Ria',
+                status: 'SCANNING',
+                completed_at: 'Continuous',
+                sla_status: 'SCANNING',
+                duration: 'Background process',
+                assigned_to: 'Ria (Support Agent) - Background monitoring',
+                description: 'Continuous monitoring of social media platforms for client mentions and reputation management.',
+                logs: `[09:00] Social media monitoring started
+[11:30] LinkedIn mention detected - positive
+[13:15] Twitter scan - no mentions
+[14:20] Facebook review monitoring active
+[14:45] No negative mentions detected`,
+                result: {
+                    status: 'SCANNING',
+                    data: 'Social media monitoring active. 1 positive LinkedIn mention detected. No negative sentiment found.'
+                }
+            },
+            'fraud-detection': {
+                name: 'URGENT: Fraud Detection Alert',
+                agent: '🛡️ Nina',
+                status: 'ANALYZING',
+                completed_at: 'In Progress',
+                sla_status: 'ANALYZING',
+                duration: 'Real-time',
+                assigned_to: 'Nina (Security Agent) - Dynamic trigger',
+                description: 'Dynamic fraud detection alert triggered by suspicious wire instruction pattern.',
+                logs: `[14:51] Suspicious pattern detected in wire instructions
+[14:51] Multiple changes in short timeframe flagged
+[14:52] Auto-triggered fraud analysis protocols
+[14:52] Comparing against known fraud patterns
+[14:53] Running security verification checks...`,
+                result: {
+                    status: 'ANALYZING',
+                    data: 'Fraud detection analysis in progress. Suspicious wire instruction pattern requires verification.'
+                }
+            },
+            'weather-monitoring': {
+                name: 'Weather Impact Monitoring',
+                agent: '🌦️ Corey',
+                status: 'TRACKING',
+                completed_at: 'Continuous',
+                sla_status: 'TRACKING',
+                duration: 'Background process',
+                assigned_to: 'Corey (Compliance Agent) - Background monitoring',
+                description: 'Monitoring weather conditions in Miami for potential closing day impact.',
+                logs: `[09:00] Weather monitoring started for Miami area
+[12:00] Current conditions: Partly cloudy, 78°F
+[14:00] Tomorrow forecast: Sunny, 82°F
+[14:30] No severe weather alerts
+[14:45] Closing day forecast: Clear skies`,
+                result: {
+                    status: 'TRACKING',
+                    data: 'Weather monitoring active. Clear skies forecast for closing day. No weather-related delays expected.'
+                }
+            },
+            'document-backup': {
+                name: 'Document Backup & Archive',
+                agent: '💾 System',
+                status: 'BACKING UP',
+                completed_at: 'In Progress',
+                sla_status: 'BACKING UP',
+                duration: 'Real-time',
+                assigned_to: 'System Process - Dynamic trigger',
+                description: 'Dynamic backup process triggered to secure critical workflow documents.',
+                logs: `[14:45] Critical document backup initiated
+[14:46] Backing up payoff statement PDF
+[14:47] Archiving email communications
+[14:48] Securing research data files
+[14:49] Backup progress: 75% complete`,
+                result: {
+                    status: 'BACKING UP',
+                    data: 'Document backup in progress. 75% complete. Securing all critical workflow files.'
+                }
+            },
+            'api-health-check': {
+                name: 'API Health Monitoring',
+                agent: '🔧 System',
+                status: 'HEALTHY',
+                completed_at: 'Continuous',
+                sla_status: 'HEALTHY',
+                duration: 'Background process',
+                assigned_to: 'System Monitor - Continuous health check',
+                description: 'Continuous monitoring of external API endpoints and system health status.',
+                logs: `[09:00] API health monitoring started
+[12:00] All APIs responding normally
+[14:00] Lender portal API: 200ms response time
+[14:30] Email service API: Healthy
+[14:45] All systems operational`,
+                result: {
+                    status: 'HEALTHY',
+                    data: 'All external APIs healthy. Average response time: 180ms. No service disruptions detected.'
+                }
+            },
+            'client-escalation': {
+                name: 'URGENT: Client Escalation',
+                agent: '📞 Ria',
+                status: 'ESCALATING',
+                completed_at: 'In Progress',
+                sla_status: 'ESCALATING',
+                duration: 'Real-time',
+                assigned_to: 'Ria (Support Agent) - Dynamic trigger',
+                description: 'Dynamic escalation triggered by client demanding immediate manager intervention.',
+                logs: `[14:58] Client escalation request received
+[14:58] Client demanding manager call immediately
+[14:59] Auto-triggered escalation workflow
+[14:59] Notifying available managers
+[15:00] Preparing escalation briefing...`,
+                result: {
+                    status: 'ESCALATING',
+                    data: 'Client escalation in progress. Manager notification sent. Preparing immediate callback.'
+                }
             }
         };
 

@@ -29,15 +29,17 @@ While the full schema contains over 30 tables, the following are the most critic
 
 ## 2. Workflow Architecture
 
-The workflow system is built on a simple but powerful premise: separating the *definition* of a workflow from its *execution*.
+The workflow system is built on a dynamic task sequence approach where n8n workflows first populate tasks, then execute them.
 
-### The Static Blueprint
+### Workflow Definitions
 
-For each workflow type (e.g., `PAYOFF`, `HOA_ACQUISITION`), there is a static JSON file that acts as a **blueprint**. This file defines the complete "to-do list" for that workflow.
+For each workflow type (e.g., `PAYOFF`, `HOA_ACQUISITION`), there are n8n workflow definitions stored in the `workflows/definitions/` folder. These contain the logic for determining what tasks need to be done for a specific workflow instance.
 
-The most important part of this blueprint is the `taskSequence`, which is an array of objects, each defining a potential step in the workflow.
+### Dynamic Task Population
 
-**Example `taskSequence` entry:**
+When a workflow is triggered, the n8n workflow first populates a task sequence specific to that workflow instance. This task sequence is stored in n8n and defines the actual steps that will be executed.
+
+**Example task sequence entry:**
 
 ```json
 {
@@ -47,18 +49,16 @@ The most important part of this blueprint is the `taskSequence`, which is an arr
 }
 ```
 
-This blueprint is the single source of truth for what *can* happen in a workflow.
-
 ### The Execution Engine (n8n)
 
-The technical execution of the workflow is handled by **n8n**, an open-source workflow automation tool. When a new workflow is initiated in our application, we trigger a corresponding workflow in n8n.
+The technical execution is handled by **n8n**. When a new workflow is initiated, n8n:
 
-The n8n workflow is responsible for:
-1.  Reading the static JSON blueprint.
-2.  Executing the tasks in the correct sequence.
-3.  Calling the appropriate AI agents for each task.
-4.  Handling complex logic, branching (e.g., choosing between email or phone), and error retries.
-5.  Reporting the result of each completed task back to our application's API.
+1.  Populates the task sequence for that specific workflow instance
+2.  Executes the tasks in the correct sequence
+3.  Updates task statuses as they progress
+4.  Calls the appropriate AI agents for each task
+5.  Handles complex logic, branching (e.g., choosing between email or phone), and error retries
+6.  Reports the result of each completed task back to our application's API
 
 ### Tying It Together: The `task_executions` Log
 
@@ -67,11 +67,12 @@ This is where the data model and workflow architecture meet.
 1.  A user initiates a workflow in the UI.
 2.  Our API creates a new record in the `workflows` table.
 3.  The API triggers the `n8n` workflow, passing it the `workflow_id`.
-4.  `n8n` begins executing steps from the static blueprint.
-5.  After each step is completed by an AI agent, `n8n` calls our API.
-6.  Our API creates a new record in the `task_executions` table with the `workflow_id`, the `taskType` from the blueprint, the `status` ('COMPLETED' or 'FAILED'), and the `output_data` from the agent.
-
-The frontend then provides a real-time view of the workflow's progress by querying the `task_executions` table for that `workflow_id` and comparing the log of completed tasks against the static blueprint's full list of tasks. This allows the UI to show what's done, what's in progress, and what's still to come.
+4.  `n8n` immediately calls the "Bulk Create Tasks" endpoint, creating all task records for this workflow instance in the database with `PENDING` status.
+5.  `n8n` then executes each task sequentially:
+    - Updates task status to `RUNNING`
+    - Calls the appropriate AI agent
+    - Updates task status to `COMPLETED` or `FAILED` with result data
+6.  The frontend provides real-time progress by querying the `task_executions` table, showing the full task list and current execution status.
 
 ### Why a Dual-Layer Architecture?
 
@@ -82,9 +83,9 @@ This separation of a technical orchestration layer (`n8n`) and a business visibi
 
 This dual-layer approach gives us the best of both worlds: a powerful, off-the-shelf technical engine and a custom, business-aware application layer.
 
-## 3. Core Workflow Blueprints
+## 3. Core Workflow Types
 
-Below are the high-level task sequences for the three primary workflow types. These are defined in static JSON blueprints and executed by n8n.
+Below are the high-level task sequences for the three primary workflow types. These task sequences are dynamically populated by n8n workflows and stored in the `workflows/definitions/` folder.
 
 ### Municipal Lien Search
 
@@ -108,13 +109,14 @@ Below are the high-level task sequences for the three primary workflow types. Th
 
 ### Payoff Request
 
-| Step | `taskType` | Default Agent | Description |
-|------|------------|---------------|-------------|
-| 1 | `identify_lender_contact` | Nina 🔍 | Identifies the lender's payoff department contact details. |
-| 2 | `send_payoff_request` | Max/Florian/Mia | Contacts the lender to request the payoff statement. |
-| 3 | `await_statement` | - | A waiting step for the lender to provide the statement. |
-| 4 | `extract_payoff_data` | Iris 📄 | Extracts all relevant figures from the payoff statement. |
-| 5 | `generate_invoice` | Kosha 💰 | Generates an invoice for the service. |
+| Step | `taskType` | Agent | Description |
+|------|------------|-------|-------------|
+| 1 | `identify_lender_contact` | Nina 🔍 | Research lender contact information and communication preferences |
+| 2 | `send_payoff_request` | Max/Florian/Mia | Send the payoff request to the lender (IVR/Phone/Email based on preference) |
+| 3 | `extract_payoff_data` | Iris 📄 | Extract data from the payoff statement (after lender response) |
+| 4 | `generate_invoice` | Kosha 💰 | Generate an invoice for the payoff |
+| 5 | `update_crm_record` | Ria 👩‍💼 | Update the CRM with the payoff information |
+| 6 | `notify_client` | Mia 📧 | Notify the client that the payoff is complete |
 
 
 ## 4. SLA Monitoring

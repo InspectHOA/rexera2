@@ -6,9 +6,7 @@ This document explains the architecture of the Rexera 2.0 frontend, including it
 
 A core architectural principle is the separation of the "plan" from the "log."
 
-*   **The Plan (Static Blueprint)**: For each workflow type, a static JSON file defines the `taskSequence`—the complete, ordered list of all possible steps. This is the "to-do list" and the single source of truth for what a workflow *can* entail.
-
-*   **The Log (Dynamic State)**: The application database, specifically the `task_executions` table, serves as the single source of truth for the *state* of the workflow. It is a stateful, append-only log of what has happened.
+*   **The Log (Dynamic State)**: The application database, specifically the `task_executions` table, serves as the single source of truth for the *plan* and *state* of the workflow. It is a stateful, append-only log of what will happen and has happened.
 
 When a new workflow is initiated, the backend reads the static blueprint and **bulk-creates all possible tasks** for that workflow in the `task_executions` table, each with an initial status of `PENDING`.
 
@@ -35,14 +33,13 @@ The UI is built from a set of reusable components, primarily using [shadcn/ui](h
 *   `TaskInterruptQueue`: The main inbox for HIL operators, displaying tasks that require manual intervention. It sorts interrupts by priority (`critical` > `standard`) and then by the SLA deadline.
 *   `WorkflowOverview`: A high-level view of all active workflows.
 *   `TaskProgressPanel`: Shows the status of ongoing, automated tasks.
-*   `AgentStatusPanel`: Monitors the health and status of the AI agents.
 *   `AgentTaskInterfaceFactory`: A dynamic component that renders the appropriate, specialized UI for a given agent when a HIL operator needs to handle a task. For example, it will show a document viewer and data entry form for an `Iris` task, or an email editor for a `Mia` task.
 *   `TaskResolutionPanel`: A generic component embedded within the agent interfaces that provides a standardized way for HIL operators to resolve a task (e.g., complete, retry, escalate).
 
 ### State Management & Real-Time Updates
 
 *   **State Management**: We use [Zustand](https://zustand-demo.pmnd.rs/) for managing global client-side state. It provides a simple, unopinionated, and scalable solution for managing UI state, user information, and the local cache of workflow data.
-*   **Real-Time Updates**: The application uses **tRPC subscriptions** over WebSockets to receive real-time updates from the backend. A `InterruptWebSocketService` class manages the connection, handles incoming messages (e.g., `NEW_INTERRUPT`, `TASK_UPDATED`), and dispatches actions to the Zustand store to keep the UI in sync. This ensures the HIL dashboard is always live and requires no manual refreshing.
+*   **Real-Time Updates**: The application uses ** subscriptions** over WebSockets to receive real-time updates from the backend. A `InterruptWebSocketService` class manages the connection, handles incoming messages (e.g., `NEW_INTERRUPT`, `TASK_UPDATED`), and dispatches actions to the Zustand store to keep the UI in sync. This ensures the HIL dashboard is always live and requires no manual refreshing.
 
 ## 3. Universal Audit System
 
