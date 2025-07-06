@@ -140,10 +140,10 @@ export function useWorkflow(id: string) {
   } = useQuery({
     queryKey: ['tasks', { workflow_id: id }],
     queryFn: () => api.tasks.list({ 
-      workflow_id: id, 
+      workflowId: workflow?.id || id, // Use actual UUID for task filtering
       include: ['assigned_user'] 
     }),
-    enabled: !!id,
+    enabled: !!id && !!workflow,
     staleTime: 30000,
   });
 
@@ -173,7 +173,7 @@ export function useWorkflow(id: string) {
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'tasks',
+        table: 'task_executions',
         filter: `workflow_id=eq.${id}`
       }, () => {
         queryClient.invalidateQueries({ queryKey: ['tasks', { workflow_id: id }] });

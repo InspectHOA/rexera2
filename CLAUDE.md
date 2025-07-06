@@ -32,6 +32,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
+This project is a workflow automation platform where n8n orchestrates complex business processes by calling a suite of external, specialized AI agent services. The backend API and database serve as a simple "log book," atomically recording the outcomes of each step that n8n completes. The frontend provides a complete view of the workflow's progress by combining the static process definition with the execution logs, and it serves as the dashboard for Human-in-the-Loop (HIL) operators to resolve any flagged interrupts.
+
 Rexera 2.0 is an AI-powered real estate workflow automation platform with a sophisticated **dual-layer architecture**:
 
 ### Layer 1: Technical Orchestration (n8n Cloud)
@@ -157,279 +159,105 @@ The system uses WebSocket connections for live updates:
 
 ## Integration Patterns & Workflow Execution
 
-### **Simple n8n Workflow Architecture**
+### The "Log Book" Architecture: Static Blueprint + Dynamic Log
 
-Rexera implements a **3-step workflow architecture** where **n8n workflows self-manage task creation and tracking** while **PostgreSQL maintains complete business state** for real-time visibility.
+Rexera 2.0's task execution architecture is built on a simple and powerful philosophy: the database serves as an **immutable log of completed work**, not a state machine for pending tasks. This separation of concerns creates a robust, scalable, and easily debuggable system.
 
-#### **Core Architecture: 3-Step Process**
+-   **Static Blueprint (Workflow Definition):** The complete plan for any workflow is defined in a static JSON file (e.g., `PAYOFF_REQUEST.json`). This file contains a `taskSequence` array that lists all potential steps in their intended order. This is the "to-do list" and is the source of truth for the UI.
 
-1. **Workflow Triggered** → First n8n node creates all predefined tasks in database
-2. **Each Execution Node** → Updates corresponding task status (start/complete)  
-3. **Dynamic Events** → Trigger separate micro-workflows that create their own tasks
+-   **Dynamic Log (Database):** The database, specifically the `task_executions` table, only records work that has already been completed. It is the "log book" of what has happened. It does not know or care about what tasks are pending.
 
-#### **Workflow Types**
+-   **`taskType` Identifier:** A human-readable string (e.g., `"identify_lender_contact"`) is the shared key that links the static blueprint to the dynamic log entries created by `n8n`.
 
-**Main Workflows (Self-Contained)**:
-- `payoff-request` - Creates 4 tasks, executes agents, tracks completion
-- `hoa-acquisition` - Creates 3 tasks, orchestrates HOA research
-- `municipal-lien-search` - Creates 5 tasks, handles government searches
+### The Execution Flow
 
-**Micro-Workflows (Event-Driven)**:
-- `reply-to-lender` - Handle incoming lender emails
-- `reply-to-client` - Process client communications  
-- `escalate-to-hil` - Human-in-the-loop interventions
+This diagram illustrates how a workflow proceeds from start to finish under the new model:
 
-#### **Key Benefits**
+```mermaid
+graph TD
+    subgraph "Application Backend"
+        A[1. Start Workflow] --> B(Create `workflows` record);
+        B --> C{Pass `workflow_id` to n8n};
+    end
 
-✅ **Maximum Simplicity** - Tasks defined directly in workflow JSON
-✅ **Zero Code Changes** - New workflows just need JSON modifications
-✅ **Self-Contained** - Each workflow manages its own task lifecycle
-✅ **Clear Separation** - Main workflows vs micro-workflows for events
+    subgraph "n8n Workflow Engine"
+        C --> D[2. Execute Step 1 logic<br/>(e.g., taskType: 'identify_lender_contact')];
+        D --> E[Agent completes work];
+        E --> F{3. Report Result via Webhook};
+    end
 
-### **Complete Workflow Example: Mortgage Payoff Request**
-
-#### **1. Simple Workflow Creation**
-```typescript
-// Frontend creates workflow record only
-const workflow = await trpc.workflows.create.mutate({
-  workflow_type: 'PAYOFF',
-  client_id: 'client-123',
-  title: 'Payoff Request - 123 Main St',
-  metadata: {
-    property: { address: '123 Main St', loanNumber: 'LOAN-2024-001' },
-    borrower: { name: 'John Doe', email: 'john.doe@example.com' }
-  }
-});
-
-// Trigger n8n workflow - tasks will be created by n8n itself
-await triggerN8nWorkflow('payoff-request', {
-  workflow_id: workflow.id,
-  metadata: workflow.metadata
-});
+    subgraph "Application Backend"
+        F --> G["POST /api/webhooks/n8n<br/>Receives `workflow_id`, `taskType`, and `result`"];
+        G --> H[4. Create `task_executions` record<br/>(The immutable log entry)];
+        H --> I[...next step in n8n];
+    end
 ```
 
-#### **2. Self-Contained n8n Workflow**
+### API Interaction: The `n8n` Webhook
+
+All communication from `n8n` to the Rexera backend happens through a single, unified webhook endpoint. Instead of telling the backend to perform actions (like starting or completing a task), `n8n` simply reports events that have already occurred.
+
+**Endpoint:** `POST /api/webhooks/n8n`
+
+#### `n8n` Reporting Payload
+
+When an `n8n` node finishes a task, it sends a simple payload to the webhook:
+
 ```json
-// payoff-request.json - Workflow creates and manages its own tasks
+// Example from an n8n "HTTP Request" node
 {
-  "name": "Payoff Request Workflow",
-  "nodes": [
-    {
-      "name": "Create All Tasks",
-      "type": "httpRequest",
-      "url": "={{ $env.REXERA_API_URL }}/api/rest/workflows/{{ $json.workflow_id }}/initialize-tasks",
-      "method": "POST",
-      "body": {
-        "tasks": [
-          { "title": "Research Lender Contact", "agent": "nina", "node_id": "nina-research" },
-          { "title": "Submit Payoff Request", "agent": "dynamic", "node_id": "communication-switch" },
-          { "title": "Process Lender Response", "agent": "iris", "node_id": "iris-extract" },
-          { "title": "Generate Invoice", "agent": "kosha", "node_id": "kosha-invoice" }
-        ]
-      }
-    },
-    {
-      "name": "Start Task: Nina Research",
-      "type": "httpRequest",
-      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/nina-research/start",
-      "body": { "workflow_id": "{{ $json.workflow_id }}" }
-    },
-    {
-      "name": "Nina: Identify Lender Contact",
-      "type": "httpRequest", 
-      "url": "={{ $env.REXERA_API_URL }}/api/agents/nina/execute",
-      "body": { "taskType": "identify_lender_contact" }
-    },
-    {
-      "name": "Complete Task: Nina Research",
-      "type": "httpRequest",
-      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/nina-research/complete",
-      "body": { "workflow_id": "{{ $json.workflow_id }}" }
-    },
-    {
-      "name": "Communication Method Switch",
-      "type": "switch"
-    }
-  ]
-}
-```
-
-#### **3. Micro-Workflow for Dynamic Events**
-```json
-// reply-to-lender.json - Self-contained email response workflow
-{
-  "name": "Reply to Lender Email", 
-  "nodes": [
-    {
-      "name": "Incoming Email Trigger",
-      "type": "webhook",
-      "path": "reply-to-lender"
-    },
-    {
-      "name": "Create Dynamic Task",
-      "type": "httpRequest", 
-      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks",
-      "method": "POST",
-      "body": {
-        "workflow_id": "{{ $json.workflow_id }}",
-        "title": "Reply to Lender Email",
-        "executor_type": "AI",
-        "metadata": { "trigger": "incoming_email", "agent": "mia" }
-      }
-    },
-    {
-      "name": "Mia: Process Email Response",
-      "type": "httpRequest",
-      "url": "={{ $env.REXERA_API_URL }}/api/agents/mia/execute",
-      "body": { "taskType": "process_lender_email" }
-    },
-    {
-      "name": "Complete Dynamic Task",
-      "type": "httpRequest",
-      "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/{{ $('Create Dynamic Task').item.json.id }}/complete"
-    }
-  ]
-}
-```
-
-#### **4. Simple API Integration**
-```typescript
-// Just 2 API endpoints needed for all task management
-
-// Initialize workflow tasks
-router.post('/api/rest/workflows/:id/initialize-tasks', async (req) => {
-  const { tasks } = req.body;
-  const workflowId = req.params.id;
-  
-  const tasksToCreate = tasks.map(task => ({
-    workflow_id: workflowId,
-    title: task.title,
-    executor_type: 'AI',
-    metadata: { 
-      node_id: task.node_id, 
-      agent: task.agent 
-    }
-  }));
-  
-  await supabase.from('tasks').insert(tasksToCreate);
-});
-
-// Update task by node (used by all workflows)
-router.put('/api/rest/tasks/by-node/:node_id/:action', async (req) => {
-  const { node_id, action } = req.params;
-  const { workflow_id } = req.body;
-  
-  const updates = action === 'start' 
-    ? { status: 'IN_PROGRESS' }
-    : { status: 'COMPLETED', completed_at: new Date().toISOString() };
-    
-  await supabase.from('tasks')
-    .update(updates)
-    .match({ 
-      workflow_id,
-      'metadata->node_id': node_id 
-    });
-});
-
-// External events trigger micro-workflows directly
-router.post('/api/rest/incoming-email', async (req) => {
-  const { workflow_id, email_data } = req.body;
-  
-  await fetch(`${process.env.N8N_BASE_URL}/webhook/reply-to-lender`, {
-    method: 'POST',
-    body: JSON.stringify({ workflow_id, email_data })
-  });
-});
-```
-
-#### **4. Error Handling & HIL Escalation**
-```typescript
-// Automatic error escalation to Human-in-the-Loop
-case 'error_occurred':
-  await supabase.from('workflows').update({
-    status: 'BLOCKED',  // Triggers HIL dashboard alert
-    metadata: {
-      n8n_error: event.data.error,
-      n8n_error_node: event.data.nodeId,
-      escalation_reason: 'Agent task failed - requires manual intervention'
-    }
-  });
-```
-
-### **Core Integration Patterns**
-
-**🔄 Workflow Triggering**: tRPC creates PostgreSQL record → triggers n8n via API → links with `n8n_execution_id`
-
-**📡 Real-Time Sync**: n8n webhooks → PostgreSQL updates → Supabase real-time → Frontend updates
-
-**🤖 Agent Coordination**: n8n orchestrates 10 specialized AI agents via HTTP APIs with standardized JSON payloads
-
-**⚠️ Error Handling**: n8n errors → PostgreSQL BLOCKED status → HIL dashboard alerts → Manual intervention
-
-**📊 Business Reporting**: All execution data flows to PostgreSQL for analytics, SLA tracking, and cross-workflow coordination
-
-### **n8n Workflow Development Process**
-
-#### **1. Environment Setup**
-```bash
-N8N_API_KEY=your_api_key
-N8N_BASE_URL=https://rexera2.app.n8n.cloud
-N8N_PAYOFF_WORKFLOW_ID=workflow-id
-```
-
-#### **2. Workflow Creation & Management**
-```bash
-# Import workflow from JSON
-npm run workflow:import-payoff
-
-# Test workflow with sample data  
-npm run workflow:test-payoff
-
-# Activate workflow in n8n
-npm run workflow -- activate <workflow-id>
-
-# Monitor executions
-npm run workflow -- executions <workflow-id>
-```
-
-#### **3. Workflow JSON Structure**
-```json
-{
-  "name": "Mortgage Payoff Request Workflow",
-  "nodes": [
-    {
-      "name": "Webhook Trigger",
-      "type": "n8n-nodes-base.webhook",
-      "parameters": { "path": "payoff-request" }
-    },
-    {
-      "name": "Agent HTTP Call",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
-        "url": "={{ $json.rexeraApiUrl }}/api/agents/nina/execute",
-        "body": { "taskType": "research_task", "payload": "={{ $json }}" }
-      }
-    },
-    {
-      "name": "Update Database",
-      "type": "n8n-nodes-base.httpRequest", 
-      "parameters": {
-        "url": "={{ $json.rexeraApiUrl }}/api/webhook/n8n",
-        "body": {
-          "eventType": "agent_task_completed",
-          "data": { "result": "={{ $json }}" }
+  "eventType": "agent_task_completed",
+  "data": {
+    "workflow_id": "{{ $json.workflow_id }}",
+    "taskType": "identify_lender_contact",
+    "status": "COMPLETED",
+    "result": {
+      "contacts": [
+        {
+          "name": "Big Bank Mortgage Dept.",
+          "email": "payoffs@bigbank.com",
+          "phone": "1-800-555-1234"
         }
-      }
-    }
-  ],
-  "connections": {
-    "Webhook Trigger": { "main": [["Agent HTTP Call"]] },
-    "Agent HTTP Call": { "main": [["Update Database"]] }
+      ],
+      "confidenceScore": 0.95
+    },
+    "agentName": "nina",
+    "executionTime": 4500
   }
 }
 ```
 
-This architecture enables **complex multi-agent workflows** with **real-time business visibility**, **automatic error handling**, and **seamless human intervention** when needed.
+#### Backend Logging Logic (Conceptual)
+
+The backend's responsibility is to validate the incoming event and create a corresponding record in the `task_executions` table. It does not manage state; it simply logs the event.
+
+```javascript
+// Conceptual handler for the /api/webhooks/n8n endpoint
+
+// 1. Validate the incoming payload against a schema.
+const { eventType, data } = validatePayload(req.body);
+
+// 2. Prepare the data for the database log.
+const executionLogEntry = {
+  workflow_id: data.workflow_id,
+  task_type: data.taskType, // The shared identifier
+  action_type: 'execute', // Or derived from eventType
+  status: data.status, // 'COMPLETED' or 'FAILED'
+  output_data: data.result,
+  agent_name: data.agentName,
+  // ... and other relevant fields
+};
+
+// 3. Insert the immutable record into the log.
+await supabase
+  .from('task_executions')
+  .insert(executionLogEntry);
+
+// 4. Send a simple success response.
+res.status(200).json({ success: true });
+```
+
+This architecture ensures that `n8n` remains the master of the workflow process, while the Rexera application provides a robust, real-time view into the execution history without managing complex state.
 
 ## Development Guidelines & Patterns
 

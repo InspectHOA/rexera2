@@ -1,5 +1,5 @@
 {
-  "name": "Reply to Lender Email",
+  "name": "Reply to Lender Email V2",
   "nodes": [
     {
       "parameters": {
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/bulk",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -35,32 +35,53 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "workflow_id",
-              "value": "={{ $json.workflow_id }}"
-            },
-            {
-              "name": "title",
-              "value": "Reply to Lender Email"
-            },
-            {
-              "name": "executor_type",
-              "value": "AI"
-            },
-            {
-              "name": "metadata",
-              "value": "{\"trigger\": \"incoming_email\", \"agent\": \"mia\", \"email_from\": \"{{ $json.email_data.from }}\", \"email_subject\": \"{{ $json.email_data.subject }}\"}"
+              "name": "json",
+              "value": "={{ [ { \"workflow_id\": $json.workflow_id, \"title\": \"Process Lender Email\", \"executor_type\": \"AI\", \"description\": \"Process and respond to incoming lender email\", \"sequence_order\": 1, \"task_type\": \"process_lender_email\" } ] }}"
             }
           ]
         },
         "options": {
-          "timeout": 10000
+          "timeout": 30000
         }
       },
-      "id": "create-dynamic-task",
-      "name": "Create Dynamic Task",
+      "id": "bulk-create-tasks",
+      "name": "Bulk Create Tasks",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [460, 300]
+      "position": [460, 100]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[0].id, \"status\": \"RUNNING\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-mia-running",
+      "name": "Update Mia Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 100]
     },
     {
       "parameters": {
@@ -91,7 +112,7 @@
             },
             {
               "name": "payload",
-              "value": "={{ $('Incoming Email Trigger').item.json.email_data }}"
+              "value": "={{ $json.email_data }}"
             }
           ]
         },
@@ -103,11 +124,11 @@
       "name": "Mia: Process Email Response",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 300]
+      "position": [900, 100]
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/{{ $('Create Dynamic Task').item.json.id }}/complete",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -125,17 +146,18 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "result",
-              "value": "={{ $json }}"
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[0].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "complete-dynamic-task",
-      "name": "Complete Dynamic Task",
+      "id": "update-mia-completed",
+      "name": "Update Mia Completed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 300]
+      "position": [1120, 100]
     },
     {
       "parameters": {
@@ -171,18 +193,18 @@
       "name": "Resume Main Workflow",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1120, 300]
+      "position": [1340, 300]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"task_id\": $('Create Dynamic Task').item.json.id, \"email_processed\": true } }}"
+        "responseBody": "={{ { \"success\": true, \"email_processed\": true } }}"
       },
       "id": "webhook-response",
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1340, 300]
+      "position": [1560, 300]
     }
   ],
   "connections": {
@@ -190,51 +212,62 @@
       "main": [
         [
           {
-            "node": "Create Dynamic Task",
+            "node": "bulk-create-tasks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create Dynamic Task": {
+    "bulk-create-tasks": {
       "main": [
         [
           {
-            "node": "Mia: Process Email Response",
+            "node": "update-mia-running",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mia: Process Email Response": {
+    "update-mia-running": {
       "main": [
         [
           {
-            "node": "Complete Dynamic Task",
+            "node": "mia-process-email",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Complete Dynamic Task": {
+    "mia-process-email": {
       "main": [
         [
           {
-            "node": "Resume Main Workflow",
+            "node": "update-mia-completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Resume Main Workflow": {
+    "update-mia-completed": {
       "main": [
         [
           {
-            "node": "Webhook Response",
+            "node": "resume-main-workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "resume-main-workflow": {
+      "main": [
+        [
+          {
+            "node": "webhook-response",
             "type": "main",
             "index": 0
           }
@@ -246,11 +279,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1.0.0",
+  "versionId": "2.0.0",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "reply-to-lender-workflow",
+  "id": "reply-to-lender-workflow-v2",
   "tags": [
     {
       "createdAt": "2025-01-07T16:32:00.000Z",

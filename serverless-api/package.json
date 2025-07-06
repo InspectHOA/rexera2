@@ -5,7 +5,12 @@
   "private": true,
   "scripts": {
     "start": "vercel dev --listen 3001",
+    "dev": "node src/server/express-server.js",
     "build": "echo 'Build skipped for dev'",
+    "test": "node tests/scripts/test-runner.js",
+    "test:integration": "node tests/api.integration.test.js",
+    "test:smoke": "node tests/smoke.test.js",
+    "seed": "node scripts/seed-database.js",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .vercel"
@@ -14,6 +19,8 @@
     "@rexera/schemas": "workspace:*",
     "@rexera/types": "workspace:*",
     "@supabase/supabase-js": "^2.38.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

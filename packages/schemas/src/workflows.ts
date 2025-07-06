@@ -7,8 +7,8 @@ export const GetWorkflowInput = z.object({
 });
 
 export const GetWorkflowsInput = z.object({
-  workflow_type: z.enum(['HOA_ACQUISITION', 'MUNICIPAL_LIEN_SEARCH', 'PAYOFF_REQUEST']).optional(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED', 'CANCELLED']).optional(),
+  workflow_type: z.enum(['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH', 'PAYOFF_REQUEST']).optional(),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']).optional(),
   client_id: z.string().uuid().optional(),
   assigned_to: z.string().uuid().optional(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
@@ -18,7 +18,7 @@ export const GetWorkflowsInput = z.object({
 });
 
 export const CreateWorkflowInput = z.object({
-  workflow_type: z.enum(['HOA_ACQUISITION', 'MUNICIPAL_LIEN_SEARCH', 'PAYOFF_REQUEST']),
+  workflow_type: z.enum(['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH', 'PAYOFF_REQUEST']),
   client_id: z.string().uuid(),
   title: z.string().min(1),
   description: z.string().optional(),
@@ -31,10 +31,10 @@ export const CreateWorkflowInput = z.object({
 // Output schemas
 export const Workflow = z.object({
   id: z.string(),
-  workflow_type: z.enum(['HOA_ACQUISITION', 'MUNICIPAL_LIEN_SEARCH', 'PAYOFF_REQUEST']),
+  workflow_type: z.enum(['HOA_ACQUISITION', 'MUNI_LIEN_SEARCH', 'PAYOFF_REQUEST']),
   title: z.string(),
   description: z.string().nullable(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED', 'CANCELLED']),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
   metadata: z.record(z.any()),
   created_by: z.string(),

@@ -43,9 +43,9 @@ export default function WorkflowDetailPage() {
   
   // Transform API data to component format
   const workflow: Workflow | null = workflowData ? {
-    id: workflowData.id || params.id as string,
+    id: workflowData.human_readable_id || workflowData.id || params.id as string,
     title: workflowData.title || 'Workflow Details',
-    subtitle: `${workflowData.id || params.id} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF')} - ${workflowData.client?.name || 'Unknown Client'}`,
+    subtitle: `${workflowData.human_readable_id || workflowData.id || params.id} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF')} - ${workflowData.clients?.name || 'Unknown Client'}`,
     status: getDisplayStatus(workflowData.status || 'PENDING'),
     eta: formatDateTime(workflowData.due_date),
     due: formatDate(workflowData.due_date),
@@ -88,11 +88,11 @@ export default function WorkflowDetailPage() {
 
   function getDisplayStatus(status: string) {
     const statusMap: Record<string, string> = {
-      'PENDING': 'In Progress',
+      'PENDING': 'Pending',
       'IN_PROGRESS': 'In Progress', 
-      'AWAITING_REVIEW': 'Urgent',
+      'AWAITING_REVIEW': 'Awaiting Review',
       'COMPLETED': 'Completed',
-      'BLOCKED': 'Urgent'
+      'BLOCKED': 'Blocked'
     };
     return statusMap[status] || status;
   }
@@ -221,7 +221,7 @@ export default function WorkflowDetailPage() {
             
             <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
             
-            <TabContent activeTab={activeTab} workflow={workflowData} />
+            <TabContent activeTab={activeTab} workflowData={workflowData} />
           </div>
         </div>
 
@@ -243,16 +243,16 @@ export default function WorkflowDetailPage() {
   );
 }
 
-function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any }) {
+function TabContent({ activeTab, workflowData }: { activeTab: string; workflowData?: any }) {
   switch (activeTab) {
     case 'details':
-      const detailFields = workflow ? [
-        { label: 'Borrower Name', value: workflow.metadata?.borrower_name || 'Not specified' },
-        { label: 'Lender Name', value: workflow.client?.name || 'Unknown' },
-        { label: 'Loan Number', value: workflow.metadata?.loan_number || 'Not specified', mono: true },
-        { label: 'Payoff Date', value: workflow.due_date ? new Date(workflow.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' },
-        { label: 'Primary HIL', value: workflow.assigned_user?.full_name || 'Unassigned' },
-        { label: 'Client', value: workflow.client?.name || 'Unknown' }
+      const detailFields = workflowData ? [
+        { label: 'Borrower Name', value: workflowData.metadata?.borrower_name || 'Not specified' },
+        { label: 'Lender Name', value: workflowData.clients?.name || 'Unknown' },
+        { label: 'Loan Number', value: workflowData.metadata?.loan_number || 'Not specified', mono: true },
+        { label: 'Payoff Date', value: workflowData.due_date ? new Date(workflowData.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' },
+        { label: 'Primary HIL', value: workflowData.assigned_user?.full_name || 'Unassigned' },
+        { label: 'Client', value: workflowData.clients?.name || 'Unknown' }
       ] : [];
       
       return (
@@ -274,11 +274,11 @@ function TabContent({ activeTab, workflow }: { activeTab: string; workflow?: any
       return (
         <div className="space-y-5">
           <FileUpload
-            workflowId={workflow?.id || ''}
+            workflowId={workflowData?.id || ''}
             onUploadComplete={() => {}}
           />
           <DocumentList
-            workflowId={workflow?.id || ''}
+            workflowId={workflowData?.id || ''}
             onDocumentDeleted={() => {}}
           />
         </div>

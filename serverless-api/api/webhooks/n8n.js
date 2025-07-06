@@ -87,7 +87,7 @@ module.exports = async function handler(req, res) {
       case 'task_completed':
         if (data.taskId) {
           const { error } = await supabase
-            .from('tasks')
+            .from('task_executions')
             .update({
               status: 'COMPLETED',
               completed_at: new Date().toISOString(),
@@ -107,7 +107,7 @@ module.exports = async function handler(req, res) {
       case 'task_failed':
         if (data.taskId) {
           const { error } = await supabase
-            .from('tasks')
+            .from('task_executions')
             .update({
               status: 'FAILED',
               metadata: {
@@ -144,7 +144,7 @@ module.exports = async function handler(req, res) {
           }
 
           const { error } = await supabase
-            .from('tasks')
+            .from('task_executions')
             .update(updates)
             .eq('id', data.taskId);
 

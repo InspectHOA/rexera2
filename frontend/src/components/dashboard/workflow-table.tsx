@@ -16,10 +16,10 @@ export function WorkflowTable() {
     const hasInterrupts = interruptCount > 0;
     
     return {
-      id: workflow.id,
-      workflowId: workflow.id,
+      id: workflow.human_readable_id || workflow.id,
+      workflowId: workflow.human_readable_id || workflow.id, // Use human readable ID for navigation
       type: getDisplayWorkflowType(workflow.workflow_type),
-      client: workflow.client?.name || 'Unknown Client',
+      client: workflow.clients?.name || 'Unknown Client',
       property: workflow.title || 'No property info',
       status: getDisplayStatus(workflow.status),
       statusClass: getStatusClass(workflow.status),
@@ -45,11 +45,11 @@ export function WorkflowTable() {
 
   function getDisplayStatus(status: string) {
     const statusMap: Record<string, string> = {
-      'PENDING': 'In Progress',
+      'PENDING': 'Pending',
       'IN_PROGRESS': 'In Progress', 
-      'AWAITING_REVIEW': 'Urgent',
+      'AWAITING_REVIEW': 'Awaiting Review',
       'COMPLETED': 'Completed',
-      'BLOCKED': 'Urgent'
+      'BLOCKED': 'Blocked'
     };
     return statusMap[status] || status;
   }

@@ -1,5 +1,5 @@
 {
-  "name": "Payoff Request V1",
+  "name": "Payoff Request V2",
   "nodes": [
     {
       "parameters": {
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/workflows/{{ $json.workflow_id }}/initialize-tasks",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/bulk",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -35,24 +35,24 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "tasks",
-              "value": "[{\"title\": \"Research Lender Contact\", \"agent\": \"nina\", \"node_id\": \"nina-research\"}, {\"title\": \"Submit Payoff Request\", \"agent\": \"dynamic\", \"node_id\": \"communication-switch\"}, {\"title\": \"Process Lender Response\", \"agent\": \"iris\", \"node_id\": \"iris-extract\"}, {\"title\": \"Generate Invoice\", \"agent\": \"kosha\", \"node_id\": \"kosha-invoice\"}, {\"title\": \"Update CRM Records\", \"agent\": \"ria\", \"node_id\": \"ria-update\"}, {\"title\": \"Notify Client\", \"agent\": \"mia\", \"node_id\": \"mia-notify\"}]"
+              "name": "json",
+              "value": "={{ [ { \"workflow_id\": $json.workflow_id, \"title\": \"Identify Lender Contact\", \"executor_type\": \"AI\", \"description\": \"Research lender contact information and communication preferences\", \"sequence_order\": 1, \"task_type\": \"identify_lender_contact\" }, { \"workflow_id\": $json.workflow_id, \"title\": \"Send Payoff Request\", \"executor_type\": \"AI\", \"description\": \"Send the payoff request to the lender\", \"sequence_order\": 2, \"task_type\": \"send_payoff_request\" }, { \"workflow_id\": $json.workflow_id, \"title\": \"Extract Payoff Data\", \"executor_type\": \"AI\", \"description\": \"Extract data from the payoff statement\", \"sequence_order\": 3, \"task_type\": \"extract_payoff_data\" }, { \"workflow_id\": $json.workflow_id, \"title\": \"Generate Invoice\", \"executor_type\": \"AI\", \"description\": \"Generate an invoice for the payoff\", \"sequence_order\": 4, \"task_type\": \"generate_invoice\" }, { \"workflow_id\": $json.workflow_id, \"title\": \"Update CRM\", \"executor_type\": \"AI\", \"description\": \"Update the CRM with the payoff information\", \"sequence_order\": 5, \"task_type\": \"update_crm_record\" }, { \"workflow_id\": $json.workflow_id, \"title\": \"Notify Client\", \"executor_type\": \"AI\", \"description\": \"Notify the client that the payoff is complete\", \"sequence_order\": 6, \"task_type\": \"notify_client\" } ] }}"
             }
           ]
         },
         "options": {
-          "timeout": 10000
+          "timeout": 30000
         }
       },
-      "id": "initialize-tasks",
-      "name": "Create All Tasks",
+      "id": "bulk-create-tasks",
+      "name": "Bulk Create Tasks",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [460, 300]
+      "position": [460, 100]
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/nina-research/start",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -70,17 +70,18 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "workflow_id",
-              "value": "={{ $json.workflow_id }}"
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[0].id, \"status\": \"RUNNING\" } }}"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "start-nina-task",
-      "name": "Start Task: Nina Research",
+      "id": "update-nina-running",
+      "name": "Update Nina Running",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 300]
+      "position": [680, 100]
     },
     {
       "parameters": {
@@ -123,11 +124,11 @@
       "name": "Nina: Identify Lender Contact",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 300]
+      "position": [900, 100]
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/nina-research/complete",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -145,53 +146,18 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "workflow_id",
-              "value": "={{ $('Payoff Request Trigger').item.json.workflow_id }}"
-            },
-            {
-              "name": "result",
-              "value": "={{ $json }}"
-            }
-          ]
-        }
-      },
-      "id": "complete-nina-task",
-      "name": "Complete Task: Nina Research",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [1120, 300]
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/communication-switch/start",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer {{ $env.REXERA_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[0].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
             }
           ]
         },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "workflow_id",
-              "value": "={{ $('Payoff Request Trigger').item.json.workflow_id }}"
-            }
-          ]
-        }
+        "options": {}
       },
-      "id": "start-communication-task",
-      "name": "Start Task: Communication Switch",
+      "id": "update-nina-completed",
+      "name": "Update Nina Completed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1340, 300]
+      "position": [1120, 100]
     },
     {
       "parameters": {
@@ -227,7 +193,40 @@
       "name": "Communication Method Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
-      "position": [680, 300]
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[1].id, \"status\": \"RUNNING\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-communication-running",
+      "name": "Update Communication Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 300]
     },
     {
       "parameters": {
@@ -267,7 +266,7 @@
       "name": "Max: IVR Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 200]
+      "position": [1780, 200]
     },
     {
       "parameters": {
@@ -307,7 +306,7 @@
       "name": "Florian: Phone Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 300]
+      "position": [1780, 300]
     },
     {
       "parameters": {
@@ -347,11 +346,11 @@
       "name": "Mia: Email Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 400]
+      "position": [1780, 400]
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/rest/tasks/by-node/communication-switch/complete",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -369,21 +368,18 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "workflow_id",
-              "value": "={{ $('Payoff Request Trigger').item.json.workflow_id }}"
-            },
-            {
-              "name": "result",
-              "value": "Communication method executed successfully"
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[1].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "complete-communication-task",
-      "name": "Complete Task: Communication Switch",
+      "id": "update-communication-completed",
+      "name": "Update Communication Completed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1120, 300]
+      "position": [2000, 300]
     },
     {
       "parameters": {
@@ -396,7 +392,40 @@
       "name": "Wait for Lender Response",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
-      "position": [1340, 300]
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[2].id, \"status\": \"RUNNING\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-iris-running",
+      "name": "Update Iris Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2440, 300]
     },
     {
       "parameters": {
@@ -432,7 +461,73 @@
       "name": "Iris: Extract Payoff Data",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1340, 300]
+      "position": [2660, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[2].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-iris-completed",
+      "name": "Update Iris Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2880, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[3].id, \"status\": \"RUNNING\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-kosha-running",
+      "name": "Update Kosha Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3100, 300]
     },
     {
       "parameters": {
@@ -468,7 +563,73 @@
       "name": "Kosha: Generate Invoice",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1560, 300]
+      "position": [3320, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[3].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-kosha-completed",
+      "name": "Update Kosha Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3540, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[4].id, \"status\": \"RUNNING\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-ria-running",
+      "name": "Update Ria Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3760, 300]
     },
     {
       "parameters": {
@@ -504,7 +665,73 @@
       "name": "Ria: Update CRM",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1780, 300]
+      "position": [3980, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[4].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-ria-completed",
+      "name": "Update Ria Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [4200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[5].id, \"status\": \"RUNNING\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-mia-running",
+      "name": "Update Mia Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [4420, 300]
     },
     {
       "parameters": {
@@ -540,7 +767,40 @@
       "name": "Mia: Notify Client",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2000, 300]
+      "position": [4640, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"id\": $('bulk-create-tasks').item.json.data[5].id, \"status\": \"COMPLETED\", \"result_data\": $json } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-mia-completed",
+      "name": "Update Mia Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [4860, 300]
     },
     {
       "parameters": {
@@ -549,9 +809,9 @@
       },
       "id": "workflow-response",
       "name": "Workflow Response",
-      "type": "n8n-nodes-base.respondToWebhook",
+      "type": "n8n-nodes-.respondToWebhook",
       "typeVersion": 1,
-      "position": [2220, 300]
+      "position": [5080, 300]
     }
   ],
   "connections": {
@@ -559,186 +819,288 @@
       "main": [
         [
           {
-            "node": "Create All Tasks",
+            "node": "bulk-create-tasks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create All Tasks": {
+    "bulk-create-tasks": {
       "main": [
         [
           {
-            "node": "Start Task: Nina Research",
+            "node": "update-nina-running",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Start Task: Nina Research": {
+    "update-nina-running": {
       "main": [
         [
           {
-            "node": "Nina: Identify Lender Contact",
+            "node": "nina-lender-research",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Nina: Identify Lender Contact": {
+    "nina-lender-research": {
       "main": [
         [
           {
-            "node": "Complete Task: Nina Research",
+            "node": "update-nina-completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Complete Task: Nina Research": {
+    "update-nina-completed": {
       "main": [
         [
           {
-            "node": "Start Task: Communication Switch",
+            "node": "communication-switch",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Start Task: Communication Switch": {
+    "communication-switch": {
       "main": [
         [
           {
-            "node": "Communication Method Switch",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Communication Method Switch": {
-      "main": [
-        [
-          {
-            "node": "Max: IVR Request",
+            "node": "update-communication-running",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Florian: Phone Request",
+            "node": "update-communication-running",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Mia: Email Request",
+            "node": "update-communication-running",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Max: IVR Request": {
+    "update-communication-running": {
       "main": [
         [
           {
-            "node": "Complete Task: Communication Switch",
+            "node": "max-ivr-request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "florian-phone-request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "mia-email-request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Florian: Phone Request": {
+    "max-ivr-request": {
       "main": [
         [
           {
-            "node": "Complete Task: Communication Switch",
+            "node": "update-communication-completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mia: Email Request": {
+    "florian-phone-request": {
       "main": [
         [
           {
-            "node": "Complete Task: Communication Switch",
+            "node": "update-communication-completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Complete Task: Communication Switch": {
+    "mia-email-request": {
       "main": [
         [
           {
-            "node": "Wait for Lender Response",
+            "node": "update-communication-completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Wait for Lender Response": {
+    "update-communication-completed": {
       "main": [
         [
           {
-            "node": "Iris: Extract Payoff Data",
+            "node": "wait-for-response",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Iris: Extract Payoff Data": {
+    "wait-for-response": {
       "main": [
         [
           {
-            "node": "Kosha: Generate Invoice",
+            "node": "update-iris-running",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Kosha: Generate Invoice": {
+    "update-iris-running": {
       "main": [
         [
           {
-            "node": "Ria: Update CRM",
+            "node": "iris-extract-data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ria: Update CRM": {
+    "iris-extract-data": {
       "main": [
         [
           {
-            "node": "Mia: Notify Client",
+            "node": "update-iris-completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mia: Notify Client": {
+    "update-iris-completed": {
       "main": [
         [
           {
-            "node": "Workflow Response",
+            "node": "update-kosha-running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-kosha-running": {
+      "main": [
+        [
+          {
+            "node": "kosha-generate-invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "kosha-generate-invoice": {
+      "main": [
+        [
+          {
+            "node": "update-kosha-completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-kosha-completed": {
+      "main": [
+        [
+          {
+            "node": "update-ria-running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-ria-running": {
+      "main": [
+        [
+          {
+            "node": "ria-update-crm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ria-update-crm": {
+      "main": [
+        [
+          {
+            "node": "update-ria-completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-ria-completed": {
+      "main": [
+        [
+          {
+            "node": "update-mia-running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-mia-running": {
+      "main": [
+        [
+          {
+            "node": "mia-notify-client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mia-notify-client": {
+      "main": [
+        [
+          {
+            "node": "update-mia-completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update-mia-completed": {
+      "main": [
+        [
+          {
+            "node": "workflow-response",
             "type": "main",
             "index": 0
           }
@@ -750,11 +1112,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1.0.0",
+  "versionId": "2.0.0",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "payoff-request-v1",
+  "id": "payoff-request-v2",
   "tags": [
     {
       "createdAt": "2025-01-07T16:32:00.000Z",

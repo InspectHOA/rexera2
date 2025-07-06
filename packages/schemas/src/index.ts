@@ -12,3 +12,4 @@ export * from './workflows';
 export * from './tasks';
 export * from './agents';
 export * from './api';
+export * from './taskExecutions';

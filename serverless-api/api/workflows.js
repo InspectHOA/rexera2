@@ -2,8 +2,8 @@
  * Real workflows endpoint using Supabase database
  */
 
-const { createServerClient } = require('../utils/database');
-const { handleError, sendSuccess } = require('../utils/errors');
+const { createServerClient } = require('../src/utils/database');
+const { handleError, sendSuccess } = require('../src/utils/errors');
 
 // Initialize Supabase client
 const supabase = createServerClient();

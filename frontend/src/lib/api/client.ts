@@ -141,9 +141,10 @@ export const workflowsApi = {
   },
 };
 
-// Tasks API functions
+// Task Executions API functions (using the actual endpoint)
 export const tasksApi = {
   async list(filters: {
+    workflowId?: string;
     workflow_id?: string;
     status?: string;
     executor_type?: string;
@@ -153,32 +154,36 @@ export const tasksApi = {
     limit?: number;
     include?: string[];
   } = {}) {
-    const params = new URLSearchParams();
+    // Use workflowId if provided, otherwise fall back to workflow_id
+    const workflowId = filters.workflowId || filters.workflow_id;
     
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          params.append(key, value.join(','));
-        } else {
-          params.append(key, String(value));
-        }
+    if (workflowId) {
+      const response = await fetch(`${API_BASE_URL}/taskExecutions?workflowId=${workflowId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new ApiError(
+          data.error || `HTTP ${response.status}`,
+          response.status,
+          data.details
+        );
       }
-    });
 
-    const response = await fetch(`${API_BASE_URL}/tasks?${params}`);
-    const data: ApiResponse = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new ApiError(
-        data.error || `HTTP ${response.status}`,
-        response.status,
-        data.details
-      );
+      return {
+        data: data.success ? data.data : data, // Handle both formats
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: Array.isArray(data.success ? data.data : data) ? (data.success ? data.data : data).length : 0,
+          totalPages: 1
+        }
+      };
     }
 
+    // If no workflow ID, return empty
     return {
-      data: data.data || [],
-      pagination: data.pagination || {
+      data: [],
+      pagination: {
         page: 1,
         limit: 20,
         total: 0,
@@ -189,16 +194,32 @@ export const tasksApi = {
 
   async create(data: {
     workflow_id: string;
+    agent_id?: string;
     title: string;
     description?: string;
+    sequence_order: number;
+    task_type: string;
     executor_type: 'AI' | 'HIL';
-    assigned_to?: string;
     priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-    metadata?: Record<string, any>;
-    due_date?: string;
+    input_data?: Record<string, any>;
   }) {
-    return apiRequest('/tasks', {
+    return apiRequest('/taskExecutions', {
       method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: {
+    status?: 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED';
+    output_data?: Record<string, any>;
+    completed_at?: string;
+    started_at?: string;
+    error_message?: string;
+    execution_time_ms?: number;
+    retry_count?: number;
+  }) {
+    return apiRequest(`/taskExecutions?id=${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
