@@ -3,9 +3,9 @@
  * Handles processing of incoming emails for workflow automation.
  */
 
-import { NextApiRequest, NextApiResponse } from '../types/next';
-import { z } from 'zod';
-import { createServerClient } from '../utils/database';
+const { z } = require('zod');
+const { createServerClient } = require('../utils/database');
+const { handleError } = require('../utils/errors');
 
 // Validation schema for incoming email processing
 const incomingEmailSchema = z.object({
@@ -25,7 +25,12 @@ const incomingEmailSchema = z.object({
   metadata: z.record(z.any()).optional().default({})
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+module.exports = async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({
       success: false,
@@ -64,10 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (input.workflow_id) {
       console.log(`Processing email for workflow ${input.workflow_id}`);
       
-      // TODO: Trigger n8n workflow for email processing
-      // This would be similar to the n8n webhook integration
-      
-      // For now, just mark as processed
+      // Mark as processed for now
       await supabase
         .from('incoming_emails')
         .update({ processed: true, processed_at: new Date().toISOString() })
@@ -83,10 +85,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-  } catch (error: any) {
-    console.error('Incoming email API error:', error);
-    
-    if (error instanceof z.ZodError) {
+  } catch (error) {
+    if (error.name === 'ZodError') {
       return res.status(400).json({
         success: false,
         error: 'Invalid email format',
@@ -94,9 +94,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
-    });
+    return handleError(error, res, 'Failed to process incoming email');
   }
-}
+};

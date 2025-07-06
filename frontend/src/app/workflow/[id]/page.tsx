@@ -51,16 +51,7 @@ export default function WorkflowDetailPage() {
     due: formatDate(workflowData.due_date),
     closing: formatDate(workflowData.metadata?.closing_date),
     progress: `${tasksData?.filter((t: any) => t.status === 'COMPLETED').length || 0} of ${tasksData?.length || 0} tasks`
-  } : {
-    id: params.id as string,
-    title: 'Sample Workflow',
-    subtitle: `${params.id} • Payoff Request - Sample Client`,
-    status: 'In Progress',
-    eta: 'Dec 29, 2:00 PM',
-    due: 'Dec 29',
-    closing: 'Dec 30',
-    progress: '2 of 5 tasks'
-  };
+  } : null;
 
   // Update browser tab title with workflow address
   useEffect(() => {
@@ -84,35 +75,7 @@ export default function WorkflowDetailPage() {
     meta: getTaskMeta(task),
     sla: getSlaStatus(task),
     conditional: task.metadata?.conditional || false
-  })) : [
-    {
-      id: '1',
-      name: 'Extract Payoff Amount',
-      agent: '📄 Iris',
-      status: 'awaiting-review',
-      meta: 'Needs review • Low confidence',
-      sla: 'DUE SOON',
-      conditional: false
-    },
-    {
-      id: '2',
-      name: 'Validate Lender Information',
-      agent: '🔍 Nina',
-      status: 'completed',
-      meta: 'Completed Dec 29, 1:30 PM',
-      sla: 'ON TIME',
-      conditional: false
-    },
-    {
-      id: '3',
-      name: 'Send Confirmation Email',
-      agent: '📧 Mia',
-      status: 'pending',
-      meta: 'Due Dec 29',
-      sla: 'ON TIME',
-      conditional: true
-    }
-  ];
+  })) : [];
 
   function getDisplayWorkflowType(type: string) {
     const typeMap: Record<string, string> = {

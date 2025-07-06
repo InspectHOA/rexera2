@@ -35,11 +35,14 @@ async function apiRequest<T = any>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Only set Content-Type for requests with body (POST, PUT, PATCH)
+  const headers: Record<string, string> = { ...options.headers };
+  if (options.body && !headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
 

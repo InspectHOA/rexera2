@@ -3,9 +3,9 @@
  * Handles getting and updating interrupt by ID.
  */
 
-import { NextApiRequest, NextApiResponse } from '../../types/next';
-import { z } from 'zod';
-import { createServerClient } from '../../utils/database';
+const { z } = require('zod');
+const { createServerClient } = require('../../utils/database');
+const { handleError } = require('../../utils/errors');
 
 const updateInterruptSchema = z.object({
   status: z.enum(['PENDING', 'IN_PROGRESS', 'RESOLVED', 'ESCALATED']).optional(),
@@ -14,7 +14,12 @@ const updateInterruptSchema = z.object({
   metadata: z.record(z.any()).optional()
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+module.exports = async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const supabase = createServerClient();
   const { id } = req.query;
 
@@ -89,10 +94,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: 'Method not allowed'
       });
     }
-  } catch (error: any) {
-    console.error('Interrupt API error:', error);
-    
-    if (error instanceof z.ZodError) {
+  } catch (error) {
+    if (error.name === 'ZodError') {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -100,9 +103,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
-    });
+    return handleError(error, res, 'Failed to process interrupt request');
   }
-}
+};

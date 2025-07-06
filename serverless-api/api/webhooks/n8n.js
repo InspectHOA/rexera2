@@ -3,9 +3,9 @@
  * Handles updates from n8n Cloud to Rexera database.
  */
 
-import { NextApiRequest, NextApiResponse } from '../types/next';
-import { z } from 'zod';
-import { createServerClient } from '../utils/database';
+const { z } = require('zod');
+const { createServerClient } = require('../../utils/database');
+const { handleError } = require('../../utils/errors');
 
 const n8nWebhookSchema = z.object({
   eventType: z.enum([
@@ -20,7 +20,12 @@ const n8nWebhookSchema = z.object({
   data: z.record(z.any())
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+module.exports = async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({
       success: false,
@@ -124,7 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Handle agent-specific task updates
         if (data.taskId && data.agentName) {
           const status = eventType === 'agent_task_completed' ? 'COMPLETED' : 'FAILED';
-          const updates: any = {
+          const updates = {
             status,
             metadata: {
               ...(data.metadata || {}),
@@ -182,10 +187,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: `Processed ${eventType} event successfully`
     });
 
-  } catch (error: any) {
-    console.error('n8n webhook error:', error);
-    
-    if (error instanceof z.ZodError) {
+  } catch (error) {
+    if (error.name === 'ZodError') {
       return res.status(400).json({
         success: false,
         error: 'Invalid webhook payload',
@@ -193,9 +196,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
-    });
+    return handleError(error, res, 'Failed to process n8n webhook');
   }
-}
+};

@@ -3,9 +3,9 @@
  * Handles AI agent monitoring and coordination.
  */
 
-import { NextApiRequest, NextApiResponse } from '../types/next';
-import { z } from 'zod';
-import { createServerClient } from '../utils/database';
+const { z } = require('zod');
+const { createServerClient } = require('../utils/database');
+const { handleError, sendSuccess } = require('../utils/errors');
 
 // Validation schemas
 const getAgentsSchema = z.object({
@@ -24,7 +24,12 @@ const updateAgentSchema = z.object({
   last_heartbeat: z.string().optional()
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+module.exports = async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const supabase = createServerClient();
 
   try {
@@ -55,15 +60,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const totalPages = Math.ceil((count || 0) / input.limit);
 
-      return res.json({
-        success: true,
-        data: agents || [],
-        pagination: {
-          page: input.page,
-          limit: input.limit,
-          total: count || 0,
-          totalPages
-        }
+      return sendSuccess(res, agents || [], {
+        page: input.page,
+        limit: input.limit,
+        total: count || 0,
+        totalPages
       });
 
     } else if (req.method === 'POST') {
@@ -104,10 +105,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: 'Method not allowed'
       });
     }
-  } catch (error: any) {
-    console.error('Agents API error:', error);
-    
-    if (error instanceof z.ZodError) {
+  } catch (error) {
+    if (error.name === 'ZodError') {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -115,9 +114,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
-    });
+    return handleError(error, res, 'Failed to process agents request');
   }
-}
+};

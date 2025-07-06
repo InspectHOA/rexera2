@@ -9,6 +9,11 @@ const { handleError, sendSuccess } = require('../utils/errors');
 const supabase = createServerClient();
 
 module.exports = async (req, res) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     if (req.method === 'GET') {
       const { 
