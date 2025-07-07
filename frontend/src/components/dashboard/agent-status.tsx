@@ -158,7 +158,7 @@ export function AgentStatus() {
               </div>
               <div className="mt-2 bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full" 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
                   style={{ 
                     width: `${Math.min((agents.reduce((sum, agent) => sum + agent.current_tasks, 0) / Math.max(agents.reduce((sum, agent) => sum + agent.max_tasks, 0), 1)) * 100, 100)}%` 
                   }}

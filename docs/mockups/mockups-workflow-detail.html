@@ -414,24 +414,6 @@
             border-left: 3px solid var(--warning);
         }
 
-        .task-item.parallel {
-            background: linear-gradient(90deg, #f0f9ff 0%, var(--surface) 100%);
-            border-left: 3px solid var(--info);
-        }
-
-        .parallel-tasks {
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-light);
-        }
-
-        .parallel-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-        }
 
         .task-status {
             width: 10px;
@@ -2683,277 +2665,80 @@
                 <div class="panel-content">
                     <!-- Workflow Progress -->
                     <div class="progress-section">
-                        <div class="progress-title">Task Progress (6 of 10 tasks)</div>
+                        <div class="progress-title">Task Log</div>
                         <div class="task-list">
                             <div class="task-item" onclick="selectTask('lookup-lender')" data-task="lookup-lender">
                                 <div class="task-status completed"></div>
                                 <div class="task-details">
                                     <div class="task-name">Lookup Lender Contact Information</div>
-                                    <div class="task-meta">🔍 Nina • Completed Dec 27, 9:45 AM</div>
+                                    <div class="task-meta">Start: Dec 27, 9:33 AM • End: Dec 27, 9:45 AM • 🔍 Nina</div>
                                 </div>
-                                <div class="task-sla on-time">ON TIME</div>
                             </div>
                             <div class="task-item" onclick="selectTask('send-request')" data-task="send-request">
                                 <div class="task-status completed"></div>
                                 <div class="task-details">
                                     <div class="task-name">Send Payoff Request</div>
-                                    <div class="task-meta">📧 Mia • Completed Dec 27, 11:30 AM (Email method)</div>
+                                    <div class="task-meta">Start: Dec 27, 11:22 AM • End: Dec 27, 11:30 AM • 📧 Mia</div>
                                 </div>
-                                <div class="task-sla on-time">ON TIME</div>
                             </div>
                             <div class="task-item" onclick="selectTask('await-response')" data-task="await-response">
                                 <div class="task-status completed"></div>
                                 <div class="task-details">
                                     <div class="task-name">Await Statement Response</div>
-                                    <div class="task-meta">👤 HIL Monitor • Received Dec 29, 1:30 PM</div>
+                                    <div class="task-meta">Start: Dec 27, 11:30 AM • End: Dec 29, 1:30 PM • 👤 HIL Monitor</div>
                                 </div>
-                                <div class="task-sla on-time">ON TIME</div>
                             </div>
                             <div class="task-item conditional" onclick="selectTask('portal-access')" data-task="portal-access">
                                 <div class="task-status awaiting-review"></div>
                                 <div class="task-details">
                                     <div class="task-name">Access Lender Portal (Conditional)</div>
-                                    <div class="task-meta">🌐 Rex • Failed Dec 29, 2:15 PM • Backup attempt</div>
+                                    <div class="task-meta">Start: Dec 29, 1:30 PM • End: Dec 29, 2:15 PM (Failed) • 🌐 Rex</div>
                                 </div>
-                                <div class="task-sla late">LATE</div>
                             </div>
                             <div class="task-item" onclick="selectTask('process-document')" data-task="process-document">
                                 <div class="task-status awaiting-review"></div>
                                 <div class="task-details">
                                     <div class="task-name">Process Payoff Document</div>
-                                    <div class="task-meta">📄 Iris • Low confidence Dec 29, 1:45 PM</div>
+                                    <div class="task-meta">Start: Dec 29, 1:30 PM • End: Dec 29, 1:45 PM (Low Confidence) • 📄 Iris</div>
                                 </div>
-                                <div class="task-sla warning">DUE SOON</div>
                             </div>
                             <div class="task-item pending" onclick="selectTask('qa-review')" data-task="qa-review">
                                 <div class="task-status pending"></div>
                                 <div class="task-details">
                                     <div class="task-name">Quality Assurance Review</div>
-                                    <div class="task-meta">✓ Cassy • Depends on: Document Processing</div>
+                                    <div class="task-meta">Not Started • ✓ Cassy</div>
                                 </div>
-                                <div class="task-sla">SLA: 3:00 PM</div>
                             </div>
                             <div class="task-item pending" onclick="selectTask('generate-invoice')" data-task="generate-invoice">
                                 <div class="task-status pending"></div>
                                 <div class="task-details">
                                     <div class="task-name">Generate Invoice</div>
-                                    <div class="task-meta">💰 Kosha • Depends on: QA Review</div>
+                                    <div class="task-meta">Not Started • 💰 Kosha</div>
                                 </div>
-                                <div class="task-sla">SLA: 4:00 PM</div>
                             </div>
                             <div class="task-item pending" onclick="selectTask('client-notification')" data-task="client-notification">
                                 <div class="task-status pending"></div>
                                 <div class="task-details">
                                     <div class="task-name">Client Notification</div>
-                                    <div class="task-meta">📧 Mia • Depends on: Invoice Generation</div>
+                                    <div class="task-meta">Not Started • 📧 Mia</div>
                                 </div>
-                                <div class="task-sla">SLA: 4:15 PM</div>
                             </div>
                             <div class="task-item pending" onclick="selectTask('update-crm')" data-task="update-crm">
                                 <div class="task-status pending"></div>
                                 <div class="task-details">
                                     <div class="task-name">Update CRM Records</div>
-                                    <div class="task-meta">🔄 System • Depends on: Client Notification</div>
+                                    <div class="task-meta">Not Started • 🔄 System</div>
                                 </div>
-                                <div class="task-sla">SLA: 4:30 PM</div>
                             </div>
                             <div class="task-item pending" onclick="selectTask('workflow-completion')" data-task="workflow-completion">
                                 <div class="task-status pending"></div>
                                 <div class="task-details">
                                     <div class="task-name">Workflow Completion</div>
-                                    <div class="task-meta">🎯 System • Depends on: CRM Update</div>
+                                    <div class="task-meta">Not Started • 🎯 System</div>
                                 </div>
-                                <div class="task-sla">SLA: 4:35 PM</div>
                             </div>
                         </div>
                         
-                        <!-- Parallel/Dynamic Tasks -->
-                        <div class="parallel-tasks">
-                            <div class="parallel-title">Parallel Tasks (21 Active)</div>
-                            
-                            <!-- Urgent Priority Tasks -->
-                            <div class="task-item parallel" onclick="selectTask('hoa-email-response')" data-task="hoa-email-response" style="border-left: 3px solid var(--critical);">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">URGENT: HOA Email Response Required</div>
-                                    <div class="task-meta">📧 Mia • Dynamic • Processing email</div>
-                                </div>
-                                <div class="task-sla late">URGENT</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('portal-auth-failure')" data-task="portal-auth-failure" style="border-left: 3px solid var(--critical);">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">URGENT: Portal Authentication Failed</div>
-                                    <div class="task-meta">🌐 Rex → Florian • Escalating to human</div>
-                                </div>
-                                <div class="task-sla late">ESCALATING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('wire-instructions')" data-task="wire-instructions" style="border-left: 3px solid var(--critical);">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">URGENT: Wire Instructions Changed</div>
-                                    <div class="task-meta">💰 Nina • Security verification required</div>
-                                </div>
-                                <div class="task-sla warning">VERIFYING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('sla-breach-alert')" data-task="sla-breach-alert" style="border-left: 3px solid var(--critical);">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">URGENT: SLA Breach Alert</div>
-                                    <div class="task-meta">⚠️ System • Portal task overdue 40 min</div>
-                                </div>
-                                <div class="task-sla late">ALERTING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('fraud-detection')" data-task="fraud-detection" style="border-left: 3px solid var(--critical);">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">URGENT: Fraud Detection Alert</div>
-                                    <div class="task-meta">🛡️ Nina • Suspicious wire pattern detected</div>
-                                </div>
-                                <div class="task-sla warning">ANALYZING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('client-escalation')" data-task="client-escalation" style="border-left: 3px solid var(--critical);">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">URGENT: Client Escalation</div>
-                                    <div class="task-meta">📞 Ria • Client demanding manager call</div>
-                                </div>
-                                <div class="task-sla late">ESCALATING</div>
-                            </div>
-                            
-                            <!-- Normal Priority Tasks -->
-                            <div class="task-item parallel" onclick="selectTask('document-upload')" data-task="document-upload">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Document Upload Detected</div>
-                                    <div class="task-meta">📄 Iris • OCR processing updated statement</div>
-                                </div>
-                                <div class="task-sla warning">OCR RUNNING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('webhook-update')" data-task="webhook-update">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Webhook: Title Company Status Update</div>
-                                    <div class="task-meta">📡 Kosha • Closing date change notification</div>
-                                </div>
-                                <div class="task-sla warning">PARSING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('phone-transcription')" data-task="phone-transcription">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Phone Call Transcription</div>
-                                    <div class="task-meta">📞 Max • Incoming call from FNB</div>
-                                </div>
-                                <div class="task-sla on-time">TRANSCRIBING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('backup-lender-search')" data-task="backup-lender-search">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Backup Lender Search</div>
-                                    <div class="task-meta">🔍 Nina • Finding alternative contacts</div>
-                                </div>
-                                <div class="task-sla on-time">SEARCHING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('document-conflict')" data-task="document-conflict">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Document Version Conflict</div>
-                                    <div class="task-meta">📄 Iris • $267.13 difference detected</div>
-                                </div>
-                                <div class="task-sla warning">ANALYZING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('document-backup')" data-task="document-backup">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Document Backup & Archive</div>
-                                    <div class="task-meta">💾 System • Securing critical files</div>
-                                </div>
-                                <div class="task-sla on-time">BACKING UP</div>
-                            </div>
-                            
-                            <!-- Background Tasks -->
-                            <div class="task-item parallel active" onclick="selectTask('client-communication')" data-task="client-communication">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Client Communication</div>
-                                    <div class="task-meta">👩‍💼 Ria • Dynamic • 6 messages handled</div>
-                                </div>
-                                <div class="task-sla on-time">ACTIVE</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('quality-check')" data-task="quality-check">
-                                <div class="task-status awaiting-review"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Automated Quality Check</div>
-                                    <div class="task-meta">🔍 Cassy • Background validation 73%</div>
-                                </div>
-                                <div class="task-sla on-time">RUNNING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('compliance-monitoring')" data-task="compliance-monitoring">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Compliance Monitoring</div>
-                                    <div class="task-meta">📋 Corey • TRID deadlines on track</div>
-                                </div>
-                                <div class="task-sla on-time">ACTIVE</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('email-monitoring')" data-task="email-monitoring">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Email Thread Monitoring</div>
-                                    <div class="task-meta">📧 Mia • 4 threads, 1 new HOA message</div>
-                                </div>
-                                <div class="task-sla on-time">ACTIVE</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('cost-calculation')" data-task="cost-calculation">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Real-time Cost Calculation</div>
-                                    <div class="task-meta">💰 Kosha • Current total: $187.25</div>
-                                </div>
-                                <div class="task-sla on-time">CALCULATING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('social-media-monitoring')" data-task="social-media-monitoring">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Social Media Monitoring</div>
-                                    <div class="task-meta">👁️ Ria • 1 positive LinkedIn mention</div>
-                                </div>
-                                <div class="task-sla on-time">SCANNING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('weather-monitoring')" data-task="weather-monitoring">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">Weather Impact Monitoring</div>
-                                    <div class="task-meta">🌦️ Corey • Clear skies for closing day</div>
-                                </div>
-                                <div class="task-sla on-time">TRACKING</div>
-                            </div>
-                            
-                            <div class="task-item parallel" onclick="selectTask('api-health-check')" data-task="api-health-check">
-                                <div class="task-status completed"></div>
-                                <div class="task-details">
-                                    <div class="task-name">API Health Monitoring</div>
-                                    <div class="task-meta">🔧 System • All APIs healthy, 180ms avg</div>
-                                </div>
-                                <div class="task-sla on-time">HEALTHY</div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Tabs -->

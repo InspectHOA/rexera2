@@ -57,7 +57,7 @@ graph TD
     API_Layer --> n8n_Engine
     n8n_Engine --> AI_Agent_Suite
     n8n_Engine --> API_Layer
-    PostgreSQL_DB -- Real-time Updates --> User_Interfaces
+    PostgreSQL_DB -- Supabase Realtime --> User_Interfaces
 ```
 
 ## 3. Technology Stack
@@ -76,6 +76,6 @@ The platform is built on a modern, type-safe technology stack designed for scala
 
 *   **Separation of Concerns**: All workflow-specific logic and steps are in `n8n`, while our core application is workflow-agnostic and handles user management, progress tracking, and business operations.
 *   **End-to-End Type Safety**: By using TypeScript across the stack with tRPC and Zod schemas, we minimize runtime errors and improve developer productivity.
-*   **Real-Time by Default**: The UI is always up-to-date thanks to real-time subscriptions from the database, providing immediate feedback to users.
+*   **Real-Time by Default**: The UI is always up-to-date thanks to Supabase Realtime subscriptions, providing immediate feedback to users.
 *   **Scalability**: The architecture is designed to scale horizontally. We can add more instances of our API, the `n8n` engine, or individual AI agents to handle increased load.
 *   **Human-in-the-Loop**: The system is designed to augment, not replace, human operators. When automation fails or requires validation, tasks are seamlessly escalated to the HIL dashboard.

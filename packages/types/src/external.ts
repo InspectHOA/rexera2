@@ -7,6 +7,18 @@
 export * from './supabase';
 export type { Database } from './supabase';
 
+// Database table types
+export interface UserProfile {
+  id: string;
+  user_type: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  company_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // =====================================================
 // SUPABASE SPECIFIC TYPES
 // =====================================================

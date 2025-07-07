@@ -1,62 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { AlertTriangle, Clock, User, ArrowRight } from 'lucide-react';
-
-interface InterruptItem {
-  id: string;
-  workflow_id: string;
-  task_title: string;
-  interrupt_reason: string;
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  created_at: string;
-  workflow_type: string;
-}
+import { useInterrupts } from '@/lib/hooks/useInterrupts';
 
 export function InterruptQueue() {
-  const [interrupts, setInterrupts] = useState<InterruptItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchInterrupts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Use tRPC endpoint instead of REST
-        const response = await fetch('/api/trpc/interrupts.list', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            json: { limit: 10 }
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch interrupts: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setInterrupts(data.result?.data?.interrupts || []);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load interrupt queue';
-        setError(errorMessage);
-        console.error('Interrupt queue error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInterrupts();
-    
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchInterrupts, 15000); // Poll every 15 seconds
-    
-    return () => clearInterval(interval);
-  }, []);
+  const { interrupts, loading, error } = useInterrupts();
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
@@ -85,6 +33,22 @@ export function InterruptQueue() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${Math.floor(diffHours / 24)}d ago`;
+  };
+
+  const formatTaskType = (taskType: string): string => {
+    return taskType
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const formatWorkflowType = (workflowType: string): string => {
+    const typeMap: Record<string, string> = {
+      'PAYOFF': 'Payoff Request',
+      'HOA_ACQUISITION': 'HOA Documents',
+      'MUNI_LIEN_SEARCH': 'Municipal Lien Search'
+    };
+    return typeMap[workflowType] || workflowType;
   };
 
   if (loading) {
@@ -164,22 +128,22 @@ export function InterruptQueue() {
             </div>
           ) : (
             interrupts.map((interrupt) => (
-              <div key={interrupt.id} className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${getPriorityStyle(interrupt.priority)}`}>
+              <div key={interrupt.id} className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${getPriorityStyle('HIGH')}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3 flex-1">
-                    {getPriorityIcon(interrupt.priority)}
+                    {getPriorityIcon('HIGH')}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{interrupt.task_title}</h3>
+                        <h3 className="font-semibold text-gray-900">{formatTaskType(interrupt.task_type)}</h3>
                         <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                          {interrupt.workflow_type}
+                          {formatWorkflowType(interrupt.workflow?.workflow_type)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 mb-2">{interrupt.interrupt_reason}</p>
+                      <p className="text-sm text-gray-700 mb-2">Task requires human review</p>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {interrupt.workflow_id}
+                          {interrupt.workflow?.human_readable_id || interrupt.workflow_id}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />

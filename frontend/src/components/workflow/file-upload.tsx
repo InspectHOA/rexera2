@@ -150,9 +150,9 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
               Uploading... {uploadProgress}%
             </p>
             {uploadProgress > 0 && (
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>

@@ -202,23 +202,17 @@ export default function WorkflowDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <WorkflowHeader workflow={workflow} onBackClick={handleBackClick} />
       
-      <div className="grid grid-cols-2 gap-0 h-[calc(100vh-60px)]">
+      <div className="grid grid-cols-[40%_60%] gap-0 h-[calc(100vh-60px)]">
         {/* Left Panel */}
-        <div className="bg-white border-r border-gray-200 overflow-y-auto">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              📋 Workflow Details
-            </div>
-          </div>
+        <div className="bg-white border-r border-gray-200 overflow-y-auto flex flex-col">
+          <TaskList
+            tasks={tasks}
+            selectedTask={selectedTask}
+            onTaskClick={setSelectedTask}
+            progress={workflow.progress}
+          />
           
-          <div className="p-4 space-y-4">
-            <TaskList
-              tasks={tasks}
-              selectedTask={selectedTask}
-              onTaskClick={setSelectedTask}
-              progress={workflow.progress}
-            />
-            
+          <div className="flex-1 border-t border-gray-100 p-4 space-y-4">
             <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
             
             <TabContent activeTab={activeTab} workflowData={workflowData} />
@@ -230,9 +224,6 @@ export default function WorkflowDetailPage() {
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
             <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
               📋 Task Details
-            </div>
-            <div className="text-gray-400 text-xs font-normal mt-1">
-              {selectedTask ? 'Task selected' : 'Select a task to view details'}
             </div>
           </div>
           

@@ -27,8 +27,8 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f8fafc', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontSize: '14px' }}>
-      <div className="dashboard-container" style={{ maxWidth: '100%', margin: '0', padding: '24px 32px', minHeight: '100vh', width: '100vw' }}>
+    <div className="min-h-screen bg-gray-50 font-sans text-sm">
+      <div className="max-w-full m-0 p-2 min-h-screen w-screen">
         {children}
       </div>
     </div>

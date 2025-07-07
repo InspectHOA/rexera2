@@ -5,7 +5,16 @@ import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import type { Route } from 'next';
 import { useSupabase } from '@/lib/supabase/provider';
-import type { UserProfile } from '@rexera/types';
+interface UserProfile {
+  id: string;
+  user_type: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  company_id?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 type AuthContext = {
   user: User | null;

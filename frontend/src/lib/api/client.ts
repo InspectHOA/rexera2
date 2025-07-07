@@ -36,7 +36,9 @@ async function apiRequest<T = any>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   // Only set Content-Type for requests with body (POST, PUT, PATCH)
-  const headers: Record<string, string> = { ...options.headers };
+  const headers: Record<string, string> = { 
+    ...(options.headers as Record<string, string> || {}) 
+  };
   if (options.body && !headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = 'application/json';
   }

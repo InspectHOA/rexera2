@@ -17,6 +17,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm type-check` - Type check all packages  
 - `pnpm clean` - Clean build artifacts
 
+### Development Server Ports
+- **Frontend**: http://localhost:3000 (Next.js)
+- **API**: http://localhost:3001 (Express.js development server)
+
+### Individual Development Commands
+- `cd frontend && npm run dev` - Start frontend on port 3000
+- `cd serverless-api && npm run dev` - Start API development server on port 3001
+
+### Server Management
+To kill existing servers and start fresh:
+```bash
+# Kill any existing servers on ports 3000-3002
+lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+lsof -ti:3001 | xargs kill -9 2>/dev/null || true
+lsof -ti:3002 | xargs kill -9 2>/dev/null || true
+
+# Start both servers
+cd frontend && npm run dev &
+cd serverless-api && npm run dev &
+```
+
+### Development URLs
+- **Frontend**: http://localhost:3000
+- **API Health Check**: http://localhost:3001/api/health
+- **API Workflows**: http://localhost:3001/api/workflows
+
 ### Database Operations
 - `pnpm db:migrate` - Run database migrations
 - `pnpm db:seed` - Seed database with initial data
@@ -24,7 +50,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - `pnpm e2e` - Run end-to-end tests with Playwright
-- `pnpm --filter agents test` - Run agent integration tests
+- `pnpm test` - Run all tests across packages
 
 ### Deployment
 - `pnpm deploy:staging` - Deploy to staging environment
@@ -32,7 +58,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This project is a workflow automation platform where n8n orchestrates complex business processes by calling a suite of external, specialized AI agent services. The backend API and database serve as a simple "log book," atomically recording the outcomes of each step that n8n completes. The frontend provides a complete view of the workflow's progress by combining the static process definition with the execution logs, and it serves as the dashboard for Human-in-the-Loop (HIL) operators to resolve any flagged interrupts.
+This project is a workflow automation platform where n8n orchestrates complex business processes by coordinating external AI agent services. The backend API and database serve as a stateful log, tracking workflow progress through task execution records. The frontend provides a complete view of the workflow's progress by combining workflow definitions with execution status, and serves as the dashboard for Human-in-the-Loop (HIL) operators to resolve any flagged interrupts.
 
 Rexera 2.0 is an AI-powered real estate workflow automation platform with a sophisticated **dual-layer architecture**:
 
@@ -139,23 +165,25 @@ This project uses a **Turbo + pnpm** monorepo setup for optimal performance and 
 
 ## Real-Time Features
 
-The system uses WebSocket connections for live updates:
-- Workflow status changes
-- Task execution updates
-- HIL notifications and alerts
-- Cross-workflow coordination events
+The system uses Supabase Realtime subscriptions for instant notifications:
+- Task execution status changes trigger immediate UI notifications
+- Workflow completion alerts
+- HIL interrupt notifications via toast messages
+- Dashboard data updates through cache invalidation
 
 ## Integration Patterns & Workflow Execution
 
-### The "Log Book" Architecture: Static Blueprint + Dynamic Log
+### The "Stateful Log" Architecture: Task Pre-Population + Status Updates
 
-Rexera 2.0's task execution architecture is built on a simple and powerful philosophy: the database serves as an **immutable log of completed work**, not a state machine for pending tasks. This separation of concerns creates a robust, scalable, and easily debuggable system.
+Rexera 2.0's task execution architecture uses a **stateful log approach** where all potential tasks are pre-created in the database, then their statuses are updated as work progresses. This creates a complete, real-time view of workflow progress.
 
--   **Static Blueprint (Workflow Definition):** The complete plan for any workflow is defined in a static JSON file (e.g., `PAYOFF_REQUEST.json`). This file contains a `taskSequence` array that lists all potential steps in their intended order. This is the "to-do list" and is the source of truth for the UI.
+-   **Workflow Definition:** Complete workflow plans are defined in n8n with task sequences that determine the steps for each workflow type (Municipal Lien Search, HOA Acquisition, Payoff Request).
 
--   **Dynamic Log (Database):** The database, specifically the `task_executions` table, only records work that has already been completed. It is the "log book" of what has happened. It does not know or care about what tasks are pending.
+-   **Task Pre-Population:** When a workflow starts, n8n calls the "Bulk Create Tasks" endpoint to create ALL potential task records in the `task_executions` table with `PENDING` status.
 
--   **`taskType` Identifier:** A human-readable string (e.g., `"identify_lender_contact"`) is the shared key that links the static blueprint to the dynamic log entries created by `n8n`.
+-   **Status-Driven Execution:** As n8n executes each task, it updates the corresponding database record status from `PENDING` → `RUNNING` → `COMPLETED` or `FAILED`.
+
+-   **Real-Time UI:** The frontend displays all pre-populated tasks with their current status, providing immediate visibility into workflow progress and any interrupts requiring human attention.
 
 ### The Execution Flow
 
@@ -169,83 +197,108 @@ graph TD
     end
 
     subgraph "n8n Workflow Engine"
-        C --> D[2. Execute Step 1 logic<br/>(e.g., taskType: 'identify_lender_contact')];
-        D --> E[Agent completes work];
-        E --> F{3. Report Result via Webhook};
+        C --> D[2. Bulk Create All Tasks<br/>POST /api/taskExecutions/bulk];
+        D --> E[3. Execute First Task<br/>Update status: PENDING → RUNNING];
+        E --> F[4. Agent completes work];
+        F --> G[5. Update Task Status<br/>RUNNING → COMPLETED];
+        G --> H[6. Next task in sequence];
     end
 
-    subgraph "Application Backend"
-        F --> G["POST /api/webhooks/n8n<br/>Receives `workflow_id`, `taskType`, and `result`"];
-        G --> H[4. Create `task_executions` record<br/>(The immutable log entry)];
-        H --> I[...next step in n8n];
+    subgraph "Frontend Dashboard"
+        I[Real-time task list display<br/>All tasks with current status];
+        G --> I;
+        H --> I;
     end
 ```
 
-### API Interaction: The `n8n` Webhook
+### API Integration: n8n to Rexera Communication
 
-All communication from `n8n` to the Rexera backend happens through a single, unified webhook endpoint. Instead of telling the backend to perform actions (like starting or completing a task), `n8n` simply reports events that have already occurred.
+Communication from `n8n` to the Rexera backend uses multiple REST endpoints for different workflow stages:
 
-**Endpoint:** `POST /api/webhooks/n8n`
+**Key Endpoints:**
+- `POST /api/workflows` - Create new workflow
+- `POST /api/taskExecutions/bulk` - Create all tasks for a workflow  
+- `PATCH /api/taskExecutions/:id` - Update task status and results
 
-#### `n8n` Reporting Payload
+#### Task Execution Updates
 
-When an `n8n` node finishes a task, it sends a simple payload to the webhook:
+When n8n updates a task, it sends a PATCH request to update the task status and results:
 
 ```json
-// Example from an n8n "HTTP Request" node
+// Example PATCH /api/taskExecutions/:id
 {
-  "eventType": "agent_task_completed",
-  "data": {
-    "workflow_id": "{{ $json.workflow_id }}",
-    "taskType": "identify_lender_contact",
-    "status": "COMPLETED",
-    "result": {
-      "contacts": [
-        {
-          "name": "Big Bank Mortgage Dept.",
-          "email": "payoffs@bigbank.com",
-          "phone": "1-800-555-1234"
-        }
-      ],
-      "confidenceScore": 0.95
-    },
-    "agentName": "nina",
-    "executionTime": 4500
-  }
+  "status": "COMPLETED",
+  "output_data": {
+    "contacts": [
+      {
+        "name": "Big Bank Mortgage Dept.",
+        "email": "payoffs@bigbank.com", 
+        "phone": "1-800-555-1234"
+      }
+    ],
+    "confidenceScore": 0.95
+  },
+  "agent_name": "nina",
+  "completed_at": "2024-01-15T10:30:00Z"
 }
 ```
 
-#### Backend Logging Logic (Conceptual)
+#### Backend Task Management
 
-The backend's responsibility is to validate the incoming event and create a corresponding record in the `task_executions` table. It does not manage state; it simply logs the event.
+The backend manages task state through a combination of bulk creation and status updates:
 
 ```javascript
-// Conceptual handler for the /api/webhooks/n8n endpoint
+// Bulk task creation when workflow starts
+POST /api/taskExecutions/bulk
+const tasks = workflowDefinition.taskSequence.map(task => ({
+  workflow_id: workflow.id,
+  task_type: task.taskType,
+  status: 'PENDING',
+  sequence_order: task.order,
+  agent_name: task.defaultAgent
+}));
 
-// 1. Validate the incoming payload against a schema.
-const { eventType, data } = validatePayload(req.body);
+await supabase.from('task_executions').insert(tasks);
 
-// 2. Prepare the data for the database log.
-const executionLogEntry = {
-  workflow_id: data.workflow_id,
-  task_type: data.taskType, // The shared identifier
-  action_type: 'execute', // Or derived from eventType
-  status: data.status, // 'COMPLETED' or 'FAILED'
-  output_data: data.result,
-  agent_name: data.agentName,
-  // ... and other relevant fields
-};
-
-// 3. Insert the immutable record into the log.
+// Individual task updates as work progresses  
+PATCH /api/taskExecutions/:id
 await supabase
   .from('task_executions')
-  .insert(executionLogEntry);
-
-// 4. Send a simple success response.
-res.status(200).json({ success: true });
+  .update({
+    status: req.body.status,
+    output_data: req.body.output_data,
+    completed_at: req.body.completed_at
+  })
+  .eq('id', taskId);
 ```
 
-This architecture ensures that `n8n` remains the master of the workflow process, while the Rexera application provides a robust, real-time view into the execution history without managing complex state.
+This architecture provides real-time workflow visibility while maintaining n8n as the orchestration engine. The frontend displays all tasks immediately with their current status, creating transparency for HIL operators and clients.
+
+## Current Implementation Status
+
+### ✅ Completed Features
+- **Dashboard Interface**: Fully functional workflow table with sorting, filtering, and search
+- **Real-Time Updates**: Live workflow status updates via Supabase subscriptions  
+- **n8n Integration**: End-to-end tested workflow orchestration with webhook communication
+- **API Endpoints**: Complete REST API for workflows, tasks, and communications
+- **Type Safety**: Comprehensive Zod schemas and TypeScript typing
+- **Database Schema**: Production-ready PostgreSQL schema with RLS policies
+- **Monorepo Structure**: Optimized Turborepo + pnpm workspace setup
+
+### 🔧 Technical Achievements  
+- **Code Cleanup**: Removed 1,300+ lines of unused/duplicate code while maintaining functionality
+- **API Testing**: All 11 core API endpoints tested and validated
+- **n8n Testing**: Successfully created and executed test workflows in n8n Cloud
+- **Frontend Features**: Working sorting, filtering, search, and pagination with accurate date formatting
+- **Database Integration**: Real due dates, proper task execution tracking, and interrupt handling
+
+### 🎯 Dashboard Features
+- **Sortable Columns**: All columns support ascending/descending sort with visual indicators
+- **Smart Filtering**: Type, status, and interrupt filters with search functionality
+- **Date Display**: Human-readable dates ("Jul 6" format) for created and due dates
+- **Status Indicators**: Color-coded status badges with proper styling
+- **Interrupt Tracking**: Visual interrupt indicators with task-specific icons
+- **Responsive Design**: Clean, professional interface optimized for HIL operators
 
 ## Development Guidelines & Patterns
 

@@ -11,7 +11,7 @@ The database is the single source of truth for the *state* of all business objec
 While the full schema contains over 30 tables, the following are the most critical to understand:
 
 *   `workflows`: This is the central table, representing a single instance of a business process (e.g., one Payoff Request). It holds the overall status, priority, and metadata for the workflow.
-*   `task_executions`: This table is an immutable log of every step taken within a workflow. Each time an agent or human performs an action, a new record is created here. It answers the question "What work has been done?".
+*   `task_executions`: This table is an immutable log of every step taken within a workflow. Each time an agent or human performs an action, a new record is created here. It answers the question "What work has been done?". It also includes an `interrupt_type` field to flag tasks that require human intervention.
 *   `communications`: A unified table for all interactions (emails, calls, internal messages). It uses a hybrid approach with type-specific metadata tables (`email_metadata`, `call_metadata`, `message_metadata`) to ensure type safety and performance while providing a single point of query for all communication events.
 *   `documents`: Stores metadata for all files, from working documents to final deliverables. This table now also handles what was formerly in `workflow_outputs`, using a `document_type` of 'DELIVERABLE'.
 *   `counterparties`: A directory of external organizations (e.g., Lenders, HOAs) that the system interacts with.
@@ -19,6 +19,7 @@ While the full schema contains over 30 tables, the following are the most critic
 *   `audit_events`: A universal, append-only log of every significant action taken in the system by any actor (human, agent, or system process). This is the source of truth for compliance, debugging, and analytics.
 *   `sla_tracking`: Tracks the status of tasks against their defined Service Level Agreements, including their current alert level (`GREEN`, `YELLOW`, `ORANGE`, `RED`, `BREACHED`).
 *   `invoices` and `cost_items`: Manages the financial aspects of workflows, tracking costs incurred and generating invoices for clients.
+*   `hil_notifications`: Stores in-app notifications for HIL users, triggered by events like task interrupts, SLA warnings, or direct mentions. This allows the UI to display a real-time notification feed.
 
 ### Key Design Principles
 

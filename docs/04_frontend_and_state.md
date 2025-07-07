@@ -39,7 +39,7 @@ The UI is built from a set of reusable components, primarily using [shadcn/ui](h
 ### State Management & Real-Time Updates
 
 *   **State Management**: We use [Zustand](https://zustand-demo.pmnd.rs/) for managing global client-side state. It provides a simple, unopinionated, and scalable solution for managing UI state, user information, and the local cache of workflow data.
-*   **Real-Time Updates**: The application uses ** subscriptions** over WebSockets to receive real-time updates from the backend. A `InterruptWebSocketService` class manages the connection, handles incoming messages (e.g., `NEW_INTERRUPT`, `TASK_UPDATED`), and dispatches actions to the Zustand store to keep the UI in sync. This ensures the HIL dashboard is always live and requires no manual refreshing.
+*   **Real-Time Updates**: The application uses Supabase Realtime subscriptions to receive live updates from the database. These subscriptions automatically trigger UI updates when tasks change status or new interrupts are created, ensuring the HIL dashboard is always current without manual refreshing.
 
 ## 3. Universal Audit System
 

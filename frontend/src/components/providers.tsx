@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { SupabaseProvider } from '@/lib/supabase/provider';
 import { AuthProvider } from '@/lib/auth/provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { NotificationProvider } from '@/lib/notifications/provider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -28,7 +29,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         <SupabaseProvider>
           <AuthProvider>
-            {children}
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
           </AuthProvider>
         </SupabaseProvider>
       </ThemeProvider>

@@ -135,7 +135,7 @@ app.get('/api/workflows/:id', async (req, res) => {
   }
 });
 
-// Task executions endpoint
+// Task executions GET endpoint
 app.get('/api/taskExecutions', async (req, res) => {
   try {
     const { workflowId, include, limit = 50, offset = 0 } = req.query;
@@ -168,6 +168,29 @@ app.get('/api/taskExecutions', async (req, res) => {
     }
     
     sendSuccess(res, data);
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+// Task executions POST endpoint (bulk create)
+app.post('/api/taskExecutions', async (req, res) => {
+  try {
+    const tasks = req.body;
+    
+    // Handle both single task and array of tasks
+    const tasksArray = Array.isArray(tasks) ? tasks : [tasks];
+    
+    const { data, error } = await supabase
+      .from('task_executions')
+      .insert(tasksArray)
+      .select();
+    
+    if (error) {
+      return handleError(res, error);
+    }
+    
+    sendSuccess(res, data, 201);
   } catch (error) {
     handleError(res, error);
   }

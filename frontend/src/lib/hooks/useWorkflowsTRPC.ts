@@ -22,7 +22,17 @@ interface WorkflowStats {
   completedToday: number;
 }
 
-export function useWorkflowsTRPC(filters: WorkflowFilters = {}) {
+export function useWorkflowsTRPC(filters: WorkflowFilters = {}): {
+  workflows: any[];
+  stats: WorkflowStats;
+  loading: boolean;
+  error: string | null;
+  pagination: any;
+  refetch: () => void;
+  createWorkflow: any;
+  createWorkflowAsync: any;
+  isCreating: boolean;
+} {
   // Convert to new API format and delegate to useWorkflows
   return useWorkflows(filters);
 }
