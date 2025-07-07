@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd ../packages/shared && npm run build",
-  "installCommand": "cd .. && npm install",
+  "buildCommand": "pnpm --filter=@rexera/shared build",
+  "installCommand": "pnpm install",
   "functions": {
     "api/**/*.js": {
       "runtime": "@vercel/node@3.0.27"
@@ -13,7 +13,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://rexera2-frontend.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",
