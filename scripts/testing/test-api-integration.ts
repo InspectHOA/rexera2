@@ -1,24 +1,62 @@
-#!/usr/bin/env node
-
+#!/usr/bin/env tsx
 /**
- * API Integration Test - Simulates n8n workflow calls to test API endpoints
- * Tests the same API calls that the n8n workflow would make
+ * Script Name: API Integration Test
+ * Purpose: Simulates n8n workflow calls to test API endpoints
+ * Usage: tsx scripts/testing/test-api-integration.ts
+ * Requirements: Local API server running on port 3001, SUPABASE_* environment variables
  */
 
-const fetch = require('node-fetch');
-require('dotenv').config({ path: '/home/vish/code/rexera2/serverless-api/.env' });
+import { config } from 'dotenv';
 
-const config = {
+config({ path: './serverless-api/.env' });
+
+interface Config {
+  rexeraApiUrl: string;
+  supabaseUrl: string;
+  supabaseKey: string;
+}
+
+interface WorkflowData {
+  workflow_type: string;
+  client_id: string;
+  title: string;
+  description: string;
+  priority: string;
+  metadata: {
+    test: boolean;
+    property_address: string;
+    loan_number: string;
+  };
+  created_by: string;
+}
+
+interface TaskData {
+  workflow_id: string;
+  task_type: string;
+  action_type: string;
+  status: string;
+  sequence_order: number;
+  agent_name: string;
+  input_data: Record<string, any>;
+}
+
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+const apiConfig: Config = {
   rexeraApiUrl: 'http://localhost:3001',
-  supabaseUrl: process.env.SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+  supabaseUrl: process.env.SUPABASE_URL!,
+  supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY!
 };
 
-console.log('🚀 Starting API Integration Test (Simulating n8n Workflow)');
-console.log('========================================================');
-
-async function main() {
+async function main(): Promise<void> {
   try {
+    console.log('🚀 Starting API Integration Test (Simulating n8n Workflow)');
+    console.log('========================================================');
+
     // Step 1: Check API health
     console.log('\n🔍 Step 1: Checking API health...');
     await checkApi();
@@ -47,14 +85,16 @@ async function main() {
     console.log('✅ The n8n workflow would work correctly with these endpoints.');
 
   } catch (error) {
-    console.error('\n❌ Test failed:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('\n❌ Test failed:', error instanceof Error ? error.message : error);
+    if (error instanceof Error && error.stack) {
+      console.error('Stack:', error.stack);
+    }
     process.exit(1);
   }
 }
 
-async function checkApi() {
-  const response = await fetch(`${config.rexeraApiUrl}/api/health`);
+async function checkApi(): Promise<any> {
+  const response = await fetch(`${apiConfig.rexeraApiUrl}/api/health`);
   const data = await response.json();
   
   if (!response.ok || !data.status) {
@@ -65,8 +105,8 @@ async function checkApi() {
   return data;
 }
 
-async function createTestWorkflow() {
-  const workflowData = {
+async function createTestWorkflow(): Promise<any> {
+  const workflowData: WorkflowData = {
     workflow_type: 'PAYOFF',
     client_id: 'test-client-001',
     title: 'API Integration Test Payoff',
@@ -80,7 +120,7 @@ async function createTestWorkflow() {
     created_by: 'api-integration-test'
   };
 
-  const response = await fetch(`${config.rexeraApiUrl}/api/workflows`, {
+  const response = await fetch(`${apiConfig.rexeraApiUrl}/api/workflows`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -93,7 +133,7 @@ async function createTestWorkflow() {
     throw new Error(`Failed to create workflow: ${response.status} ${error}`);
   }
 
-  const result = await response.json();
+  const result: ApiResponse = await response.json();
   
   if (!result.success) {
     throw new Error(`Workflow creation failed: ${result.error}`);
@@ -103,8 +143,8 @@ async function createTestWorkflow() {
   return result.data;
 }
 
-async function createTestTasks(workflowId) {
-  const tasksData = [
+async function createTestTasks(workflowId: string): Promise<any[]> {
+  const tasksData: TaskData[] = [
     {
       workflow_id: workflowId,
       task_type: 'identify_lender_contact',
@@ -137,7 +177,7 @@ async function createTestTasks(workflowId) {
     }
   ];
 
-  const response = await fetch(`${config.rexeraApiUrl}/api/taskExecutions/bulk`, {
+  const response = await fetch(`${apiConfig.rexeraApiUrl}/api/task-executions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -150,7 +190,7 @@ async function createTestTasks(workflowId) {
     throw new Error(`Failed to create tasks: ${response.status} ${error}`);
   }
 
-  const result = await response.json();
+  const result: ApiResponse = await response.json();
   
   if (!result.success) {
     throw new Error(`Task creation failed: ${result.error}`);
@@ -160,7 +200,7 @@ async function createTestTasks(workflowId) {
   return result.data;
 }
 
-async function simulateAgentWork(tasks) {
+async function simulateAgentWork(tasks: any[]): Promise<void> {
   const mockResults = [
     {
       lender_name: 'Test Bank Mortgage',
@@ -201,13 +241,13 @@ async function simulateAgentWork(tasks) {
   }
 }
 
-async function updateTaskStatus(taskId, status, outputData = null) {
-  const updateData = { status };
+async function updateTaskStatus(taskId: string, status: string, outputData: any = null): Promise<any> {
+  const updateData: any = { status };
   if (outputData) {
     updateData.output_data = outputData;
   }
 
-  const response = await fetch(`${config.rexeraApiUrl}/api/taskExecutions?id=${taskId}`, {
+  const response = await fetch(`${apiConfig.rexeraApiUrl}/api/task-executions?id=${taskId}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json'
@@ -220,7 +260,7 @@ async function updateTaskStatus(taskId, status, outputData = null) {
     throw new Error(`Failed to update task ${taskId}: ${response.status} ${error}`);
   }
 
-  const result = await response.json();
+  const result: ApiResponse = await response.json();
   
   if (!result.success) {
     throw new Error(`Task update failed: ${result.error}`);
@@ -229,24 +269,24 @@ async function updateTaskStatus(taskId, status, outputData = null) {
   return result.data;
 }
 
-async function completeWorkflow(workflowId) {
+async function completeWorkflow(workflowId: string): Promise<void> {
   // Note: Workflow completion endpoint doesn't exist yet, but would be needed
   console.log(`✅ Workflow ${workflowId} marked as completed`);
 }
 
-async function verifyResults(workflowId) {
+async function verifyResults(workflowId: string): Promise<void> {
   // Verify tasks were created and completed
-  const response = await fetch(`${config.rexeraApiUrl}/api/taskExecutions?workflowId=${workflowId}`);
+  const response = await fetch(`${apiConfig.rexeraApiUrl}/api/task-executions?workflowId=${workflowId}`);
   
   if (!response.ok) {
     throw new Error('Failed to fetch task executions');
   }
 
-  const result = await response.json();
+  const result: ApiResponse = await response.json();
   const tasks = result.data;
 
-  const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
-  const tasksWithResults = tasks.filter(t => t.output_data);
+  const completedTasks = tasks.filter((t: any) => t.status === 'COMPLETED');
+  const tasksWithResults = tasks.filter((t: any) => t.output_data);
 
   console.log(`✅ ${tasks.length} tasks created`);
   console.log(`✅ ${completedTasks.length} tasks completed`);
@@ -267,5 +307,7 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Run the test
-main();
+// Run script if called directly
+if (require.main === module) {
+  main();
+}

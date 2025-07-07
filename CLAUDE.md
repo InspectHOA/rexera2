@@ -459,3 +459,66 @@ import { helper } from '@rexera/shared/src/internal/helper';
 
 ### Key Takeaway
 **Default to keeping code together rather than splitting it apart. Package extraction should be the exception, not the rule. When in doubt, add to `@rexera/shared`.**
+
+## 📜 Script Organization Guidelines
+
+### Script Location Rules
+**ALL development, testing, and utility scripts MUST be placed in the `/scripts` directory**, never in the project root.
+
+#### Directory Structure:
+```
+scripts/
+├── testing/          # All testing scripts (API, n8n, integration tests)
+├── db/              # Database utilities and migrations  
+├── deployment/      # Deployment and CI/CD scripts
+└── utils/           # General utility scripts
+```
+
+#### ✅ Correct Script Placement:
+- Testing scripts → `scripts/testing/`
+- Database scripts → `scripts/db/` 
+- Deployment scripts → `scripts/deployment/`
+- General utilities → `scripts/utils/`
+
+#### ❌ Never place scripts in:
+- Project root directory
+- Inside package directories (frontend/, serverless-api/)
+- Random subdirectories
+
+### Script Development Standards:
+1. **TypeScript Only**: All scripts must be written in TypeScript (.ts)
+2. **Executable**: Include shebang `#!/usr/bin/env tsx` for direct execution
+3. **Documented**: Include clear purpose and usage comments
+4. **Environment Aware**: Use proper environment variable handling
+5. **Error Handling**: Implement proper error handling and logging
+
+### Example Script Template:
+```typescript
+#!/usr/bin/env tsx
+/**
+ * Script Name: Brief description
+ * Purpose: What this script does
+ * Usage: tsx scripts/category/script-name.ts
+ * Requirements: List any environment variables or dependencies
+ */
+
+import { config } from 'dotenv';
+config({ path: './serverless-api/.env' });
+
+async function main() {
+  try {
+    console.log('🚀 Starting script...');
+    // Script logic here
+    console.log('✅ Script completed successfully');
+  } catch (error) {
+    console.error('❌ Script failed:', error);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main();
+}
+```
+
+This ensures a clean, organized codebase with no random scripts cluttering the project structure.

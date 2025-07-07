@@ -60,6 +60,10 @@ export type Database = {
           execution_time_ms: number | null
           retry_count: number
           created_at: string
+          // Simple SLA tracking fields
+          sla_hours: number
+          sla_due_at: string | null
+          sla_status: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
         }
         Insert: {
           id?: string
@@ -81,6 +85,10 @@ export type Database = {
           execution_time_ms?: number | null
           retry_count?: number
           created_at?: string
+          // Simple SLA tracking fields
+          sla_hours?: number
+          sla_due_at?: string | null
+          sla_status?: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
         }
         Update: {
           id?: string
@@ -102,6 +110,10 @@ export type Database = {
           execution_time_ms?: number | null
           retry_count?: number
           created_at?: string
+          // Simple SLA tracking fields
+          sla_hours?: number
+          sla_due_at?: string | null
+          sla_status?: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
         }
         Relationships: []
       }

@@ -1,0 +1,18 @@
+name: SLA Monitor
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sla-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call SLA Monitor Endpoint
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            https://your-app.vercel.app/api/cron/sla-monitor

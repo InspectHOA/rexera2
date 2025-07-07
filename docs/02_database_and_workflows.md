@@ -120,20 +120,52 @@ Below are the high-level task sequences for the three primary workflow types. Th
 | 6 | `notify_client` | Mia 📧 | Notify the client that the payoff is complete |
 
 
-## 4. SLA Monitoring
+## 4. Simple SLA Monitoring
 
-The system actively monitors Service Level Agreements (SLAs) to ensure timely workflow completion. This is handled by the `sla_tracking` table, which is created for tasks with defined time limits.
+The system uses an ultra-simple SLA tracking approach built directly into the `task_executions` table to ensure timely task completion.
 
-### SLA Alert Levels
+### How SLA Tracking Works
 
-SLA status is tracked with a color-coded alert system to provide immediate visibility into tasks that are at risk.
+**Three Fields in `task_executions`:**
+- `sla_hours` - How many hours allocated for this task (default: 24, configurable per task type)
+- `sla_due_at` - When this task is due (auto-calculated: `started_at + sla_hours`)
+- `sla_status` - Current status: `'ON_TIME'`, `'AT_RISK'`, `'BREACHED'`
 
-| Alert Level | Threshold | Action Required |
-|-------------|-----------|-----------------|
-| **GREEN** | 0-60% of SLA time elapsed | Monitor |
-| **YELLOW** | 60-80% of SLA time elapsed | Prepare for escalation |
-| **ORANGE** | 80-95% of SLA time elapsed | Alert HIL team |
-| **RED** | 95-100% of SLA time elapsed | Immediate escalation |
-| **BREACHED** | >100% of SLA time elapsed | Manager notification |
+**Automatic SLA Lifecycle:**
+1. **Task Creation**: `sla_hours` set based on task type (default 24h)
+2. **Task Start**: `sla_due_at` auto-calculated when `started_at` is set
+3. **Background Monitoring**: Script runs every 15-30 minutes checking for breaches
+4. **Breach Detection**: Tasks where `sla_due_at < now()` and `status != 'COMPLETED'`
+5. **Notification**: Updates `sla_status = 'BREACHED'` and creates HIL notifications
+6. **Real-time Updates**: Frontend receives instant notifications via existing Supabase subscriptions
 
-This system allows the operations team to proactively address potential delays before they impact clients.
+### SLA Status Levels
+
+| Status | Description | Action |
+|--------|-------------|--------|
+| **ON_TIME** | Task is within SLA deadline | Monitor |
+| **AT_RISK** | Task is approaching deadline (80-95% elapsed) | Prepare for escalation |
+| **BREACHED** | Task has exceeded SLA deadline | HIL notification sent |
+
+### Configuration Examples
+
+```typescript
+// Default SLA hours by task type
+const TASK_SLA_HOURS = {
+  'identify_lender_contact': 4,   // Research tasks: 4 hours
+  'send_payoff_request': 24,      // Communication: 24 hours  
+  'extract_payoff_data': 2,       // Data extraction: 2 hours
+  'document_analysis': 6,         // Analysis tasks: 6 hours
+  'portal_access': 8              // Portal tasks: 8 hours
+};
+```
+
+### Background Monitoring
+
+The SLA monitoring system runs via `scripts/background/sla-monitor.ts`:
+- **Frequency**: Every 15-30 minutes (configurable via cron)
+- **Detection**: Queries tasks with `sla_due_at < now()` and `sla_status = 'ON_TIME'`
+- **Notification**: Uses existing HIL notification system (`SLA_WARNING` type)
+- **Frontend Integration**: Triggers real-time toast notifications via `useNotifications()` hook
+
+This ultra-simple approach provides effective SLA monitoring without complex infrastructure while leveraging the existing notification system.

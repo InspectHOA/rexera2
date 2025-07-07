@@ -21,16 +21,23 @@ export const TaskExecutionSchema = z.object({
   execution_time_ms: z.number().int().optional().nullable(),
   retry_count: z.number().int(),
   created_at: z.string().datetime(),
+  // Simple SLA tracking fields
+  sla_hours: z.number().int().min(1).default(24), // Hours allocated for this task (configurable per task type)
+  sla_due_at: z.string().datetime().optional().nullable(), // When this task is due (auto-calculated when started)
+  sla_status: z.enum(['ON_TIME', 'AT_RISK', 'BREACHED']).default('ON_TIME'), // Current SLA status
 });
 
 export const CreateTaskExecutionSchema = TaskExecutionSchema.omit({
   id: true,
   created_at: true,
+  sla_due_at: true, // Auto-calculated, not provided on create
 }).partial({
   status: true,
   priority: true,
   retry_count: true,
   input_data: true,
+  sla_hours: true, // Optional on create, defaults to 24
+  sla_status: true, // Optional on create, defaults to 'ON_TIME'
 });
 
 export const UpdateTaskExecutionSchema = TaskExecutionSchema.pick({
@@ -41,6 +48,8 @@ export const UpdateTaskExecutionSchema = TaskExecutionSchema.pick({
   error_message: true,
   execution_time_ms: true,
   retry_count: true,
+  sla_hours: true, // Allow updating SLA hours if needed
+  sla_status: true, // Allow updating SLA status (for breach notifications)
 }).partial();
 
 export type TaskExecution = z.infer<typeof TaskExecutionSchema>;

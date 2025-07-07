@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "cd ../packages/shared && npm run build",
+  "installCommand": "cd .. && npm install",
   "functions": {
     "api/**/*.js": {
       "runtime": "@vercel/node@3.0.27"
@@ -22,6 +24,12 @@
           "value": "Content-Type, Authorization"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sla-monitor",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
