@@ -24,14 +24,12 @@
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
       "@/lib/*": ["./src/lib/*"],
-      "@/hooks/*": ["./src/hooks/*"],
-      "@/types": ["../packages/types/src"],
-      "@rexera/types": ["../packages/types/src"]
+      "@/hooks/*": ["./src/hooks/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"],
   "references": [
-    { "path": "../packages/types" }
+    { "path": "../packages/shared" }
   ]
 }
