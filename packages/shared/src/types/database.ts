@@ -171,6 +171,99 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          id: string
+          workflow_id: string
+          filename: string
+          url: string
+          file_size_bytes: number | null
+          mime_type: string | null
+          document_type: string
+          tags: string[]
+          upload_source: string | null
+          status: string | null
+          metadata: Json
+          deliverable_data: Json
+          version: number
+          change_summary: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workflow_id: string
+          filename: string
+          url: string
+          file_size_bytes?: number | null
+          mime_type?: string | null
+          document_type?: string
+          tags?: string[]
+          upload_source?: string | null
+          status?: string | null
+          metadata?: Json
+          deliverable_data?: Json
+          version?: number
+          change_summary?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workflow_id?: string
+          filename?: string
+          url?: string
+          file_size_bytes?: number | null
+          mime_type?: string | null
+          document_type?: string
+          tags?: string[]
+          upload_source?: string | null
+          status?: string | null
+          metadata?: Json
+          deliverable_data?: Json
+          version?: number
+          change_summary?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          id: string
+          user_type: Database["public"]["Enums"]["user_type"]
+          email: string
+          full_name: string | null
+          role: string
+          company_id: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id: string
+          user_type: Database["public"]["Enums"]["user_type"]
+          email: string
+          full_name?: string | null
+          role: string
+          company_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
+          email?: string
+          full_name?: string | null
+          role?: string
+          company_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       // Add other essential tables as needed
     }
     Views: {
@@ -185,6 +278,7 @@ export type Database = {
       workflow_type: "MUNI_LIEN_SEARCH" | "HOA_ACQUISITION" | "PAYOFF"
       priority_level: "LOW" | "NORMAL" | "HIGH" | "URGENT"
       executor_type: "AI" | "HIL"
+      user_type: "client_user" | "hil_user"
     }
     CompositeTypes: {
       [_ in never]: never
