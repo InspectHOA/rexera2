@@ -3,7 +3,7 @@
 import { createContext, useContext, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types';
+import type { Database } from '@rexera/shared';
 
 type SupabaseContext = {
   supabase: SupabaseClient<Database>;
