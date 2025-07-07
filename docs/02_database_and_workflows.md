@@ -139,7 +139,7 @@ The system uses an ultra-simple SLA tracking approach built directly into the `t
 5. **Notification**: Updates `sla_status = 'BREACHED'` and creates HIL notifications
 6. **Real-time Updates**: Frontend receives instant notifications via existing Supabase subscriptions
 
-### SLA Status Levels
+### SLA Status Levels 
 
 | Status | Description | Action |
 |--------|-------------|--------|
