@@ -1,7 +1,7 @@
 // Simple API server for testing frontend connectivity
-const express = require('express');
-const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
+import express from 'express';
+import cors from 'cors';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,10 +20,14 @@ app.use(express.json());
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://wmgidablmqotriwlefhq.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtZ2lkYWJsbXFvdHJpd2xlZmhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTEzNzk2NywiZXhwIjoyMDY2NzEzOTY3fQ.viSjS9PV2aDSOIzayHv6zJG-rjmjOBOVMsHlm77h6ns';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Helper functions
-function handleError(res, error, statusCode = 500) {
+interface ApiError extends Error {
+  code?: string;
+}
+
+function handleError(res: express.Response, error: ApiError, statusCode: number = 500): void {
   console.error('API Error:', error);
   res.status(statusCode).json({
     success: false,
@@ -34,7 +38,7 @@ function handleError(res, error, statusCode = 500) {
   });
 }
 
-function sendSuccess(res, data, statusCode = 200) {
+function sendSuccess(res: express.Response, data: any, statusCode: number = 200): void {
   res.status(statusCode).json({
     success: true,
     data
@@ -49,7 +53,10 @@ app.get('/api/health', (req, res) => {
 // Workflows endpoint
 app.get('/api/workflows', async (req, res) => {
   try {
-    const { include, limit = 50, offset = 0, status, client_id } = req.query;
+    const { include, limit = '50', offset = '0', status, client_id } = req.query as Record<string, string>;
+    
+    const limitNum = parseInt(limit, 10);
+    const offsetNum = parseInt(offset, 10);
     
     // Build select string based on include parameter
     let selectString = '*';
@@ -76,7 +83,7 @@ app.get('/api/workflows', async (req, res) => {
     }
     
     query = query
-      .range(offset, offset + limit - 1)
+      .range(offsetNum, offsetNum + limitNum - 1)
       .order('created_at', { ascending: false });
     
     const { data, error } = await query;
@@ -87,7 +94,7 @@ app.get('/api/workflows', async (req, res) => {
     
     sendSuccess(res, data);
   } catch (error) {
-    handleError(res, error);
+    handleError(res, error as ApiError);
   }
 });
 
@@ -95,7 +102,7 @@ app.get('/api/workflows', async (req, res) => {
 app.get('/api/workflows/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { include } = req.query;
+    const { include } = req.query as Record<string, string>;
     
     // Build select string based on include parameter
     let selectString = '*';
@@ -131,14 +138,17 @@ app.get('/api/workflows/:id', async (req, res) => {
     
     sendSuccess(res, data);
   } catch (error) {
-    handleError(res, error);
+    handleError(res, error as ApiError);
   }
 });
 
 // Task executions GET endpoint
-app.get('/api/taskExecutions', async (req, res) => {
+app.get('/api/task-executions', async (req, res) => {
   try {
-    const { workflowId, include, limit = 50, offset = 0 } = req.query;
+    const { workflowId, include, limit = '50', offset = '0' } = req.query as Record<string, string>;
+    
+    const limitNum = parseInt(limit, 10);
+    const offsetNum = parseInt(offset, 10);
     
     // Build select string based on include parameter
     let selectString = '*';
@@ -158,7 +168,7 @@ app.get('/api/taskExecutions', async (req, res) => {
     }
     
     query = query
-      .range(offset, offset + limit - 1)
+      .range(offsetNum, offsetNum + limitNum - 1)
       .order('sequence_order', { ascending: true });
     
     const { data, error } = await query;
@@ -169,12 +179,12 @@ app.get('/api/taskExecutions', async (req, res) => {
     
     sendSuccess(res, data);
   } catch (error) {
-    handleError(res, error);
+    handleError(res, error as ApiError);
   }
 });
 
 // Task executions POST endpoint (bulk create)
-app.post('/api/taskExecutions', async (req, res) => {
+app.post('/api/task-executions', async (req, res) => {
   try {
     const tasks = req.body;
     
@@ -192,7 +202,7 @@ app.post('/api/taskExecutions', async (req, res) => {
     
     sendSuccess(res, data, 201);
   } catch (error) {
-    handleError(res, error);
+    handleError(res, error as ApiError);
   }
 });
 
@@ -210,7 +220,7 @@ app.get('/api/agents', async (req, res) => {
     
     sendSuccess(res, data);
   } catch (error) {
-    handleError(res, error);
+    handleError(res, error as ApiError);
   }
 });
 
@@ -219,6 +229,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Simple API server running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📋 Workflows: http://localhost:${PORT}/api/workflows`);
-  console.log(`⚡ Task Executions: http://localhost:${PORT}/api/taskExecutions`);
+  console.log(`⚡ Task Executions: http://localhost:${PORT}/api/task-executions`);
   console.log(`🤖 Agents: http://localhost:${PORT}/api/agents`);
 });

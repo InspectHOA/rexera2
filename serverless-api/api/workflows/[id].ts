@@ -2,21 +2,27 @@
  * Real workflow details endpoint using Supabase database
  */
 
-const { createServerClient } = require('../../utils/database');
-const { handleError } = require('../../utils/errors');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { createServerClient } from '../../src/utils/database';
+import { handleError } from '../../src/utils/errors';
 
-module.exports = async (req, res) => {
+interface WorkflowQueryParams {
+  id: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   const supabase = createServerClient();
-
-  const id = req.query?.id;
+  const { id } = req.query as WorkflowQueryParams;
 
   try {
-    
     if (req.method === 'GET') {
       // Fetch workflow with related data
       const { data: workflow, error: workflowError } = await supabase
@@ -102,6 +108,6 @@ module.exports = async (req, res) => {
       });
     }
   } catch (error) {
-    return handleError(error, res, 'Failed to fetch workflow details');
+    return handleError(error as Error, res, 'Failed to fetch workflow details');
   }
-};
+}

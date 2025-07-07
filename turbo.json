@@ -3,7 +3,8 @@
   "pipeline": {
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["NODE_ENV", "PORT", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
     },
     "build": {
       "dependsOn": ["^build"],
@@ -14,15 +15,31 @@
       ]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["type-check"],
       "outputs": ["coverage/**"]
+    },
+    "test:smoke": {
+      "cache": false,
+      "env": ["API_BASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+    },
+    "test:integration": {
+      "cache": false,
+      "dependsOn": ["type-check"],
+      "env": ["API_BASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+    },
+    "seed": {
+      "cache": false,
+      "env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+    },
+    "notifications": {
+      "cache": false,
+      "env": ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
     },
     "lint": {
       "outputs": [],
       "cache": false
     },
     "type-check": {
-      "dependsOn": ["^build"],
       "outputs": [],
       "cache": false
     },

@@ -2,13 +2,39 @@
  * Real workflows endpoint using Supabase database
  */
 
-const { createServerClient } = require('../src/utils/database');
-const { handleError, sendSuccess } = require('../src/utils/errors');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { createServerClient } from '../src/utils/database';
+import { handleError, sendSuccess } from '../src/utils/errors';
 
 // Initialize Supabase client
 const supabase = createServerClient();
 
-module.exports = async (req, res) => {
+interface WorkflowQueryParams {
+  workflow_type?: string;
+  status?: string;
+  client_id?: string;
+  assigned_to?: string;
+  priority?: string;
+  page?: string;
+  limit?: string;
+  include?: string;
+}
+
+interface CreateWorkflowBody {
+  workflow_type: string;
+  client_id: string;
+  title: string;
+  description?: string;
+  priority?: string;
+  metadata?: Record<string, any>;
+  due_date?: string;
+  created_by?: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -22,10 +48,10 @@ module.exports = async (req, res) => {
         client_id, 
         assigned_to, 
         priority, 
-        page = 1, 
-        limit = 20,
+        page = '1', 
+        limit = '20',
         include 
-      } = req.query;
+      } = req.query as WorkflowQueryParams;
 
       let query = supabase
         .from('workflows')
@@ -106,7 +132,7 @@ module.exports = async (req, res) => {
         metadata = {}, 
         due_date, 
         created_by 
-      } = req.body;
+      } = req.body as CreateWorkflowBody;
 
       const { data: workflow, error } = await supabase
         .from('workflows')
@@ -159,6 +185,6 @@ module.exports = async (req, res) => {
       });
     }
   } catch (error) {
-    return handleError(error, res, 'Failed to process workflows request');
+    return handleError(error as Error, res, 'Failed to process workflows request');
   }
-};
+}

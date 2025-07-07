@@ -38,6 +38,7 @@ export default function WorkflowDetailPage() {
   const router = useRouter();
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('details');
+  const [rightPanelTab, setRightPanelTab] = useState('task-details');
 
   const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflowTRPC(params.id as string);
   
@@ -110,24 +111,22 @@ export default function WorkflowDetailPage() {
 
   function getAgentDisplay(task: any) {
     if (task.executor_type === 'HIL') {
-      return '👤 HIL Monitor';
+      return 'HIL Monitor';
     }
     
-    const agentName = task.metadata?.agent_name || 'Agent';
-    const agentIcons: Record<string, string> = {
-      'Nina': '🔍 Nina',
-      'Mia': '📧 Mia', 
-      'Florian': '🗣️ Florian',
-      'Rex': '🌐 Rex',
-      'Iris': '📄 Iris',
-      'Ria': '🤝 Ria',
-      'Kosha': '💰 Kosha',
-      'Cassy': '✓ Cassy',
-      'Max': '📞 Max',
-      'Corey': '🏢 Corey'
-    };
+    // Try to get agent name from included agent data first
+    if (task.agent && task.agent.name) {
+      return task.agent.name;
+    }
     
-    return agentIcons[agentName] || `🤖 ${agentName}`;
+    // Fallback to other possible locations for agent name
+    const agentName = task.metadata?.agent_name ||
+                     task.agent_name ||
+                     task.assigned_agent ||
+                     task.metadata?.assigned_agent ||
+                     'Agent';
+    
+    return agentName;
   }
 
   function getTaskMeta(task: any) {
@@ -220,14 +219,40 @@ export default function WorkflowDetailPage() {
         </div>
 
         {/* Right Panel */}
-        <div className="bg-white overflow-y-auto">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+        <div className="bg-white overflow-y-auto flex flex-col">
+          {/* Right Panel Tabs */}
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex gap-6">
+            <button
+              onClick={() => setRightPanelTab('task-details')}
+              className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                rightPanelTab === 'task-details'
+                  ? 'text-gray-700'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
               📋 Task Details
-            </div>
+            </button>
+            <button
+              onClick={() => setRightPanelTab('agent-interface')}
+              className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                rightPanelTab === 'agent-interface'
+                  ? 'text-gray-700'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              🤖 Agent Interface
+            </button>
           </div>
           
-          <TaskDetailView selectedTask={selectedTask} tasks={tasks} />
+          {/* Right Panel Content */}
+          <div className="flex-1 overflow-y-auto">
+            {rightPanelTab === 'task-details' && (
+              <TaskDetailView selectedTask={selectedTask} tasks={tasks} />
+            )}
+            {rightPanelTab === 'agent-interface' && (
+              <AgentInterfaceView selectedTask={selectedTask} tasks={tasks} />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -284,6 +309,69 @@ function TabContent({ activeTab, workflowData }: { activeTab: string; workflowDa
     default:
       return null;
   }
+}
+
+function AgentInterfaceView({ selectedTask, tasks }: { selectedTask: string | null; tasks: Task[] }) {
+  if (!selectedTask) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        <div className="mb-4">
+          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+            🤖
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
+          <p className="text-sm text-gray-600">
+            Select a task to view the associated agent interface.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const task = tasks.find(t => t.id === selectedTask);
+  if (!task) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        <div className="mb-4">
+          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+            🤖
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
+          <p className="text-sm text-gray-600">
+            Task not found.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Since we simplified getAgentDisplay to return just the agent name, we can use it directly
+  const agentName = task.agent;
+
+  return (
+    <div className="p-6">
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
+          🤖
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Connected to agent for task: <span className="font-medium">{task.name}</span>
+        </p>
+      </div>
+      
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div className="text-center">
+          <div className="text-lg font-semibold text-gray-900 mb-2">
+            {agentName}
+          </div>
+          <div className="text-sm text-gray-600">
+            Agent interface functionality will be implemented here.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function PlaceholderContent({ children }: { children: React.ReactNode }) {

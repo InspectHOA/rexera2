@@ -3,9 +3,10 @@
  * Handles AI agent monitoring and coordination.
  */
 
-const { z } = require('zod');
-const { createServerClient } = require('../utils/database');
-const { handleError, sendSuccess } = require('../utils/errors');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { createServerClient } from '../src/utils/database';
+import { handleError, sendSuccess } from '../src/utils/errors';
 
 // Validation schemas
 const getAgentsSchema = z.object({
@@ -24,7 +25,14 @@ const updateAgentSchema = z.object({
   last_heartbeat: z.string().optional()
 });
 
-module.exports = async function handler(req, res) {
+interface AgentQueryParams {
+  id?: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -70,7 +78,7 @@ module.exports = async function handler(req, res) {
     } else if (req.method === 'POST') {
       // Update agent status (heartbeat)
       const input = updateAgentSchema.parse(req.body);
-      const { id } = req.query;
+      const { id } = req.query as AgentQueryParams;
 
       if (!id || typeof id !== 'string') {
         return res.status(400).json({
@@ -106,7 +114,7 @@ module.exports = async function handler(req, res) {
       });
     }
   } catch (error) {
-    if (error.name === 'ZodError') {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -114,6 +122,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return handleError(error, res, 'Failed to process agents request');
+    return handleError(error as Error, res, 'Failed to process agents request');
   }
-};
+}

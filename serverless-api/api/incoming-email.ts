@@ -3,9 +3,10 @@
  * Handles processing of incoming emails for workflow automation.
  */
 
-const { z } = require('zod');
-const { createServerClient } = require('../utils/database');
-const { handleError } = require('../utils/errors');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { createServerClient } from '../src/utils/database';
+import { handleError } from '../src/utils/errors';
 
 // Validation schema for incoming email processing
 const incomingEmailSchema = z.object({
@@ -25,7 +26,10 @@ const incomingEmailSchema = z.object({
   metadata: z.record(z.any()).optional().default({})
 });
 
-module.exports = async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -86,7 +90,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    if (error.name === 'ZodError') {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: 'Invalid email format',
@@ -94,6 +98,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return handleError(error, res, 'Failed to process incoming email');
+    return handleError(error as Error, res, 'Failed to process incoming email');
   }
-};
+}

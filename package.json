@@ -5,7 +5,7 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "serverless-api",
+    "serverless-api", 
     "workflows",
     "packages/types",
     "packages/schemas"
@@ -16,6 +16,10 @@
     "kill-ports": "fuser -k 3000/tcp 2>/dev/null || true && fuser -k 3001/tcp 2>/dev/null || true && fuser -k 3002/tcp 2>/dev/null || true",
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:smoke": "turbo run test:smoke",
+    "test:integration": "turbo run test:integration", 
+    "seed": "turbo run seed",
+    "notifications": "turbo run notifications",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",

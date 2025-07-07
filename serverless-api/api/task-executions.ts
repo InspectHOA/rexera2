@@ -1,27 +1,37 @@
-const { createServerClient } = require('../src/utils/database');
-const { handleError, sendSuccess } = require('../src/utils/errors');
-const { z } = require('zod');
-const { CreateTaskExecutionSchema, UpdateTaskExecutionSchema } = require('@rexera/schemas');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { createServerClient } from '../src/utils/database';
+import { handleError, sendSuccess } from '../src/utils/errors';
+import { CreateTaskExecutionSchema, UpdateTaskExecutionSchema } from '@rexera/schemas';
 
 const supabase = createServerClient();
 
-module.exports = async (req, res) => {
+interface TaskExecutionQueryParams {
+  workflowId?: string;
+  id?: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
-    const { method, body, query } = req;
+    const { method, body, query, url } = req;
+    const typedQuery = query as TaskExecutionQueryParams;
 
     switch (method) {
       case 'GET':
         // listByWorkflow
-        if (query.workflowId) {
+        if (typedQuery.workflowId) {
           const { data, error } = await supabase
             .from('task_executions')
             .select('*')
-            .eq('workflow_id', query.workflowId)
+            .eq('workflow_id', typedQuery.workflowId)
             .order('sequence_order', { ascending: true });
 
           if (error) {
@@ -34,7 +44,7 @@ module.exports = async (req, res) => {
 
       case 'POST':
         // Differentiate between single and bulk creation
-        if (req.url && req.url.endsWith('/bulk')) {
+        if (url && url.endsWith('/bulk')) {
           // bulkCreate
           const validation = z.array(CreateTaskExecutionSchema).safeParse(body);
           if (!validation.success) {
@@ -83,7 +93,7 @@ module.exports = async (req, res) => {
 
       case 'PATCH':
         // update
-        if (query.id) {
+        if (typedQuery.id) {
           const validation = UpdateTaskExecutionSchema.safeParse(body);
           if (!validation.success) {
             return res.status(400).json({ 
@@ -95,7 +105,7 @@ module.exports = async (req, res) => {
           const { data, error } = await supabase
             .from('task_executions')
             .update(body)
-            .eq('id', query.id)
+            .eq('id', typedQuery.id)
             .select()
             .single();
           if (error) {
@@ -114,6 +124,6 @@ module.exports = async (req, res) => {
         });
     }
   } catch (error) {
-    return handleError(error, res, 'Failed to process task executions request');
+    return handleError(error as Error, res, 'Failed to process task executions request');
   }
 }

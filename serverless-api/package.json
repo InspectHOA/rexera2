@@ -5,15 +5,16 @@
   "private": true,
   "scripts": {
     "start": "vercel dev --listen 3001",
-    "dev": "node src/server/express-server.js",
-    "build": "echo 'Build skipped for dev'",
-    "test": "node tests/scripts/test-runner.js",
-    "test:integration": "node tests/api.integration.test.js",
-    "test:smoke": "node tests/smoke.test.js",
-    "seed": "node scripts/seed-database.js",
+    "dev": "tsx src/server/express-server.ts",
+    "build": "tsc",
+    "test": "tsx tests/utils/test-runner.ts",
+    "test:integration": "tsx tests/integration.test.ts",
+    "test:smoke": "tsx tests/smoke.test.ts",
+    "seed": "tsx scripts/seed-database.ts",
+    "notifications": "tsx scripts/notifications.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .vercel"
+    "clean": "rm -rf .vercel dist"
   },
   "dependencies": {
     "@rexera/schemas": "workspace:*",
@@ -24,8 +25,11 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/node": "^20.9.0",
     "eslint": "^8.53.0",
+    "tsx": "^4.20.3",
     "typescript": "^5.2.2",
     "vercel": "^44.2.11"
   }

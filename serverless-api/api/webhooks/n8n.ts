@@ -3,9 +3,10 @@
  * Handles updates from n8n Cloud to Rexera database.
  */
 
-const { z } = require('zod');
-const { createServerClient } = require('../../utils/database');
-const { handleError } = require('../../utils/errors');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { createServerClient } from '../../src/utils/database';
+import { handleError } from '../../src/utils/errors';
 
 const n8nWebhookSchema = z.object({
   eventType: z.enum([
@@ -20,7 +21,10 @@ const n8nWebhookSchema = z.object({
   data: z.record(z.any())
 });
 
-module.exports = async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -129,7 +133,7 @@ module.exports = async function handler(req, res) {
         // Handle agent-specific task updates
         if (data.taskId && data.agentName) {
           const status = eventType === 'agent_task_completed' ? 'COMPLETED' : 'FAILED';
-          const updates = {
+          const updates: any = {
             status,
             metadata: {
               ...(data.metadata || {}),
@@ -188,7 +192,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    if (error.name === 'ZodError') {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: 'Invalid webhook payload',
@@ -196,6 +200,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return handleError(error, res, 'Failed to process n8n webhook');
+    return handleError(error as Error, res, 'Failed to process n8n webhook');
   }
-};
+}

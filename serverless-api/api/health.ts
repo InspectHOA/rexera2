@@ -3,7 +3,24 @@
  * Provides basic API status and uptime monitoring.
  */
 
-module.exports = async function handler(req, res) {
+import { NextApiRequest, NextApiResponse } from 'next';
+
+interface HealthResponse {
+  success: boolean;
+  message: string;
+  timestamp: string;
+  environment: string;
+}
+
+interface ErrorResponse {
+  success: false;
+  error: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<HealthResponse | ErrorResponse>
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -22,4 +39,4 @@ module.exports = async function handler(req, res) {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
-};
+}

@@ -5,13 +5,14 @@
  * Can be run standalone or as part of CI/CD
  */
 
-const { runAllTests } = require('../api.integration.test.js');
+import { runIntegrationTests } from '../integration.test';
+import { smokeTests } from '../smoke.test';
 
 console.log('🧪 Rexera 2.0 API Test Runner');
 console.log('=============================\n');
 
 // Check if API server is running
-async function checkApiServer() {
+async function checkApiServer(): Promise<boolean> {
   const API_URL = process.env.API_BASE_URL || 'http://localhost:3001/api';
   
   try {
@@ -24,13 +25,36 @@ async function checkApiServer() {
       return false;
     }
   } catch (error) {
-    console.error('❌ API server is not accessible:', error.message);
+    const err = error as Error;
+    console.error('❌ API server is not accessible:', err.message);
     console.log('💡 Make sure the API server is running on localhost:3001');
     return false;
   }
 }
 
-async function main() {
+async function runAllTests(): Promise<void> {
+  console.log('🚀 Running all tests...\n');
+  
+  try {
+    // Run smoke tests first
+    console.log('1️⃣ Running smoke tests...');
+    const smokeSuccess = await smokeTests();
+    
+    if (!smokeSuccess) {
+      throw new Error('Smoke tests failed');
+    }
+    
+    console.log('\n2️⃣ Running integration tests...');
+    await runIntegrationTests();
+    
+    console.log('\n🎉 All tests completed successfully!');
+  } catch (error) {
+    console.error('\n❌ Test suite failed:', error);
+    throw error;
+  }
+}
+
+async function main(): Promise<void> {
   // Check API server first
   const isServerRunning = await checkApiServer();
   if (!isServerRunning) {
@@ -48,3 +72,5 @@ if (require.main === module) {
     process.exit(1);
   });
 }
+
+export { runAllTests, checkApiServer };

@@ -160,7 +160,15 @@ export const tasksApi = {
     const workflowId = filters.workflowId || filters.workflow_id;
     
     if (workflowId) {
-      const response = await fetch(`${API_BASE_URL}/taskExecutions?workflowId=${workflowId}`);
+      const params = new URLSearchParams();
+      params.append('workflowId', workflowId);
+      
+      // Add include parameter if provided
+      if (filters.include && filters.include.length > 0) {
+        params.append('include', filters.include.join(','));
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/taskExecutions?${params}`);
       const data = await response.json();
 
       if (!response.ok) {

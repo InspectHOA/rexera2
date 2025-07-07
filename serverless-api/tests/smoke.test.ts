@@ -5,18 +5,24 @@
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/api';
 
-async function apiRequest(endpoint) {
+interface ApiResponse<T = any> {
+  response: Response | null;
+  data: T | null;
+  error: Error | null;
+}
+
+async function apiRequest<T = any>(endpoint: string): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   try {
     const response = await fetch(url);
     const data = await response.json();
     return { response, data, error: null };
   } catch (error) {
-    return { response: null, data: null, error };
+    return { response: null, data: null, error: error as Error };
   }
 }
 
-async function smokeTests() {
+export async function smokeTests(): Promise<boolean> {
   console.log('💨 Running API Smoke Tests...\n');
   
   let passed = 0;
@@ -38,7 +44,7 @@ async function smokeTests() {
   console.log('2. Testing workflows list...');
   const { response: workflowsRes, data: workflowsData, error: workflowsError } = await apiRequest('/workflows');
   
-  if (workflowsError || !workflowsRes || workflowsRes.status !== 200 || !workflowsData.success) {
+  if (workflowsError || !workflowsRes || workflowsRes.status !== 200 || !workflowsData?.success) {
     console.log('❌ Workflows list failed');
     failed++;
   } else {
@@ -46,15 +52,15 @@ async function smokeTests() {
     passed++;
   }
   
-  // Test 3: Task Executions
+  // Test 3: Task Executions (updated endpoint name)
   console.log('3. Testing task executions...');
-  const { response: tasksRes, data: tasksData, error: tasksError } = await apiRequest('/taskExecutions');
+  const { response: tasksRes, data: tasksData, error: tasksError } = await apiRequest('/task-executions');
   
-  if (tasksError || !tasksRes || tasksRes.status !== 200 || !tasksData.success) {
+  if (tasksError || !tasksRes || tasksRes.status !== 200 || !tasksData?.success) {
     console.log('❌ Task executions failed');
     failed++;
   } else {
-    console.log(`✅ Task executions passed (${tasksData.data.length} tasks)`);
+    console.log(`✅ Task executions passed (${tasksData.data?.length || 0} tasks)`);
     passed++;
   }
   
@@ -62,7 +68,7 @@ async function smokeTests() {
   console.log('4. Testing agents...');
   const { response: agentsRes, data: agentsData, error: agentsError } = await apiRequest('/agents');
   
-  if (agentsError || !agentsRes || agentsRes.status !== 200 || !agentsData.success) {
+  if (agentsError || !agentsRes || agentsRes.status !== 200 || !agentsData?.success) {
     console.log('❌ Agents failed');
     failed++;
   } else {
@@ -78,7 +84,7 @@ async function smokeTests() {
     
     const { response: workflowRes, data: workflowData, error: workflowError } = await apiRequest(`/workflows/${testId}`);
     
-    if (workflowError || !workflowRes || workflowRes.status !== 200 || !workflowData.success) {
+    if (workflowError || !workflowRes || workflowRes.status !== 200 || !workflowData?.success) {
       console.log('❌ Individual workflow failed');
       failed++;
     } else {
@@ -101,9 +107,6 @@ async function smokeTests() {
     return false;
   }
 }
-
-// Export for programmatic use
-module.exports = { smokeTests };
 
 // Run if called directly
 if (require.main === module) {

@@ -120,10 +120,6 @@ function ResultSummary() {
 function ActionButtons() {
   return (
     <div className="flex gap-2 pt-2">
-      <button className="px-3 py-2 text-xs font-medium text-white bg-primary-500 border border-primary-500 hover:bg-primary-600 transition-colors duration-200">
-        Open Agent Interface
-      </button>
-      
       <button className="px-3 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors duration-200">
         Retry Task
       </button>

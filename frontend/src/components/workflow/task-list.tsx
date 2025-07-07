@@ -40,7 +40,7 @@ const getSlaStatusStyle = (sla: string) => {
 export function TaskList({ tasks, selectedTask, onTaskClick, progress }: TaskListProps) {
   return (
     <div className="h-[30vh] flex flex-col bg-white">
-      <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+      <div className="px-3 py-3 border-b border-gray-100 bg-gray-50 flex-shrink-0">
         <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
           Tasks ({progress})
         </div>
@@ -60,31 +60,31 @@ export function TaskList({ tasks, selectedTask, onTaskClick, progress }: TaskLis
   );
 }
 
-function TaskItem({ task, isSelected, onClick }: { 
-  task: Task; 
-  isSelected: boolean; 
-  onClick: () => void; 
+function TaskItem({ task, isSelected, onClick }: {
+  task: Task;
+  isSelected: boolean;
+  onClick: () => void;
 }) {
   return (
     <div
       onClick={onClick}
       className={`
-        flex items-center gap-2 p-2 bg-white border border-gray-100 transition-all duration-200 cursor-pointer
-        ${isSelected 
-          ? 'bg-primary-100 border-primary-600' 
-          : task.conditional 
-            ? 'bg-gray-50 border-l-2 border-l-yellow-400 hover:bg-gray-100 hover:border-primary-600' 
+        flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-100 transition-all duration-200 cursor-pointer
+        ${isSelected
+          ? 'bg-primary-100 border-primary-600'
+          : task.conditional
+            ? 'bg-gray-50 border-l-2 border-l-yellow-400 hover:bg-gray-100 hover:border-primary-600'
             : 'hover:bg-gray-50 hover:border-primary-600'
         }
       `}
     >
       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getTaskStatusColor(task.status)}`} />
       
-      <div className="flex-1 min-w-0">
-        <div className="text-xs font-medium text-gray-900">
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <div className="text-xs font-medium text-gray-900 truncate">
           {task.name}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 truncate">
           {task.agent} • {task.meta}
         </div>
       </div>

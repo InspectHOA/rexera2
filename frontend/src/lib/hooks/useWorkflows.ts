@@ -139,9 +139,9 @@ export function useWorkflow(id: string) {
     refetch: refetchTasks
   } = useQuery({
     queryKey: ['tasks', { workflow_id: id }],
-    queryFn: () => api.tasks.list({ 
+    queryFn: () => api.tasks.list({
       workflowId: workflow?.id || id, // Use actual UUID for task filtering
-      include: ['assigned_user'] 
+      include: ['assigned_user', 'agent']
     }),
     enabled: !!id && !!workflow,
     staleTime: 30000,

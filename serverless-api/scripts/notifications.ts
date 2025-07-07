@@ -1,5 +1,7 @@
-require('dotenv').config({ path: '../.env.local' });
-const { createClient } = require('@supabase/supabase-js');
+import { config } from 'dotenv';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+config({ path: '../.env.local' });
 
 // Check environment variables
 console.log('Environment check:');
@@ -12,12 +14,19 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   process.exit(1);
 }
 
-const supabase = createClient(
+const supabase: SupabaseClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-async function testNotifications() {
+interface TaskExecution {
+  id: string;
+  workflow_id: string;
+  task_type: string;
+  status: string;
+}
+
+async function testNotifications(): Promise<void> {
   console.log('🧪 Testing notification system...');
   
   try {
@@ -45,14 +54,14 @@ async function testNotifications() {
       return;
     }
     
-    console.log(`✅ Found ${tasks.length} task executions`);
-    if (tasks.length > 0) {
+    console.log(`✅ Found ${tasks?.length || 0} task executions`);
+    if (tasks && tasks.length > 0) {
       console.log('Sample task:', tasks[0]);
     }
     
     // Test 3: Try to update a task status to trigger notification
-    if (tasks.length > 0) {
-      const task = tasks[0];
+    if (tasks && tasks.length > 0) {
+      const task = tasks[0] as TaskExecution;
       console.log(`🔄 Testing notification trigger by updating task ${task.id}...`);
       
       const { data: updatedTask, error: updateError } = await supabase

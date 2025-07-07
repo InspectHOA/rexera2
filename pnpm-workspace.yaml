@@ -1,6 +1,5 @@
 packages:
   - 'frontend'
-  - 'api'
+  - 'serverless-api'
   - 'workflows'
-  - 'agents'
   - 'packages/*'

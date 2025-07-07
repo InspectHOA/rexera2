@@ -3,9 +3,10 @@
  * Handles getting and updating interrupt by ID.
  */
 
-const { z } = require('zod');
-const { createServerClient } = require('../../utils/database');
-const { handleError } = require('../../utils/errors');
+import { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { createServerClient } from '../../src/utils/database';
+import { handleError } from '../../src/utils/errors';
 
 const updateInterruptSchema = z.object({
   status: z.enum(['PENDING', 'IN_PROGRESS', 'RESOLVED', 'ESCALATED']).optional(),
@@ -14,14 +15,21 @@ const updateInterruptSchema = z.object({
   metadata: z.record(z.any()).optional()
 });
 
-module.exports = async function handler(req, res) {
+interface InterruptQueryParams {
+  id: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   const supabase = createServerClient();
-  const { id } = req.query;
+  const { id } = req.query as InterruptQueryParams;
 
   if (typeof id !== 'string') {
     return res.status(400).json({
@@ -95,7 +103,7 @@ module.exports = async function handler(req, res) {
       });
     }
   } catch (error) {
-    if (error.name === 'ZodError') {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -103,6 +111,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return handleError(error, res, 'Failed to process interrupt request');
+    return handleError(error as Error, res, 'Failed to process interrupt request');
   }
-};
+}
