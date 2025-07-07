@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { createServerClient } from '../src/utils/database';
 import { handleError, sendSuccess } from '../src/utils/errors';
-import { CreateTaskExecutionSchema, UpdateTaskExecutionSchema } from '@rexera/schemas';
+import { CreateTaskExecutionSchema, UpdateTaskExecutionSchema } from '@rexera/shared';
 
 const supabase = createServerClient();
 

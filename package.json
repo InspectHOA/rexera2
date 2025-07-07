@@ -7,8 +7,7 @@
     "frontend",
     "serverless-api", 
     "workflows",
-    "packages/types",
-    "packages/schemas"
+    "packages/shared"
   ],
   "scripts": {
     "dev": "npm run kill-ports && turbo run dev",

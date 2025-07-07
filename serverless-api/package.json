@@ -17,8 +17,7 @@
     "clean": "rm -rf .vercel dist"
   },
   "dependencies": {
-    "@rexera/schemas": "workspace:*",
-    "@rexera/types": "workspace:*",
+    "@rexera/shared": "workspace:*",
     "@supabase/supabase-js": "^2.38.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",

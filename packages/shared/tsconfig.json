@@ -4,9 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
-    "paths": {
-      "@rexera/types/*": ["../types/src/*"]
-    }
+    "declaration": true,
+    "declarationMap": true
   },
   "include": [
     "src/**/*"

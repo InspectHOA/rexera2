@@ -342,3 +342,120 @@ This architecture provides real-time workflow visibility while maintaining n8n a
 2. **Code Review**: All changes go through review process
 3. **CI/CD**: Automated testing and deployment pipelines
 4. **Documentation**: Keep CLAUDE.md updated with architectural changes
+
+## 📦 Package Management Guidelines
+
+### Core Principle: Simplicity Over Complexity
+**ALWAYS prioritize simple, maintainable package structures over theoretical purity.**
+
+### Package Creation Rules
+
+#### ✅ CREATE a new package when:
+1. **Genuine Reusability**: Code is used by 3+ distinct applications/services
+2. **Clear Boundaries**: Package has well-defined, stable interfaces
+3. **Independent Lifecycle**: Package can be versioned and updated independently
+4. **Significant Size**: Package contains substantial functionality (not just a few types)
+
+#### ❌ AVOID creating packages for:
+1. **Shared Types Only**: Use a single `@rexera/shared` package instead
+2. **Single Consumer**: If only one app uses it, keep code local
+3. **Circular Dependencies**: If packages depend on each other, merge them
+4. **Small Utilities**: Keep small helpers in the consuming application
+
+### Recommended Package Structure
+
+#### Current Architecture (Post-Consolidation):
+```
+packages/
+└── shared/              # Single shared package for common code
+    ├── src/
+    │   ├── index.ts     # Main exports
+    │   ├── types/       # TypeScript interfaces
+    │   ├── schemas/     # Zod validation schemas  
+    │   ├── enums/       # Constants and enums
+    │   └── utils/       # Shared utilities
+    └── package.json
+```
+
+#### When to Add New Packages:
+- **@rexera/ai-agents**: If we build a standalone AI agent SDK
+- **@rexera/workflow-engine**: If we extract n8n integration as standalone service
+- **@rexera/client-sdk**: If we build public API for external customers
+
+### Package Dependencies Best Practices
+
+#### ✅ Good Dependency Patterns:
+```json
+{
+  "dependencies": {
+    "@rexera/shared": "workspace:*",     // ✅ Clean workspace reference
+    "zod": "^3.22.4",                    // ✅ External dependency
+    "express": "^5.1.0"                  // ✅ External dependency  
+  }
+}
+```
+
+#### ❌ Avoid These Patterns:
+```json
+{
+  "dependencies": {
+    "@rexera/types": "workspace:*",      // ❌ Use @rexera/shared instead
+    "@rexera/schemas": "workspace:*",    // ❌ Use @rexera/shared instead
+    "@rexera/utils": "workspace:*"       // ❌ Probably belongs in shared
+  }
+}
+```
+
+### Import Guidelines
+
+#### ✅ Preferred Import Patterns:
+```typescript
+// ✅ Import from single shared package
+import { WorkflowStatus, CreateWorkflowSchema } from '@rexera/shared';
+
+// ✅ Import specific items to avoid circular dependencies  
+import type { Database } from '@rexera/shared/database';
+import { TASK_STATUSES } from '@rexera/shared/enums';
+```
+
+#### ❌ Avoid These Import Patterns:
+```typescript
+// ❌ Importing from multiple internal packages
+import { WorkflowStatus } from '@rexera/types';
+import { CreateWorkflowSchema } from '@rexera/schemas';
+
+// ❌ Deep imports that break encapsulation
+import { helper } from '@rexera/shared/src/internal/helper';
+```
+
+### Migration Strategy for Future Changes
+
+#### When You Need to Extract Code:
+1. **Start Local**: Begin with code in the consuming application
+2. **Prove Reusability**: Wait until 2-3 different places need the same code
+3. **Extract Carefully**: Move to `@rexera/shared` first, then consider dedicated package
+4. **Maintain Simplicity**: Prefer fewer packages with clear boundaries
+
+#### Warning Signs of Package Proliferation:
+- TypeScript compilation errors across packages
+- Complex dependency graphs in package.json
+- Multiple import statements for related functionality
+- Difficulty understanding where code lives
+- Circular dependency issues
+
+### Package Naming Conventions
+
+#### ✅ Good Package Names:
+- `@rexera/shared` - Contains commonly used types, schemas, utilities
+- `@rexera/client-sdk` - Public API for external customers
+- `@rexera/workflow-engine` - Standalone workflow orchestration
+
+#### ❌ Avoid These Names:
+- `@rexera/types` - Too generic, belongs in shared
+- `@rexera/schemas` - Too generic, belongs in shared  
+- `@rexera/utils` - Too generic, belongs in shared
+- `@rexera/common` - Meaningless name
+- `@rexera/lib` - Meaningless name
+
+### Key Takeaway
+**Default to keeping code together rather than splitting it apart. Package extraction should be the exception, not the rule. When in doubt, add to `@rexera/shared`.**

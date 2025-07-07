@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { Database } from '@rexera/types';
+import type { Database } from '@rexera/shared';
 
 export function createClient() {
   const cookieStore = cookies();

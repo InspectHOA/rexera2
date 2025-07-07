@@ -2,4 +2,4 @@ packages:
   - 'frontend'
   - 'serverless-api'
   - 'workflows'
-  - 'packages/*'
+  - 'packages/shared'

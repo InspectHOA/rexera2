@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TASK_STATUSES, PRIORITY_LEVELS } from '@rexera/types/enums';
+import { TASK_STATUSES, PRIORITY_LEVELS } from '../enums';
 
 export const TaskExecutionSchema = z.object({
   id: z.string().uuid(),

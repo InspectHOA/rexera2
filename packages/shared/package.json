@@ -1,7 +1,7 @@
 {
-  "name": "@rexera/schemas",
+  "name": "@rexera/shared",
   "version": "1.0.0",
-  "description": "Shared Zod schemas for Rexera 2.0",
+  "description": "Shared types, schemas, and utilities for Rexera 2.0",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -114,14 +114,14 @@ export default function WorkflowDetailPage() {
       return 'HIL Monitor';
     }
     
-    // Try to get agent name from included agent data first
-    if (task.agent && task.agent.name) {
-      return task.agent.name;
+    // Try to get agent name from included agent data first (note: it's "agents" not "agent")
+    if (task.agents && task.agents.name) {
+      return task.agents.name;
     }
     
     // Fallback to other possible locations for agent name
-    const agentName = task.metadata?.agent_name ||
-                     task.agent_name ||
+    const agentName = task.agent_name ||
+                     task.metadata?.agent_name ||
                      task.assigned_agent ||
                      task.metadata?.assigned_agent ||
                      'Agent';

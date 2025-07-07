@@ -3,7 +3,7 @@
  * Basic types for workflow status and metadata
  */
 
-import type { WorkflowType, PriorityLevel } from './enums';
+import type { WorkflowType, PriorityLevel, WorkflowStatus, TaskStatus } from '../enums';
 
 // =====================================================
 // BASIC WORKFLOW TYPES
@@ -31,18 +31,6 @@ export interface Workflow {
 }
 
 /**
- * Workflow status enum
- */
-export type WorkflowStatus = 
-  | 'PENDING'
-  | 'IN_PROGRESS' 
-  | 'AWAITING_REVIEW'
-  | 'BLOCKED'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED';
-
-/**
  * Basic task definition for workflow steps
  */
 export interface WorkflowTask {
@@ -57,16 +45,6 @@ export interface WorkflowTask {
   created_at: string;
   updated_at: string;
 }
-
-/**
- * Task status enum
- */
-export type TaskStatus =
-  | 'PENDING'
-  | 'IN_PROGRESS'
-  | 'COMPLETED' 
-  | 'FAILED'
-  | 'SKIPPED';
 
 // =====================================================
 // WORKFLOW FILTERS & QUERIES

@@ -60,9 +60,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.0.7
         version: 1.2.7(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@rexera/types':
+      '@rexera/shared':
         specifier: workspace:*
-        version: link:../packages/types
+        version: link:../packages/shared
       '@supabase/ssr':
         specifier: ^0.7.0-rc.2
         version: 0.7.0-rc.2(@supabase/supabase-js@2.50.3)
@@ -146,7 +146,7 @@ importers:
         specifier: ^5.2.2
         version: 5.8.3
 
-  packages/schemas:
+  packages/shared:
     dependencies:
       zod:
         specifier: ^3.22.4
@@ -156,20 +156,11 @@ importers:
         specifier: ^5.2.2
         version: 5.8.3
 
-  packages/types:
-    devDependencies:
-      typescript:
-        specifier: ^5.2.0
-        version: 5.8.3
-
   serverless-api:
     dependencies:
-      '@rexera/schemas':
+      '@rexera/shared':
         specifier: workspace:*
-        version: link:../packages/schemas
-      '@rexera/types':
-        specifier: workspace:*
-        version: link:../packages/types
+        version: link:../packages/shared
       '@supabase/supabase-js':
         specifier: ^2.38.0
         version: 2.50.3

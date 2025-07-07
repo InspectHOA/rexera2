@@ -1,45 +1,46 @@
-# Rexera 2.0 API - Clean Structure
+# Rexera 2.0 API - Clean TypeScript Structure
 
 ## 📁 Directory Organization
 
 ```
 serverless-api/
-├── 📂 api/                          # Vercel Serverless Functions
-│   ├── health.js                    # Health check endpoint
-│   ├── workflows.js                 # Workflow CRUD operations
-│   ├── taskExecutions.js            # Task execution management
-│   ├── agents.js                    # AI agent endpoints
-│   ├── activities.js                # Activity logging
-│   ├── incoming-email.js            # Email processing
-│   ├── interrupts.js               # HIL interrupts
-│   ├── options.js                   # CORS preflight
+├── 📂 api/                          # Vercel Serverless Functions (TypeScript)
+│   ├── health.ts                    # Health check endpoint
+│   ├── workflows.ts                 # Workflow CRUD operations
+│   ├── task-executions.ts           # Task execution management
+│   ├── agents.ts                    # AI agent endpoints
+│   ├── activities.ts                # Activity logging
+│   ├── incoming-email.ts            # Email processing
+│   ├── interrupts.ts                # HIL interrupts
+│   ├── options.ts                   # CORS preflight
 │   ├── 📂 workflows/
-│   │   └── [id].js                  # Individual workflow
+│   │   └── [id].ts                  # Individual workflow
 │   ├── 📂 interrupts/
-│   │   └── [id].js                  # Individual interrupt
+│   │   └── [id].ts                  # Individual interrupt
 │   └── 📂 webhooks/
-│       └── n8n.js                   # n8n workflow integration
-├── 📂 src/                          # Source Code
+│       └── n8n.ts                   # n8n workflow integration
+├── 📂 src/                          # Source Code (TypeScript)
 │   ├── 📂 server/
-│   │   └── express-server.js        # Development Express server
+│   │   └── express-server.ts        # Development Express server
 │   ├── 📂 utils/
-│   │   ├── database.js              # Supabase client utilities
-│   │   └── errors.js                # Error handling utilities
+│   │   ├── database.ts              # Supabase client utilities
+│   │   └── errors.ts                # Error handling utilities
+│   ├── 📂 config/
+│   │   └── index.ts                 # Configuration management
 │   └── 📂 types/
-│       ├── n8n.ts                   # n8n type definitions
-│       └── next.ts                  # Next.js type definitions
-├── 📂 tests/                        # Testing Suite
-│   ├── api.integration.test.js      # Comprehensive API tests
-│   ├── smoke.test.js                # Quick health checks
-│   └── 📂 scripts/
-│       └── test-runner.js           # Test orchestration
-├── 📂 scripts/                      # Development Scripts
-│   └── seed-database.js             # Database seeding utility
+│       └── n8n.ts                   # n8n type definitions
+├── 📂 tests/                        # Testing Suite (TypeScript)
+│   ├── integration.test.ts          # Comprehensive API tests
+│   ├── smoke.test.ts                # Quick health checks
+│   └── 📂 utils/
+│       └── test-runner.ts           # Test orchestration
+├── 📂 scripts/                      # Development Scripts (TypeScript)
+│   ├── seed-database.ts             # Database seeding utility
+│   └── notifications.ts             # Notification testing
 ├── 📂 docs/                         # Documentation
 │   └── testing.md                   # Testing documentation
 ├── 📂 public/                       # Static Assets
 │   └── index.html                   # API documentation page
-├── config.ts                        # Configuration management
 ├── package.json                     # Project configuration
 ├── tsconfig.json                    # TypeScript configuration
 ├── vercel.json                      # Vercel deployment config
