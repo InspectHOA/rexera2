@@ -37,7 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const shouldBypassAuth = isLocalhost && isDevelopment;
+  // Disable auth bypass to use real Google OAuth
+  const shouldBypassAuth = false; // isLocalhost && isDevelopment;
 
   const refreshProfile = async () => {
     if (!user) {
@@ -91,13 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('user_profiles')
           .insert({
             id: user.id,
+            user_type: 'hil_user',  // Default to HIL user type
             email: user.email!,
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-            role: 'USER',
+            role: 'HIL',  // Use valid role from schema
+            company_id: null,  // HIL users don't have company_id
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          } as any);
+          });
 
         if (error) {
           console.error('Error creating user profile:', error);
@@ -108,8 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('user_profiles')
           .update({
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || existingProfile.full_name,
+            email: user.email!, // Update email in case it changed
             updated_at: new Date().toISOString()
-          } as any)
+          })
           .eq('id', user.id);
 
         if (error) {
