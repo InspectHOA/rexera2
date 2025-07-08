@@ -13,7 +13,8 @@ export default function LoginPage() {
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const shouldBypassAuth = isLocalhost && isDevelopment;
+  // Temporarily disable auth bypass to test Google SSO
+  const shouldBypassAuth = false; // isLocalhost && isDevelopment;
 
   useEffect(() => {
     if (shouldBypassAuth) {
