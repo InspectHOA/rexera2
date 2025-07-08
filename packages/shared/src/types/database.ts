@@ -120,6 +120,7 @@ export type Database = {
       workflows: {
         Row: {
           id: string
+          human_readable_id: string | null
           workflow_type: Database["public"]["Enums"]["workflow_type"]
           client_id: string
           title: string
@@ -137,6 +138,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          human_readable_id?: string | null
           workflow_type: Database["public"]["Enums"]["workflow_type"]
           client_id: string
           title: string
@@ -154,6 +156,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          human_readable_id?: string | null
           workflow_type?: Database["public"]["Enums"]["workflow_type"]
           client_id?: string
           title?: string
