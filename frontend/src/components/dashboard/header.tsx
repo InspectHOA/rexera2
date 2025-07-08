@@ -3,13 +3,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/provider';
-import { useInterrupts } from '@/lib/hooks/useInterrupts';
+import { usePersistentNotifications } from '@/lib/hooks/usePersistentNotifications';
 import { Bell } from 'lucide-react';
 
 export function DashboardHeader() {
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
-  const { interrupts, loading: interruptsLoading } = useInterrupts();
+  const { 
+    notifications, 
+    unreadCount, 
+    loading: notificationsLoading, 
+    markAsRead, 
+    markAllAsRead 
+  } = usePersistentNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
@@ -77,11 +83,21 @@ export function DashboardHeader() {
     await signOut();
   };
 
-  const handleNotificationClick = (interrupt: any) => {
-    setShowNotifications(false);
-    // Navigate to workflow details page
-    const workflowId = interrupt.workflow?.human_readable_id || interrupt.workflow_id;
-    router.push(`/workflow/${workflowId}`);
+  const handleNotificationClick = (notification: any) => {
+    // Mark as read when clicked
+    markAsRead(notification.id);
+    
+    // Navigate to action URL if available
+    if (notification.action_url) {
+      if (notification.action_url.startsWith('/')) {
+        // Internal navigation
+        router.push(notification.action_url);
+      } else {
+        // External URL
+        window.open(notification.action_url, '_blank');
+      }
+      setShowNotifications(false);
+    }
   };
 
   return (
@@ -103,9 +119,9 @@ export function DashboardHeader() {
             title="View notifications"
           >
             <Bell className="w-5 h-5" />
-            {interrupts.length > 0 && (
+            {unreadCount > 0 && (
               <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold shadow-sm">
-                {interrupts.length}
+                {unreadCount}
               </div>
             )}
           </button>
@@ -116,39 +132,56 @@ export function DashboardHeader() {
               <div className="p-3 border-b border-gray-200 flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  <p className="text-xs text-gray-500">{interrupts.length} pending interrupts</p>
+                  <p className="text-xs text-gray-500">{notifications.length} from today • {unreadCount} unread</p>
                 </div>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="text-gray-400 hover:text-gray-600 text-sm"
-                  title="Close notifications"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                      title="Mark all as read"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="text-gray-400 hover:text-gray-600 text-sm"
+                    title="Close notifications"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
               <div className="max-h-64 overflow-y-auto">
-                {interruptsLoading && interrupts.length === 0 ? (
+                {notificationsLoading && notifications.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">Loading...</div>
-                ) : interrupts.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">No pending notifications</div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">No notifications from today</div>
                 ) : (
-                  interrupts.slice(0, 5).map((interrupt) => (
+                  notifications.slice(0, 10).map((notification) => (
                     <div 
-                      key={interrupt.id} 
-                      onClick={() => handleNotificationClick(interrupt)}
-                      className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                      key={notification.id} 
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                        !notification.read ? 'bg-blue-50' : ''
+                      }`}
                     >
                       <div className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                          !notification.read ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}></div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
-                            {interrupt.task_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} needs review
+                          <p className={`text-sm font-medium ${
+                            !notification.read ? 'text-gray-900' : 'text-gray-600'
+                          }`}>
+                            {notification.title}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            Workflow: {interrupt.workflow?.human_readable_id || interrupt.workflow_id}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {notification.message}
                           </p>
-                          <p className="text-xs text-gray-400">
-                            {new Date(interrupt.created_at).toLocaleString()}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(notification.created_at).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -156,10 +189,10 @@ export function DashboardHeader() {
                   ))
                 )}
               </div>
-              {interrupts.length > 5 && (
+              {notifications.length > 10 && (
                 <div className="p-3 border-t border-gray-200 text-center">
                   <button className="text-sm text-blue-600 hover:text-blue-800">
-                    View all {interrupts.length} notifications
+                    View all {notifications.length} notifications
                   </button>
                 </div>
               )}

@@ -267,6 +267,48 @@ export type Database = {
         }
         Relationships: []
       }
+      hil_notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: Database["public"]["Enums"]["notification_type"]
+          priority: Database["public"]["Enums"]["priority_level"]
+          title: string
+          message: string
+          action_url: string | null
+          metadata: Json | null
+          read: boolean
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: Database["public"]["Enums"]["notification_type"]
+          priority: Database["public"]["Enums"]["priority_level"]
+          title: string
+          message: string
+          action_url?: string | null
+          metadata?: Json | null
+          read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          priority?: Database["public"]["Enums"]["priority_level"]
+          title?: string
+          message?: string
+          action_url?: string | null
+          metadata?: Json | null
+          read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       // Add other essential tables as needed
     }
     Views: {
@@ -282,6 +324,7 @@ export type Database = {
       priority_level: "LOW" | "NORMAL" | "HIGH" | "URGENT"
       executor_type: "AI" | "HIL"
       user_type: "client_user" | "hil_user"
+      notification_type: "WORKFLOW_UPDATE" | "TASK_INTERRUPT" | "HIL_MENTION" | "CLIENT_MESSAGE_RECEIVED" | "COUNTERPARTY_MESSAGE_RECEIVED" | "SLA_WARNING" | "AGENT_FAILURE"
     }
     CompositeTypes: {
       [_ in never]: never
