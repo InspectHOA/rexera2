@@ -1,9 +1,9 @@
 'use client';
 
-import { useWorkflowsTRPC } from '@/lib/hooks/useWorkflowsTRPC';
+import { useWorkflows } from '@/lib/hooks/useWorkflows';
 
 export function DashboardStats() {
-  const { stats, loading, error } = useWorkflowsTRPC({ include: ['tasks'] });
+  const { stats, loading, error } = useWorkflows({ include: ['tasks'] });
   return (
     <div className="bg-white border border-gray-200 px-3 py-2 mb-4 shadow-sm flex justify-between items-center">
       <div className="flex gap-8 items-center">

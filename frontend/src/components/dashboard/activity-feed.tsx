@@ -22,23 +22,15 @@ export function ActivityFeed() {
         setLoading(true);
         setError(null);
         
-        // Use tRPC endpoint instead of REST
-        const response = await fetch('/api/trpc/activities.list', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            json: { limit: 15 }
-          })
-        });
+        // Use REST API endpoint  
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/activities?limit=15`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        setActivities(data.result?.data?.activities || []);
+        setActivities(data.data || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
         setError(errorMessage);

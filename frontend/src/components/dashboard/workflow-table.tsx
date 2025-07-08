@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWorkflowsTRPC } from '@/lib/hooks/useWorkflowsTRPC';
+import { useWorkflows } from '@/lib/hooks/useWorkflows';
 
 export function WorkflowTable() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export function WorkflowTable() {
   const [filterInterrupts, setFilterInterrupts] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  const { workflows: workflowData, loading, error } = useWorkflowsTRPC({ 
+  const { workflows: workflowData, loading, error } = useWorkflows({ 
     include: ['client', 'tasks'], 
     limit: 20 
   });

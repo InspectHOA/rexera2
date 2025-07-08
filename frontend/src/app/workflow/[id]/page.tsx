@@ -8,7 +8,7 @@ import { TabNavigation } from '@/components/workflow/tab-navigation';
 import { TaskDetailView } from '@/components/workflow/task-detail-view';
 import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
-import { useWorkflowTRPC } from '@/lib/hooks/useWorkflowsTRPC';
+import { useWorkflow } from '@/lib/hooks/useWorkflows';
 
 // Types
 interface Task {
@@ -40,7 +40,7 @@ export default function WorkflowDetailPage() {
   const [activeTab, setActiveTab] = useState('details');
   const [rightPanelTab, setRightPanelTab] = useState('task-details');
 
-  const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflowTRPC(params.id as string);
+  const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
   
   // Transform API data to component format
   const workflow: Workflow | null = workflowData ? {

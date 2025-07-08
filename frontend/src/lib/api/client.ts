@@ -1,6 +1,6 @@
 /**
  * REST API client for Rexera 2.0 frontend.
- * Replaces tRPC with standard HTTP REST calls.
+ * Provides type-safe HTTP REST calls to the backend API.
  */
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
