@@ -31,7 +31,14 @@ export function useInterrupts() {
       
       const { data, error: fetchError } = await supabase
         .from('task_executions' as any)
-        .select('*')
+        .select(`
+          *,
+          workflows!inner(
+            human_readable_id,
+            workflow_type,
+            title
+          )
+        `)
         .eq('status', 'AWAITING_REVIEW')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -49,9 +56,9 @@ export function useInterrupts() {
         created_at: item.created_at,
         updated_at: item.updated_at,
         workflow: {
-          human_readable_id: item.workflow_id, // Use workflow_id as fallback
-          workflow_type: 'PAYOFF', // Default for now
-          title: 'Workflow'
+          human_readable_id: item.workflows?.human_readable_id || item.workflow_id,
+          workflow_type: item.workflows?.workflow_type || 'PAYOFF',
+          title: item.workflows?.title || 'Workflow'
         }
       }));
 
