@@ -13,17 +13,27 @@ export function DashboardHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside (with small delay to prevent immediate closing)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
+        // Add a small delay to prevent immediate closing when opening the tray
+        setTimeout(() => {
+          setShowNotifications(false);
+        }, 100);
       }
     }
 
     if (showNotifications) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      // Add a small delay before adding the event listener to prevent immediate triggers
+      const timer = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 200);
+      
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
   }, [showNotifications]);
 
@@ -102,13 +112,22 @@ export function DashboardHeader() {
           
           {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-              <div className="p-3 border-b border-gray-200">
-                <h3 className="font-semibold text-gray-900">Notifications</h3>
-                <p className="text-xs text-gray-500">{interrupts.length} pending interrupts</p>
+            <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              <div className="p-3 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <p className="text-xs text-gray-500">{interrupts.length} pending interrupts</p>
+                </div>
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="text-gray-400 hover:text-gray-600 text-sm"
+                  title="Close notifications"
+                >
+                  ✕
+                </button>
               </div>
               <div className="max-h-64 overflow-y-auto">
-                {interruptsLoading ? (
+                {interruptsLoading && interrupts.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">Loading...</div>
                 ) : interrupts.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">No pending notifications</div>
