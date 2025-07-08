@@ -48,7 +48,7 @@ class IntegrationTester {
     console.log('Step 1: Creating test workflow...');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trpc/workflows.create`, {
+      const response = await fetch(`${API_BASE_URL}/api/workflows`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,7 +67,7 @@ class IntegrationTester {
       }
 
       const data = await response.json();
-      this.testWorkflowId = data.result.data.id;
+      this.testWorkflowId = data.data.id;
       
       this.results.push({
         step: 'Create Workflow',
