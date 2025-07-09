@@ -73,7 +73,7 @@ export default async function handler(
           });
         }
         console.error('Failed to fetch workflow:', workflowError);
-        throw new Error(`Failed to fetch workflow: ${workflowError?.message || 'Unknown error'}`);
+        throw new Error(`Failed to fetch workflow: ${workflowError?.message || workflowError || 'Unknown error'}`);
       }
 
       // Fetch tasks for this workflow (using the actual workflow UUID)

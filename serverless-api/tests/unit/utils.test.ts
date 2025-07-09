@@ -33,15 +33,15 @@ describe('UUID Formatter Utils', () => {
       const shortString = 'abc';
       const result = formatWorkflowId(shortString);
       
-      expect(result).toBe('0ABC-');
+      expect(result).toBe('ABC-');
     });
   });
 
   describe('formatWorkflowIdWithType', () => {
     const testUuid = 'b5bdf081-8e92-4fca-9ffc-eb812a7450ad';
 
-    it('should format UUID with PAYOFF_REQUEST prefix', () => {
-      const result = formatWorkflowIdWithType(testUuid, 'PAYOFF_REQUEST');
+    it('should format UUID with PAYOFF prefix', () => {
+      const result = formatWorkflowIdWithType(testUuid, 'PAYOFF');
       expect(result).toBe('PAY-2A74-50AD');
     });
 

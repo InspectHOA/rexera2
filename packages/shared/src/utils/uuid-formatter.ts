@@ -11,7 +11,7 @@ export interface WorkflowTypeConfig {
 }
 
 export const WORKFLOW_TYPE_CONFIGS: Record<string, WorkflowTypeConfig> = {
-  PAYOFF_REQUEST: {
+  PAYOFF: {
     prefix: 'PAY',
     description: 'Payoff Request'
   },

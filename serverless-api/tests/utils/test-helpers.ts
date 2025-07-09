@@ -224,7 +224,7 @@ export class APITestHelper {
   private async createTestWorkflows(timestamp: number, clients: TestClient[]): Promise<TestWorkflow[]> {
     const workflowsData = [
       {
-        workflow_type: 'PAYOFF_REQUEST',
+        workflow_type: 'PAYOFF',
         client_id: clients[0].id,
         title: `Test Payoff Workflow ${timestamp}`,
         description: 'Test payoff request for automated testing',
