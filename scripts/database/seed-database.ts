@@ -152,7 +152,7 @@ class DatabaseSeedScript extends BaseScript {
 
     const workflows = [
       {
-        workflow_type: 'PAYOFF_REQUEST',
+        workflow_type: 'PAYOFF',
         client_id: clients[0].id,
         title: 'Payoff Request - 123 Main St',
         description: 'Processing payoff request for residential property',

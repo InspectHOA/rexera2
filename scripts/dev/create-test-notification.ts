@@ -116,7 +116,7 @@ class CreateTestNotificationScript extends BaseScript {
       .from('workflows')
       .insert({
         human_readable_id: `TEST-${Date.now()}`,
-        workflow_type: 'PAYOFF_REQUEST',
+        workflow_type: 'PAYOFF',
         client_id: client.id,
         title: 'Test Notification Workflow',
         description: 'Test workflow for notification system verification',

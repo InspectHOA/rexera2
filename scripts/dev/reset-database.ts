@@ -28,9 +28,9 @@ class DatabaseResetScript extends BaseScript {
   }
 
   async run(): Promise<void> {
-    const skipConfirm = this.hasArg('confirm');
-    const seedBasic = this.hasArg('seed');
-    const seedTestData = this.hasArg('test-data');
+    const skipConfirm = this.hasFlag('confirm');
+    const seedBasic = this.hasFlag('seed');
+    const seedTestData = this.hasFlag('test-data');
     
     this.log('🚨 DATABASE RESET - DESTRUCTIVE OPERATION 🚨');
     this.log('This will permanently delete ALL data in the database');
@@ -105,10 +105,21 @@ class DatabaseResetScript extends BaseScript {
 
     for (const table of tablesToClear) {
       try {
-        const { error } = await this.supabase!
-          .from(table)
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all except system records
+        let query;
+        if (table === 'contact_labels') {
+          // contact_labels uses 'label' as primary key, not 'id'
+          query = this.supabase!
+            .from(table)
+            .delete()
+            .neq('label', '__system__');
+        } else {
+          query = this.supabase!
+            .from(table)
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        
+        const { error } = await query;
         
         if (error) {
           this.log(`⚠️  Warning: Could not clear ${table}: ${error.message}`);
@@ -253,7 +264,7 @@ class DatabaseResetScript extends BaseScript {
     if (!agents) throw new Error('Failed to create test agents');
 
     // Create diverse workflows
-    const workflowTypes = ['PAYOFF_REQUEST', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'] as const;
+    const workflowTypes = ['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'] as const;
     const statuses = ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'] as const;
     const priorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const;
 
