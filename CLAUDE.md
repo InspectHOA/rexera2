@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Core Principles
 - **BE VERY CAREFUL ABOUT ADDING UNNECESSARY COMPLEXITY IN THE CODE. OPTIMIZE FOR DEVELOPER EASE.**
-- **KEEP CODE CLEAN AND CONSISTENT** - Follow established patterns and conventions
+- **KEEP CODE CLEAN AND CONSISTENT** - Follow established patterns and conventions, do not create random js scripts everywhere, put files in the right structure
 - **MAINTAIN TYPE SAFETY** - Use TypeScript properly with strict mode
 - **EMBRACE MODERN PATTERNS** - Leverage Zod, Turbo, and modern tooling effectively
 ## Development Commands

@@ -97,7 +97,7 @@ class DatabaseResetScript extends BaseScript {
       'task_executions',
       'agent_performance_metrics',
       'workflows',
-      'user_profiles',
+      // 'user_profiles', // Skip clearing user_profiles to preserve auth users
       'agents',
       'clients',
       'contact_labels'
@@ -137,6 +137,8 @@ class DatabaseResetScript extends BaseScript {
   private async seedBasicData(): Promise<void> {
     this.log('📊 Seeding basic data...');
     
+    // Skip user profile creation for basic seeding to avoid auth issues
+    
     // Create basic clients
     const { data: clients } = await this.supabase!
       .from('clients')
@@ -169,6 +171,45 @@ class DatabaseResetScript extends BaseScript {
 
   private async seedTestData(): Promise<void> {
     this.log('📊 Seeding comprehensive test data...');
+    
+    // Get Vishrut user from auth.users and create user_profile
+    const VISHRUT_EMAIL = 'vishrut@inspecthoa.com';
+    const VISHRUT_AUTH_ID = 'b6edf56a-ba7d-4bda-8ab4-27e9ff047e71'; // Known auth.users ID
+    
+    // Check if user profile already exists, create if not
+    let { data: vishrutUser } = await this.supabase!
+      .from('user_profiles')
+      .select('id, email')
+      .eq('id', VISHRUT_AUTH_ID)
+      .single();
+      
+    if (!vishrutUser) {
+      this.log(`🔧 Creating user profile for ${VISHRUT_EMAIL}...`);
+      
+      // Create user profile for existing auth user
+      const { data: newUser, error: profileError } = await this.supabase!
+        .from('user_profiles')
+        .insert({
+          id: VISHRUT_AUTH_ID,
+          user_type: 'hil_user',
+          email: VISHRUT_EMAIL,
+          full_name: 'Vishrut Malhotra',
+          role: 'HIL_ADMIN'
+        })
+        .select()
+        .single();
+        
+      if (profileError) {
+        throw new Error(`Failed to create user profile: ${profileError.message}`);
+      }
+      
+      vishrutUser = newUser;
+      this.log(`✅ Created user profile: ${vishrutUser.email}`);
+    } else {
+      this.log(`✅ Using existing user profile: ${vishrutUser.email}`);
+    }
+    
+    const VISHRUT_USER_ID = vishrutUser.id;
     
     // Create test clients
     const { data: clients } = await this.supabase!
@@ -263,7 +304,7 @@ class DatabaseResetScript extends BaseScript {
 
     if (!agents) throw new Error('Failed to create test agents');
 
-    // Create diverse workflows
+    // Create diverse workflows - using database enum values  
     const workflowTypes = ['PAYOFF', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH'] as const;
     const statuses = ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'] as const;
     const priorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const;
@@ -282,6 +323,7 @@ class DatabaseResetScript extends BaseScript {
         description: `Test ${workflowType.toLowerCase().replace('_', ' ')} for development`,
         status,
         priority,
+        created_by: VISHRUT_USER_ID, // Use existing user or null
         metadata: {
           test_data: true,
           batch: 'dev_seed',
@@ -291,12 +333,16 @@ class DatabaseResetScript extends BaseScript {
       });
     }
 
-    const { data: createdWorkflows } = await this.supabase!
+    const { data: createdWorkflows, error: workflowError } = await this.supabase!
       .from('workflows')
       .insert(workflows)
       .select();
 
-    if (!createdWorkflows) throw new Error('Failed to create test workflows');
+    if (workflowError || !createdWorkflows) {
+      this.log(`❌ Workflow creation error: ${workflowError?.message || 'Unknown error'}`);
+      this.log(`❌ Workflow error details: ${JSON.stringify(workflowError, null, 2)}`);
+      throw new Error(`Failed to create test workflows: ${workflowError?.message || 'Unknown error'}`);
+    }
 
     // Create realistic task executions
     const taskTypes = [
@@ -335,8 +381,8 @@ class DatabaseResetScript extends BaseScript {
           executor_type: Math.random() > 0.3 ? 'AI' : 'HIL',
           priority: priorities[Math.floor(Math.random() * priorities.length)],
           input_data: { test: true, batch: 'dev_seed' },
-          sla_hours: 24 + (j * 4), // Staggered SLA times
           retry_count: Math.floor(Math.random() * 3)
+          // sla_hours: 24 + (j * 4), // Skip - column doesn't exist in live DB
         };
 
         // Add interrupt for some failed/awaiting review tasks
@@ -366,10 +412,18 @@ class DatabaseResetScript extends BaseScript {
       }
     }
 
-    const { data: createdTasks } = await this.supabase!
+    this.log(`🔧 Creating ${tasks.length} task executions...`);
+    
+    const { data: createdTasks, error: taskError } = await this.supabase!
       .from('task_executions')
       .insert(tasks)
       .select();
+      
+    if (taskError) {
+      this.log(`❌ Task creation error: ${taskError.message}`);
+      this.log(`❌ Sample task data: ${JSON.stringify(tasks[0], null, 2)}`);
+      throw new Error(`Failed to create task executions: ${taskError.message}`);
+    }
 
     // Create test counterparties
     await this.supabase!
@@ -402,7 +456,7 @@ class DatabaseResetScript extends BaseScript {
     this.log(`   - ${clients.length} clients`);
     this.log(`   - ${agents.length} agents`);
     this.log(`   - ${createdWorkflows.length} workflows`);
-    this.log(`   - ${tasks.length} task executions`);
+    this.log(`   - ${createdTasks?.length || 0} task executions`);
     this.log(`   - 3 counterparties`);
   }
 }
