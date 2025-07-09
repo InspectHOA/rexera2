@@ -20,11 +20,29 @@ export default async function handler(
   }
 
   const supabase = createServerClient();
-  const { id } = req.query as WorkflowQueryParams;
+  const { id } = req.query;
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid workflow ID'
+    });
+  }
 
   try {
     if (req.method === 'GET') {
-      // Fetch workflow with related data
+      // Only accept UUIDs now - much simpler
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
+      if (!isUUID) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid workflow ID. Please use a valid UUID.'
+        });
+      }
+      
+      console.log(`Workflow lookup: ${id}`);
+      
+      // Fetch workflow with related data using UUID only
       const { data: workflow, error: workflowError } = await supabase
         .from('workflows')
         .select(`
@@ -42,27 +60,25 @@ export default async function handler(
           updated_at,
           completed_at,
           due_date,
-          client:clients(id, name, domain),
-          assigned_user:user_profiles!workflows_new_assigned_to_fkey(id, full_name, email),
-          created_user:user_profiles!workflows_new_created_by_fkey(id, full_name, email)
+          clients(id, name, domain)
         `)
         .eq('id', id)
         .single();
 
-      if (workflowError) {
-        if (workflowError.code === 'PGRST116') {
+      if (workflowError || !workflow) {
+        if (workflowError?.code === 'PGRST116' || !workflow) {
           return res.status(404).json({
             success: false,
             error: 'Workflow not found'
           });
         }
         console.error('Failed to fetch workflow:', workflowError);
-        throw new Error(`Failed to fetch workflow: ${workflowError.message}`);
+        throw new Error(`Failed to fetch workflow: ${workflowError?.message || 'Unknown error'}`);
       }
 
-      // Fetch tasks for this workflow
+      // Fetch tasks for this workflow (using the actual workflow UUID)
       const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
+        .from('task_executions')
         .select(`
           id,
           workflow_id,
@@ -70,17 +86,22 @@ export default async function handler(
           description,
           status,
           executor_type,
-          assigned_to,
           priority,
-          metadata,
-          created_at,
-          updated_at,
+          sequence_order,
+          task_type,
+          agent_id,
+          input_data,
+          output_data,
+          error_message,
+          started_at,
           completed_at,
-          due_date,
-          assigned_user:user_profiles!tasks_assigned_to_fkey(id, full_name, email)
+          execution_time_ms,
+          retry_count,
+          created_at,
+          agent:agents(id, name, type)
         `)
-        .eq('workflow_id', id)
-        .order('created_at', { ascending: true });
+        .eq('workflow_id', workflow.id)
+        .order('sequence_order', { ascending: true });
 
       if (tasksError) {
         console.error('Failed to fetch tasks:', tasksError);
@@ -90,9 +111,7 @@ export default async function handler(
       // Transform the data for frontend compatibility
       const transformedWorkflow = {
         ...workflow,
-        client: workflow.client,
-        assigned_user: workflow.assigned_user,
-        created_user: workflow.created_user,
+        client: workflow.clients?.[0] || null,
         tasks: tasks || []
       };
 

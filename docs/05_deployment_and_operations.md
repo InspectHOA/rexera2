@@ -133,6 +133,16 @@ Before a major launch or after significant changes, we follow a comprehensive ch
 *   **Monitoring**: Health checks are passing, and error tracking/analytics are active.
 *   **Security**: Access controls are verified, and no secrets are exposed in the codebase.
 *   **Operations**: On-call rotations are set, and runbooks are up-to-date.
+*   **SLA Monitoring**: Cron job is configured in `vercel.json` and includes backward compatibility for deployments without SLA schema fields.
+
+### SLA Monitoring Deployment Notes
+
+The SLA monitoring system (`/serverless-api/api/cron/sla-monitor.js`) includes backward compatibility:
+
+*   **With SLA Migration**: Uses `sla_hours`, `sla_due_at`, `sla_status` fields for precise tracking
+*   **Without SLA Migration**: Falls back to 24-hour default SLA based on `created_at` timestamps
+*   **Error Handling**: Gracefully handles missing database fields without breaking the application
+*   **Notification Integration**: Creates HIL notifications in the `hil_notifications` table for both scenarios
 
 ### Backup and Recovery
 

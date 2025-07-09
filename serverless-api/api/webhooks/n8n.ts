@@ -21,6 +21,66 @@ const n8nWebhookSchema = z.object({
   data: z.record(z.any())
 });
 
+// Helper function to create notifications
+async function createNotification(
+  supabase: any,
+  userId: string,
+  type: string,
+  priority: string,
+  title: string,
+  message: string,
+  actionUrl?: string,
+  metadata?: any
+) {
+  try {
+    const { error } = await supabase
+      .from('hil_notifications')
+      .insert({
+        user_id: userId,
+        type,
+        priority,
+        title,
+        message,
+        action_url: actionUrl,
+        metadata: metadata || {}
+      });
+
+    if (error) {
+      console.error('Failed to create notification:', error);
+    }
+  } catch (err) {
+    console.error('Error creating notification:', err);
+  }
+}
+
+// Helper function to get assigned user for a workflow
+async function getWorkflowAssignedUser(supabase: any, workflowId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('workflows')
+      .select('assigned_to, human_readable_id')
+      .eq('id', workflowId)
+      .single();
+
+    if (error || !data?.assigned_to) {
+      // If no assigned user, try to get a default HIL user
+      const { data: hilUser } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_type', 'hil_user')
+        .limit(1)
+        .single();
+      
+      return hilUser?.id || null;
+    }
+
+    return data.assigned_to;
+  } catch (err) {
+    console.error('Error getting workflow assigned user:', err);
+    return null;
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -64,6 +124,21 @@ export default async function handler(
           if (error) {
             throw new Error(`Failed to update workflow: ${error.message}`);
           }
+
+          // Create notification for workflow completion
+          const assignedUser = await getWorkflowAssignedUser(supabase, data.workflowId);
+          if (assignedUser) {
+            await createNotification(
+              supabase,
+              assignedUser,
+              'WORKFLOW_UPDATE',
+              'NORMAL',
+              '🎉 Workflow Completed',
+              `Workflow ${data.workflowId} has been completed successfully`,
+              `/workflow/${data.workflowId}`,
+              { workflow_id: data.workflowId, event_type: 'completed' }
+            );
+          }
         }
         break;
 
@@ -84,6 +159,21 @@ export default async function handler(
 
           if (error) {
             throw new Error(`Failed to update workflow: ${error.message}`);
+          }
+
+          // Create notification for workflow failure
+          const assignedUser = await getWorkflowAssignedUser(supabase, data.workflowId);
+          if (assignedUser) {
+            await createNotification(
+              supabase,
+              assignedUser,
+              'AGENT_FAILURE',
+              'HIGH',
+              '💥 Workflow Failed',
+              `Workflow ${data.workflowId} encountered critical errors and is now blocked`,
+              `/workflow/${data.workflowId}`,
+              { workflow_id: data.workflowId, error: data.error, event_type: 'failed' }
+            );
           }
         }
         break;
@@ -110,6 +200,7 @@ export default async function handler(
 
       case 'task_failed':
         if (data.taskId) {
+          // Update task status
           const { error } = await supabase
             .from('task_executions')
             .update({
@@ -124,6 +215,29 @@ export default async function handler(
 
           if (error) {
             throw new Error(`Failed to update task: ${error.message}`);
+          }
+
+          // Get task details for notification
+          const { data: task } = await supabase
+            .from('task_executions')
+            .select('workflow_id, title, task_type')
+            .eq('id', data.taskId)
+            .single();
+
+          if (task) {
+            const assignedUser = await getWorkflowAssignedUser(supabase, task.workflow_id);
+            if (assignedUser) {
+              await createNotification(
+                supabase,
+                assignedUser,
+                'TASK_INTERRUPT',
+                'HIGH',
+                '❌ Task Failed',
+                `${task.title || task.task_type} failed and requires attention`,
+                `/workflow/${task.workflow_id}`,
+                { task_id: data.taskId, workflow_id: task.workflow_id, error: data.error }
+              );
+            }
           }
         }
         break;

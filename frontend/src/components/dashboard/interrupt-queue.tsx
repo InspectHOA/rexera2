@@ -1,10 +1,10 @@
 'use client';
 
 import { AlertTriangle, Clock, User, ArrowRight } from 'lucide-react';
-import { useInterrupts } from '@/lib/hooks/useInterrupts';
+import { useUnifiedNotifications } from '@/lib/hooks/useUnifiedNotifications';
 
 export function InterruptQueue() {
-  const { interrupts, loading, error } = useInterrupts();
+  const { interruptNotifications, loading, error } = useUnifiedNotifications();
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
@@ -115,35 +115,35 @@ export function InterruptQueue() {
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-              {interrupts.length} pending
+              {interruptNotifications.length} pending
             </span>
           </div>
         </div>
         
         <div className="space-y-4">
-          {interrupts.length === 0 ? (
+          {interruptNotifications.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <AlertTriangle className="h-8 w-8 mx-auto text-gray-300 mb-2" />
               <p>No pending interrupts</p>
             </div>
           ) : (
-            interrupts.map((interrupt) => (
+            interruptNotifications.map((interrupt) => (
               <div key={interrupt.id} className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${getPriorityStyle('HIGH')}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3 flex-1">
                     {getPriorityIcon('HIGH')}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{formatTaskType(interrupt.task_type)}</h3>
+                        <h3 className="font-semibold text-gray-900">{interrupt.title}</h3>
                         <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                          {formatWorkflowType(interrupt.workflow?.workflow_type)}
+                          {interrupt.type}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 mb-2">Task requires human review</p>
+                      <p className="text-sm text-gray-700 mb-2">{interrupt.message}</p>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {interrupt.workflow?.human_readable_id || interrupt.workflow_id}
+                          {interrupt.priority}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />

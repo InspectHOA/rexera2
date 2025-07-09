@@ -7,14 +7,18 @@
     "start": "vercel dev --listen 3001",
     "dev": "tsx src/server/express-server.ts",
     "build": "tsc",
-    "test": "tsx tests/utils/test-runner.ts",
-    "test:integration": "tsx tests/integration.test.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:unit": "jest --testPathPattern=unit",
     "test:smoke": "tsx tests/smoke.test.ts",
+    "test:legacy": "tsx tests/utils/test-runner.ts",
     "seed": "tsx scripts/seed-database.ts",
     "notifications": "tsx scripts/notifications.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .vercel dist"
+    "clean": "rm -rf .vercel dist coverage"
   },
   "dependencies": {
     "@rexera/shared": "workspace:*",
@@ -26,8 +30,13 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.5",
     "@types/node": "^20.9.0",
+    "@types/supertest": "^2.0.16",
     "eslint": "^8.53.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
     "tsx": "^4.20.3",
     "typescript": "^5.2.2",
     "vercel": "^44.2.11"

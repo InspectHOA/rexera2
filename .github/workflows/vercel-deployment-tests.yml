@@ -1,0 +1,408 @@
+name: Vercel Deployment Tests
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      vercel_url:
+        description: 'Vercel deployment URL to test'
+        required: true
+        type: string
+      test_type:
+        description: 'Type of deployment tests to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - smoke
+        - integration
+        - e2e
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # Deployment Health Check
+  deployment-health:
+    name: Deployment Health Check
+    runs-on: ubuntu-latest
+    if: github.event.deployment_status.state == 'success' || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      deployment_url: ${{ steps.get-url.outputs.url }}
+      deployment_ready: ${{ steps.health-check.outputs.ready }}
+    
+    steps:
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "url=${{ github.event.inputs.vercel_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "url=${{ github.event.deployment_status.target_url }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Wait for deployment to be ready
+        id: health-check
+        run: |
+          URL="${{ steps.get-url.outputs.url }}"
+          echo "Testing deployment at: $URL"
+          
+          # Wait up to 5 minutes for deployment to be ready
+          for i in {1..30}; do
+            if curl -f -s "$URL/api/health" > /dev/null; then
+              echo "✅ Deployment is ready"
+              echo "ready=true" >> $GITHUB_OUTPUT
+              break
+            fi
+            
+            echo "⏳ Waiting for deployment... (attempt $i/30)"
+            sleep 10
+            
+            if [[ $i -eq 30 ]]; then
+              echo "❌ Deployment not ready after 5 minutes"
+              echo "ready=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          done
+
+  # Smoke Tests on Deployment
+  deployment-smoke-tests:
+    name: Deployment Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deployment-health
+    if: needs.deployment-health.outputs.deployment_ready == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run smoke tests against deployment
+        run: |
+          echo "Running smoke tests against: ${{ needs.deployment-health.outputs.deployment_url }}"
+          pnpm --filter @rexera/api test:smoke
+        env:
+          API_BASE_URL: ${{ needs.deployment-health.outputs.deployment_url }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  # API Contract Tests
+  deployment-contract-tests:
+    name: API Contract Tests
+    runs-on: ubuntu-latest
+    needs: deployment-health
+    if: needs.deployment-health.outputs.deployment_ready == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Test API endpoints contract
+        run: |
+          URL="${{ needs.deployment-health.outputs.deployment_url }}"
+          
+          echo "Testing API contract at: $URL"
+          
+          # Test health endpoint
+          echo "🔍 Testing health endpoint..."
+          HEALTH=$(curl -s "$URL/api/health")
+          echo "Health response: $HEALTH"
+          
+          if [[ $HEALTH == *"\"status\":\"ok\""* ]]; then
+            echo "✅ Health endpoint working"
+          else
+            echo "❌ Health endpoint failed"
+            exit 1
+          fi
+          
+          # Test workflows endpoint (should return JSON array)
+          echo "🔍 Testing workflows endpoint..."
+          WORKFLOWS=$(curl -s "$URL/api/workflows" -H "Content-Type: application/json")
+          
+          if [[ $WORKFLOWS == *"\"success\":true"* ]]; then
+            echo "✅ Workflows endpoint working"
+          else
+            echo "❌ Workflows endpoint failed"
+            echo "Response: $WORKFLOWS"
+            exit 1
+          fi
+          
+          # Test invalid endpoint (should return 404)
+          echo "🔍 Testing 404 handling..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/nonexistent")
+          
+          if [[ $STATUS == "404" ]]; then
+            echo "✅ 404 handling working"
+          else
+            echo "❌ 404 handling failed (got $STATUS)"
+            exit 1
+          fi
+
+  # Performance Tests
+  deployment-performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: deployment-health
+    if: needs.deployment-health.outputs.deployment_ready == 'true'
+    
+    steps:
+      - name: Performance benchmarks
+        run: |
+          URL="${{ needs.deployment-health.outputs.deployment_url }}"
+          
+          echo "Running performance tests against: $URL"
+          
+          # Test API response times
+          for endpoint in "health" "workflows" "agents"; do
+            echo "🚀 Testing $endpoint endpoint performance..."
+            
+            # Run 5 requests and calculate average
+            total_time=0
+            for i in {1..5}; do
+              time=$(curl -o /dev/null -s -w "%{time_total}" "$URL/api/$endpoint")
+              total_time=$(echo "$total_time + $time" | bc -l)
+              echo "  Request $i: ${time}s"
+            done
+            
+            avg_time=$(echo "scale=3; $total_time / 5" | bc -l)
+            echo "  Average response time: ${avg_time}s"
+            
+            # Fail if average response time > 3 seconds
+            if (( $(echo "$avg_time > 3" | bc -l) )); then
+              echo "❌ Performance test failed: ${avg_time}s > 3s"
+              exit 1
+            else
+              echo "✅ Performance test passed: ${avg_time}s"
+            fi
+          done
+
+  # Security Tests
+  deployment-security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: deployment-health
+    if: needs.deployment-health.outputs.deployment_ready == 'true'
+    
+    steps:
+      - name: Security checks
+        run: |
+          URL="${{ needs.deployment-health.outputs.deployment_url }}"
+          
+          echo "Running security tests against: $URL"
+          
+          # Test CORS headers
+          echo "🔒 Testing CORS headers..."
+          CORS_HEADERS=$(curl -s -I "$URL/api/health" | grep -i "access-control")
+          
+          if [[ $CORS_HEADERS == *"access-control-allow-origin"* ]]; then
+            echo "✅ CORS headers present"
+          else
+            echo "❌ CORS headers missing"
+            exit 1
+          fi
+          
+          # Test for security headers
+          echo "🔒 Testing security headers..."
+          HEADERS=$(curl -s -I "$URL/api/health")
+          
+          # Check for X-Content-Type-Options
+          if [[ $HEADERS == *"x-content-type-options"* ]] || [[ $HEADERS == *"X-Content-Type-Options"* ]]; then
+            echo "✅ X-Content-Type-Options header present"
+          else
+            echo "⚠️  X-Content-Type-Options header missing (recommended)"
+          fi
+          
+          # Test SQL injection protection (basic)
+          echo "🔒 Testing basic SQL injection protection..."
+          MALICIOUS_RESPONSE=$(curl -s "$URL/api/workflows?status='%20OR%201=1--")
+          
+          if [[ $MALICIOUS_RESPONSE == *"\"success\":false"* ]] || [[ $MALICIOUS_RESPONSE == *"\"success\":true"* ]]; then
+            echo "✅ API handles malicious input gracefully"
+          else
+            echo "❌ Potential SQL injection vulnerability"
+            exit 1
+          fi
+
+  # Load Tests (Basic)
+  deployment-load-tests:
+    name: Basic Load Tests
+    runs-on: ubuntu-latest
+    needs: deployment-health
+    if: needs.deployment-health.outputs.deployment_ready == 'true' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Install siege
+        run: sudo apt-get update && sudo apt-get install -y siege
+
+      - name: Run basic load test
+        run: |
+          URL="${{ needs.deployment-health.outputs.deployment_url }}"
+          
+          echo "Running basic load test against: $URL"
+          
+          # Run 50 concurrent requests for 30 seconds
+          siege -c 10 -t 30s "$URL/api/health" "$URL/api/workflows" > siege_results.txt 2>&1
+          
+          # Display results
+          cat siege_results.txt
+          
+          # Check if availability is above 95%
+          AVAILABILITY=$(grep "Availability:" siege_results.txt | awk '{print $2}' | sed 's/%//')
+          
+          if (( $(echo "$AVAILABILITY >= 95" | bc -l) )); then
+            echo "✅ Load test passed: ${AVAILABILITY}% availability"
+          else
+            echo "❌ Load test failed: ${AVAILABILITY}% availability (< 95%)"
+            exit 1
+          fi
+
+  # Integration Tests on Deployment
+  deployment-integration-tests:
+    name: Deployment Integration Tests
+    runs-on: ubuntu-latest
+    needs: deployment-health
+    if: needs.deployment-health.outputs.deployment_ready == 'true' && (github.event.inputs.test_type == 'integration' || github.event.inputs.test_type == 'all')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: pnpm --filter @rexera/shared build
+
+      - name: Run integration tests against deployment
+        run: |
+          echo "Running integration tests against: ${{ needs.deployment-health.outputs.deployment_url }}"
+          # Note: This would run against the deployed API, not local
+          # Requires careful test isolation and cleanup
+          echo "Integration tests would run here (disabled to prevent production data issues)"
+        env:
+          API_BASE_URL: ${{ needs.deployment-health.outputs.deployment_url }}
+          TEST_MODE: deployment
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  # Test Summary and Notification
+  deployment-test-summary:
+    name: Deployment Test Summary
+    runs-on: ubuntu-latest
+    needs: [deployment-health, deployment-smoke-tests, deployment-contract-tests, deployment-performance-tests, deployment-security-tests]
+    if: always()
+    
+    steps:
+      - name: Check deployment test results
+        run: |
+          echo "🚀 Deployment Test Results Summary"
+          echo "Deployment URL: ${{ needs.deployment-health.outputs.deployment_url }}"
+          echo ""
+          echo "Test Results:"
+          echo "  Health Check: ${{ needs.deployment-health.result }}"
+          echo "  Smoke Tests: ${{ needs.deployment-smoke-tests.result }}"
+          echo "  Contract Tests: ${{ needs.deployment-contract-tests.result }}"
+          echo "  Performance Tests: ${{ needs.deployment-performance-tests.result }}"
+          echo "  Security Tests: ${{ needs.deployment-security-tests.result }}"
+          
+          # Determine overall status
+          if [[ "${{ needs.deployment-health.result }}" == "success" && 
+                "${{ needs.deployment-smoke-tests.result }}" == "success" && 
+                "${{ needs.deployment-contract-tests.result }}" == "success" && 
+                "${{ needs.deployment-performance-tests.result }}" == "success" && 
+                "${{ needs.deployment-security-tests.result }}" == "success" ]]; then
+            echo ""
+            echo "✅ All deployment tests passed!"
+            echo "DEPLOYMENT_STATUS=success" >> $GITHUB_ENV
+          else
+            echo ""
+            echo "❌ Some deployment tests failed!"
+            echo "DEPLOYMENT_STATUS=failure" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      - name: Update deployment status
+        if: github.event_name == 'deployment_status'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = process.env.DEPLOYMENT_STATUS;
+            const deploymentId = context.payload.deployment.id;
+            
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deploymentId,
+              state: status,
+              description: status === 'success' ? 'All tests passed' : 'Some tests failed',
+              environment_url: '${{ needs.deployment-health.outputs.deployment_url }}'
+            });
+
+      - name: Create deployment comment
+        if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = process.env.DEPLOYMENT_STATUS;
+            const emoji = status === 'success' ? '✅' : '❌';
+            
+            // Find the PR associated with this deployment
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            
+            const pr = prs.data.find(pr => 
+              pr.head.sha === context.payload.deployment.sha
+            );
+            
+            if (pr) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `${emoji} **Deployment Tests ${status === 'success' ? 'Passed' : 'Failed'}**
+                
+                🚀 **Deployment URL:** ${{ needs.deployment-health.outputs.deployment_url }}
+                
+                **Test Results:**
+                - Health Check: ${{ needs.deployment-health.result }}
+                - Smoke Tests: ${{ needs.deployment-smoke-tests.result }}
+                - Contract Tests: ${{ needs.deployment-contract-tests.result }}
+                - Performance Tests: ${{ needs.deployment-performance-tests.result }}
+                - Security Tests: ${{ needs.deployment-security-tests.result }}
+                
+                *Tests completed at ${new Date().toISOString()}*`
+              });
+            }

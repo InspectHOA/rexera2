@@ -30,11 +30,16 @@ This approach eliminates the need for complex client-side merging logic and ensu
 
 The UI is built from a set of reusable components, primarily using [shadcn/ui](https://ui.shadcn.com/). The core of the Human-in-the-Loop (HIL) interface is the **Dashboard**, which is composed of several key components:
 
-*   `TaskInterruptQueue`: The main inbox for HIL operators, displaying tasks that require manual intervention. It sorts interrupts by priority (`critical` > `standard`) and then by the SLA deadline.
-*   `WorkflowOverview`: A high-level view of all active workflows.
-*   `TaskProgressPanel`: Shows the status of ongoing, automated tasks.
+*   `InterruptQueue`: The main inbox for HIL operators, displaying notifications that require manual intervention. It filters notifications by type (`TASK_INTERRUPT`, `SLA_WARNING`) and displays them with priority styling.
+*   `DashboardHeader`: Contains the notification tray with bell icon, unread count, and 24-hour notification history.
+*   `WorkflowTable`: A comprehensive view of all active workflows with sorting, filtering, and search capabilities.
 *   `AgentTaskInterfaceFactory`: A dynamic component that renders the appropriate, specialized UI for a given agent when a HIL operator needs to handle a task. For example, it will show a document viewer and data entry form for an `Iris` task, or an email editor for a `Mia` task.
 *   `TaskResolutionPanel`: A generic component embedded within the agent interfaces that provides a standardized way for HIL operators to resolve a task (e.g., complete, retry, escalate).
+
+**Notification System Components:**
+*   `NotificationProvider`: Global provider that initializes real-time toast notifications
+*   Uses `usePersistentNotifications` for 24-hour notification persistence
+*   Uses `useNotifications` for immediate toast feedback (5-second duration, 3 toast limit)
 
 ### State Management & Real-Time Updates
 

@@ -1,7 +1,10 @@
 -- =====================================================
--- Rexera 2.0 Stateful Task Execution Schema
--- This is the definitive schema for the stateful task execution model.
--- It builds upon the simplified proposal and finalizes the structure.
+-- Rexera 2.0 Unified Database Schema
+-- Combined migration including all features:
+-- - Stateful task execution model
+-- - Simple SLA tracking 
+-- - Notification read tracking
+-- - Simplified workflow identifiers
 -- =====================================================
 
 -- Enable necessary extensions
@@ -41,10 +44,6 @@ CREATE TYPE invoice_status AS ENUM ('DRAFT', 'FINALIZED', 'PAID', 'VOID');
 CREATE TYPE priority_level AS ENUM ('LOW', 'NORMAL', 'HIGH', 'URGENT');
 CREATE TYPE notification_type AS ENUM ('WORKFLOW_UPDATE', 'TASK_INTERRUPT', 'HIL_MENTION', 'CLIENT_MESSAGE_RECEIVED', 'COUNTERPARTY_MESSAGE_RECEIVED', 'SLA_WARNING', 'AGENT_FAILURE');
 CREATE TYPE sender_type AS ENUM ('CLIENT', 'INTERNAL');
-
--- SLA and alert types
-CREATE TYPE sla_tracking_status AS ENUM ('ACTIVE', 'COMPLETED', 'BREACHED', 'PAUSED');
-CREATE TYPE alert_level AS ENUM ('GREEN', 'YELLOW', 'ORANGE', 'RED');
 
 -- =====================================================
 -- 2. CORE USER AND CLIENT MANAGEMENT
@@ -102,10 +101,9 @@ CREATE TABLE agents (
 -- 4. WORKFLOW AND TASK EXECUTION MANAGEMENT
 -- =====================================================
 
--- Workflows
+-- Workflows (simplified - no human_readable_id)
 CREATE TABLE workflows (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    human_readable_id TEXT,
     workflow_type workflow_type NOT NULL,
     client_id UUID NOT NULL REFERENCES clients(id),
     title TEXT NOT NULL,
@@ -121,7 +119,7 @@ CREATE TABLE workflows (
     due_date TIMESTAMPTZ
 );
 
--- Task Executions (Functioning as complete task definitions)
+-- Task Executions with integrated SLA tracking and read tracking
 CREATE TABLE task_executions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
@@ -141,7 +139,17 @@ CREATE TABLE task_executions (
     completed_at TIMESTAMPTZ,
     execution_time_ms INTEGER,
     retry_count INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    -- Simple SLA tracking fields
+    sla_hours INTEGER DEFAULT 24,           -- How many hours this task should take
+    sla_due_at TIMESTAMPTZ,                 -- When this task is due (calculated: started_at + sla_hours)
+    sla_status TEXT DEFAULT 'ON_TIME',      -- Current SLA status: 'ON_TIME', 'AT_RISK', 'BREACHED'
+    -- Notification read tracking
+    read_by_users JSONB DEFAULT '{}',       -- JSON object tracking which users have read this task notification
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    -- Constraints
+    CONSTRAINT check_sla_status CHECK (sla_status IN ('ON_TIME', 'AT_RISK', 'BREACHED')),
+    CONSTRAINT check_positive_sla_hours CHECK (sla_hours > 0)
 );
 
 -- Agent Performance Metrics
@@ -263,57 +271,7 @@ CREATE TABLE documents (
 );
 
 -- =====================================================
--- 8. SLA MANAGEMENT
--- =====================================================
-
--- SLA Definitions
-CREATE TABLE sla_definitions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    workflow_type workflow_type NOT NULL,
-    task_type TEXT, -- Now references task_executions.task_type
-    client_id UUID REFERENCES clients(id),
-    hours_to_complete INTEGER NOT NULL,
-    alert_hours_before INTEGER[] NOT NULL DEFAULT '{}',
-    is_business_hours_only BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT check_positive_hours CHECK (hours_to_complete > 0)
-);
-
--- SLA Tracking
-CREATE TABLE sla_tracking (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    workflow_id UUID REFERENCES workflows(id) ON DELETE CASCADE,
-    task_execution_id UUID REFERENCES task_executions(id) ON DELETE CASCADE,
-    sla_definition_id UUID NOT NULL REFERENCES sla_definitions(id),
-    start_time TIMESTAMPTZ NOT NULL,
-    due_time TIMESTAMPTZ NOT NULL,
-    completed_time TIMESTAMPTZ,
-    status sla_tracking_status NOT NULL DEFAULT 'ACTIVE',
-    alert_level alert_level NOT NULL DEFAULT 'GREEN',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT check_sla_target CHECK (
-        (workflow_id IS NOT NULL AND task_execution_id IS NULL) OR
-        (workflow_id IS NULL AND task_execution_id IS NOT NULL)
-    )
-);
-
--- SLA Alerts
-CREATE TABLE sla_alerts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sla_tracking_id UUID NOT NULL REFERENCES sla_tracking(id) ON DELETE CASCADE,
-    alert_level alert_level NOT NULL,
-    message TEXT NOT NULL,
-    notified_users UUID[] NOT NULL DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    resolved_at TIMESTAMPTZ
-);
-
--- =====================================================
--- 9. FINANCIAL TRACKING
+-- 8. FINANCIAL TRACKING
 -- =====================================================
 
 -- Costs
@@ -340,7 +298,7 @@ CREATE TABLE invoices (
 );
 
 -- =====================================================
--- 10. AUDIT SYSTEM
+-- 9. AUDIT SYSTEM
 -- =====================================================
 
 -- Audit Events
@@ -363,7 +321,7 @@ CREATE TABLE audit_events (
 );
 
 -- =====================================================
--- 11. ENHANCED FEATURES
+-- 10. ENHANCED FEATURES
 -- =====================================================
 
 -- Contact Labels
@@ -447,7 +405,7 @@ CREATE TABLE user_preferences (
 );
 
 -- =====================================================
--- 12. INDEXES FOR PERFORMANCE
+-- 11. INDEXES FOR PERFORMANCE
 -- =====================================================
 
 -- Core indexes
@@ -466,8 +424,6 @@ CREATE INDEX idx_counterparties_type ON counterparties(type);
 CREATE INDEX idx_workflow_counterparties_workflow ON workflow_counterparties(workflow_id);
 CREATE INDEX idx_documents_workflow ON documents(workflow_id);
 CREATE INDEX idx_documents_type ON documents(document_type);
-CREATE INDEX idx_sla_tracking_workflow ON sla_tracking(workflow_id);
-CREATE INDEX idx_sla_tracking_status ON sla_tracking(status);
 CREATE INDEX idx_costs_workflow ON costs(workflow_id);
 CREATE INDEX idx_invoices_client ON invoices(client_id);
 CREATE INDEX idx_audit_events_workflow ON audit_events(workflow_id);
@@ -477,12 +433,20 @@ CREATE INDEX idx_hil_notes_workflow ON hil_notes(workflow_id);
 CREATE INDEX idx_hil_notes_author ON hil_notes(author_id);
 CREATE INDEX idx_hil_notifications_user ON hil_notifications(user_id);
 
+-- SLA monitoring index
+CREATE INDEX idx_task_executions_sla_monitoring 
+ON task_executions (sla_due_at, sla_status, status) 
+WHERE status != 'COMPLETED';
+
+-- Notification read tracking index
+CREATE INDEX idx_task_executions_read_by_users ON task_executions USING GIN (read_by_users);
+
 -- Full-text search indexes
 CREATE INDEX idx_workflows_search ON workflows USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')));
 CREATE INDEX idx_task_executions_search ON task_executions USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')));
 
 -- =====================================================
--- 13. ROW LEVEL SECURITY
+-- 12. ROW LEVEL SECURITY
 -- =====================================================
 
 -- Enable RLS on all tables
@@ -498,9 +462,6 @@ ALTER TABLE phone_metadata ENABLE ROW LEVEL SECURITY;
 ALTER TABLE counterparties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workflow_counterparties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sla_definitions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sla_tracking ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sla_alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE costs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
@@ -523,9 +484,6 @@ CREATE POLICY "Enable all access for authenticated users" ON phone_metadata FOR 
 CREATE POLICY "Enable all access for authenticated users" ON counterparties FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable all access for authenticated users" ON workflow_counterparties FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable all access for authenticated users" ON documents FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON sla_definitions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON sla_tracking FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON sla_alerts FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable all access for authenticated users" ON costs FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable all access for authenticated users" ON invoices FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable all access for authenticated users" ON audit_events FOR ALL USING (auth.role() = 'authenticated');
@@ -536,7 +494,7 @@ CREATE POLICY "Enable all access for authenticated users" ON hil_notifications F
 CREATE POLICY "Enable all access for authenticated users" ON user_preferences FOR ALL USING (auth.role() = 'authenticated');
 
 -- =====================================================
--- 14. TRIGGERS
+-- 13. TRIGGERS AND FUNCTIONS
 -- =====================================================
 
 -- Update timestamp trigger function
@@ -548,7 +506,20 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply triggers to tables with updated_at columns
+-- SLA due date calculation function
+CREATE OR REPLACE FUNCTION update_sla_due_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- When a task starts (started_at is set), calculate the due date
+    IF NEW.started_at IS NOT NULL AND OLD.started_at IS NULL THEN
+        NEW.sla_due_at = NEW.started_at + (NEW.sla_hours || ' hours')::INTERVAL;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply timestamp triggers to tables with updated_at columns
 CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE ON user_profiles 
@@ -565,10 +536,6 @@ CREATE TRIGGER update_workflow_counterparties_updated_at BEFORE UPDATE ON workfl
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_documents_updated_at BEFORE UPDATE ON documents 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_sla_definitions_updated_at BEFORE UPDATE ON sla_definitions 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_sla_tracking_updated_at BEFORE UPDATE ON sla_tracking 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON invoices 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_workflow_contacts_updated_at BEFORE UPDATE ON workflow_contacts 
@@ -577,3 +544,55 @@ CREATE TRIGGER update_hil_notes_updated_at BEFORE UPDATE ON hil_notes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferences 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Apply SLA trigger to task_executions
+CREATE TRIGGER trigger_update_sla_due_at
+    BEFORE UPDATE ON task_executions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_sla_due_at();
+
+-- =====================================================
+-- 14. VIEWS FOR CONVENIENCE
+-- =====================================================
+
+-- SLA monitoring view
+CREATE VIEW task_sla_status AS
+SELECT 
+    id,
+    workflow_id,
+    title,
+    task_type,
+    status,
+    started_at,
+    sla_hours,
+    sla_due_at,
+    sla_status,
+    -- Calculate time remaining (negative = overdue)
+    EXTRACT(EPOCH FROM (sla_due_at - NOW())) / 3600 AS hours_remaining,
+    -- Calculate percentage of SLA time elapsed
+    CASE 
+        WHEN started_at IS NULL THEN 0
+        WHEN sla_due_at IS NULL THEN 0
+        ELSE GREATEST(0, LEAST(100, 
+            EXTRACT(EPOCH FROM (NOW() - started_at)) / 
+            EXTRACT(EPOCH FROM (sla_due_at - started_at)) * 100
+        ))
+    END AS sla_percent_elapsed
+FROM task_executions
+WHERE status != 'COMPLETED';
+
+-- =====================================================
+-- 15. COMMENTS
+-- =====================================================
+
+-- Table comments
+COMMENT ON TABLE workflows IS 'Workflows table uses UUID primary key only. Human-readable formatting is handled in application layer.';
+COMMENT ON VIEW task_sla_status IS 'Convenient view for monitoring SLA status with calculated time remaining and percentage elapsed';
+
+-- SLA field comments
+COMMENT ON COLUMN task_executions.sla_hours IS 'Hours allocated for this task (default 24). Can be customized per task type or individual task.';
+COMMENT ON COLUMN task_executions.sla_due_at IS 'Calculated deadline for this task (started_at + sla_hours). Auto-populated when task starts.';
+COMMENT ON COLUMN task_executions.sla_status IS 'Current SLA status: ON_TIME (before due), AT_RISK (approaching due), BREACHED (past due)';
+
+-- Read tracking comment
+COMMENT ON COLUMN task_executions.read_by_users IS 'JSON object tracking which users have read this task notification. Format: {"user_id": "timestamp"}';

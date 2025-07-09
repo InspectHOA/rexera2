@@ -22,6 +22,9 @@ export * from './types/database';
 // Zod validation schemas
 export * from './schemas/taskExecutions';
 
+// Utility functions
+export * from './utils/uuid-formatter';
+
 // =====================================================
 // SPECIFIC EXPORTS FOR COMMON USE CASES
 // =====================================================

@@ -64,6 +64,8 @@ export type Database = {
           sla_hours: number
           sla_due_at: string | null
           sla_status: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
+          // Notification read tracking
+          read_by_users: Json
         }
         Insert: {
           id?: string
@@ -89,6 +91,8 @@ export type Database = {
           sla_hours?: number
           sla_due_at?: string | null
           sla_status?: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
+          // Notification read tracking
+          read_by_users?: Json
         }
         Update: {
           id?: string
@@ -114,13 +118,14 @@ export type Database = {
           sla_hours?: number
           sla_due_at?: string | null
           sla_status?: 'ON_TIME' | 'AT_RISK' | 'BREACHED'
+          // Notification read tracking
+          read_by_users?: Json
         }
         Relationships: []
       }
       workflows: {
         Row: {
           id: string
-          human_readable_id: string | null
           workflow_type: Database["public"]["Enums"]["workflow_type"]
           client_id: string
           title: string
@@ -138,7 +143,6 @@ export type Database = {
         }
         Insert: {
           id?: string
-          human_readable_id?: string | null
           workflow_type: Database["public"]["Enums"]["workflow_type"]
           client_id: string
           title: string
@@ -156,7 +160,6 @@ export type Database = {
         }
         Update: {
           id?: string
-          human_readable_id?: string | null
           workflow_type?: Database["public"]["Enums"]["workflow_type"]
           client_id?: string
           title?: string

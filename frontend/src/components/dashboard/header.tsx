@@ -3,19 +3,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/provider';
-import { usePersistentNotifications } from '@/lib/hooks/usePersistentNotifications';
+import { useUnifiedNotifications } from '@/lib/hooks/useUnifiedNotifications';
 import { Bell } from 'lucide-react';
 
 export function DashboardHeader() {
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
-  const { 
-    notifications, 
-    unreadCount, 
-    loading: notificationsLoading, 
-    markAsRead, 
-    markAllAsRead 
-  } = usePersistentNotifications();
+  const {
+    notifications,
+    unreadCount,
+    loading: notificationsLoading,
+    markAsRead,
+    markAllAsRead
+  } = useUnifiedNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 

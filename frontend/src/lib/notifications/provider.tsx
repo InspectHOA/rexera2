@@ -1,10 +1,10 @@
 'use client';
 
-import { useNotifications } from '@/lib/hooks/useNotifications';
+import { useUnifiedNotifications } from '@/lib/hooks/useUnifiedNotifications';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  // Initialize global notifications
-  useNotifications();
+  // Initialize unified notification system
+  useUnifiedNotifications();
   
   return <>{children}</>;
 }

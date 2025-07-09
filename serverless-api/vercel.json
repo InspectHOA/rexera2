@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter=@rexera/shared build",
+  "buildCommand": "pnpm --filter=@rexera/shared build && pnpm --filter=@rexera/api test:smoke",
   "installCommand": "pnpm install",
   "headers": [
     {

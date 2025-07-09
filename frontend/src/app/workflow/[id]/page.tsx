@@ -9,6 +9,7 @@ import { TaskDetailView } from '@/components/workflow/task-detail-view';
 import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflow } from '@/lib/hooks/useWorkflows';
+import { formatWorkflowIdWithType } from '@rexera/shared';
 
 // Types
 interface Task {
@@ -44,9 +45,9 @@ export default function WorkflowDetailPage() {
   
   // Transform API data to component format
   const workflow: Workflow | null = workflowData ? {
-    id: workflowData.human_readable_id || workflowData.id || params.id as string,
+    id: formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type),
     title: workflowData.title || 'Workflow Details',
-    subtitle: `${workflowData.human_readable_id || workflowData.id || params.id} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF')} - ${workflowData.clients?.name || 'Unknown Client'}`,
+    subtitle: `${formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type)} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF')} - ${workflowData.clients?.name || 'Unknown Client'}`,
     status: getDisplayStatus(workflowData.status || 'PENDING'),
     eta: formatDateTime(workflowData.due_date),
     due: formatDate(workflowData.due_date),

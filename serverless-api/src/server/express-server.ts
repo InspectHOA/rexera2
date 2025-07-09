@@ -98,11 +98,24 @@ app.get('/api/workflows', async (req, res) => {
   }
 });
 
-// Individual workflow endpoint (supports both UUID and human readable ID)
+// Individual workflow endpoint (UUID only)
 app.get('/api/workflows/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { include } = req.query as Record<string, string>;
+    
+    // Validate UUID format
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    
+    if (!isUUID) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid workflow ID. Please use a valid UUID.',
+          code: 'INVALID_UUID'
+        }
+      });
+    }
     
     // Build select string based on include parameter
     let selectString = '*';
@@ -116,21 +129,11 @@ app.get('/api/workflows/:id', async (req, res) => {
       }
     }
     
-    // Try to match by human_readable_id first, then by UUID
-    let query = supabase
+    const { data, error } = await supabase
       .from('workflows')
-      .select(selectString);
-    
-    // Check if it looks like a UUID (contains dashes in UUID format)
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    
-    if (isUUID) {
-      query = query.eq('id', id);
-    } else {
-      query = query.eq('human_readable_id', id);
-    }
-    
-    const { data, error } = await query.single();
+      .select(selectString)
+      .eq('id', id)
+      .single();
     
     if (error) {
       return handleError(res, error, error.code === 'PGRST116' ? 404 : 500);

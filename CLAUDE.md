@@ -48,6 +48,87 @@ cd serverless-api && npm run dev &
 - `pnpm db:seed` - Seed database with initial data
 - `npx supabase gen types typescript` - Generate TypeScript types from Supabase schema
 
+### Database Access & Testing
+The project uses Supabase cloud database. To test database connectivity:
+
+```bash
+# Test database connection and API endpoints
+pnpm test:smoke
+
+# Start API development server (connects to Supabase)
+pnpm dev
+
+# Run full integration tests (includes database tests)
+pnpm test:integration
+
+# Test individual API endpoints
+curl http://localhost:3001/api/health
+curl http://localhost:3001/api/workflows
+```
+
+### Database Reset & Seeding
+To completely reset the database and populate with test data:
+
+```bash
+# DESTRUCTIVE: Reset database and seed with comprehensive test data
+tsx scripts/utils/script-runner.ts dev:reset-database --confirm --test-data
+
+# Or interactive version (asks for confirmation)
+tsx scripts/utils/script-runner.ts dev:reset-database --test-data
+
+# Seed basic data only (clients, agents, basic workflows)
+tsx scripts/utils/script-runner.ts seed:database
+
+# Seed comprehensive test data (20 workflows with realistic tasks)
+tsx scripts/utils/script-runner.ts seed:test-data
+
+# Seed custom amount of test data
+tsx scripts/utils/script-runner.ts seed:test-data --count=50
+
+# Add additional tasks to existing workflows
+tsx scripts/utils/script-runner.ts seed:add-tasks
+```
+
+**Database Reset Options:**
+- `--confirm` - Skip interactive confirmation (for automation)
+- `--seed` - Reseed with basic data after reset
+- `--test-data` - Reseed with comprehensive test data after reset
+- `--count=N` - Number of workflows to create (default: 20)
+
+**Important**: The database utility functions in `serverless-api/src/utils/database.ts` require environment variables to be loaded at runtime, not import time. Always ensure `.env` files are properly configured with:
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key for server-side operations
+
+### Script Management (TypeScript-First)
+All one-off scripts, migrations, and administrative tasks use the unified TypeScript script runner:
+
+**Core Script Runner**:
+```bash
+# List all available scripts
+tsx scripts/utils/script-runner.ts list
+
+# Run specific scripts
+tsx scripts/utils/script-runner.ts migrate:sla
+tsx scripts/utils/script-runner.ts seed:database --env=dev
+tsx scripts/utils/script-runner.ts test:webhook --workflow=payoff
+tsx scripts/utils/script-runner.ts dev:create-test-notification --user=email@example.com
+```
+
+**Script Categories**:
+- **Database Operations**: `migrate:*`, `seed:*` - Schema changes and data seeding
+- **Testing Utilities**: `test:*` - API and integration testing
+- **Workflow Management**: `workflow:*` - n8n workflow deployment and management
+- **Administrative Tasks**: `admin:*` - User management and system maintenance
+- **Development Utilities**: `dev:*` - Development helpers and test data creation
+
+**Script Standards**:
+- ✅ **TypeScript Only** - All scripts written in TypeScript with proper typing
+- ✅ **Environment Aware** - Uses environment variables, no hardcoded credentials
+- ✅ **Error Handling** - Comprehensive error handling and logging
+- ✅ **Argument Parsing** - Consistent command-line argument support
+- ✅ **Database Safety** - Confirmation prompts for destructive operations
+- ✅ **Unified Interface** - Single entry point via `script-runner.ts`
+
 ### Testing
 - `pnpm e2e` - Run end-to-end tests with Playwright
 - `pnpm test` - Run all tests across packages

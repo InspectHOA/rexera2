@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWorkflows } from '@/lib/hooks/useWorkflows';
+import { formatWorkflowIdWithType } from '@rexera/shared';
 
 export function WorkflowTable() {
   const router = useRouter();
@@ -41,8 +42,8 @@ export function WorkflowTable() {
     const hasInterrupts = interruptCount > 0;
     
     return {
-      id: workflow.human_readable_id || workflow.id,
-      workflowId: workflow.human_readable_id || workflow.id, // Use human readable ID for navigation
+      id: formatWorkflowIdWithType(workflow.id, workflow.workflow_type),
+      workflowId: workflow.id, // Use UUID for navigation
       created: formatCreatedDate(workflow.created_at),
       createdRaw: workflow.created_at, // For sorting
       type: getDisplayWorkflowType(workflow.workflow_type),
