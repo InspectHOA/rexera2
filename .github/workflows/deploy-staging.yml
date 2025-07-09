@@ -1,0 +1,120 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - demo
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '9'
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Deploy Frontend to Vercel (Staging)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          working-directory: ./frontend
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: |
+            rexera2-staging.vercel.app
+
+      - name: Deploy API to Vercel (Staging)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_API_PROJECT_ID }}
+          working-directory: ./serverless-api
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: |
+            rexera2-api-staging.vercel.app
+
+      - name: Run post-deployment smoke tests
+        env:
+          API_BASE_URL: https://rexera2-api-staging.vercel.app/api
+          FRONTEND_URL: https://rexera2-staging.vercel.app
+        run: |
+          # Wait for deployment to be ready
+          sleep 30
+          
+          # Run smoke tests against staging
+          cd serverless-api
+          npm run test:smoke
+
+      - name: Update staging database (if needed)
+        env:
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # Run any necessary database migrations for staging
+          echo "Checking for database updates..."
+          # Add database migration commands here if needed
+
+      - name: Notify deployment success
+        uses: 8398a7/action-slack@v3
+        if: success()
+        with:
+          status: success
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          message: |
+            🚀 Staging Deployment Successful!
+            
+            📱 Frontend: https://rexera2-staging.vercel.app
+            🔌 API: https://rexera2-api-staging.vercel.app
+            
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            
+            Ready for testing! 🧪
+
+      - name: Notify deployment failure
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: failure
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          message: |
+            ❌ Staging Deployment Failed!
+            
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            
+            Check GitHub Actions for details.

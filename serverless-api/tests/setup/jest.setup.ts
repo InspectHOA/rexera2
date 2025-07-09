@@ -11,7 +11,7 @@ config();
 // Global test configuration
 beforeAll(async () => {
   // Set test environment variables
-  process.env.NODE_ENV = 'test';
+  Object.assign(process.env, { NODE_ENV: 'test' });
   
   // Ensure required environment variables exist
   const requiredEnvVars = [
@@ -101,15 +101,12 @@ expect.extend({
 });
 
 // Augment Jest expect interface
-declare module 'expect' {
-  interface AsymmetricMatchers {
-    toBeValidUUID(): void;
-    toBeValidTimestamp(): void;
-    toMatchApiResponseFormat(): void;
-  }
-  interface Matchers<R> {
-    toBeValidUUID(): R;
-    toBeValidTimestamp(): R;
-    toMatchApiResponseFormat(): R;
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeValidUUID(): R;
+      toBeValidTimestamp(): R;
+      toMatchApiResponseFormat(): R;
+    }
   }
 }

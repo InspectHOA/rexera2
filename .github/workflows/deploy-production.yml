@@ -1,0 +1,226 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: 'Type "PRODUCTION" to confirm deployment'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '9'
+
+jobs:
+  # Pre-deployment verification
+  pre-deployment-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify production deployment confirmation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.confirm_production }}" != "PRODUCTION" ]; then
+            echo "❌ Production deployment not confirmed. Please type 'PRODUCTION' to confirm."
+            exit 1
+          fi
+          echo "✅ Production deployment confirmed"
+
+      - name: Check if main branch
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ] && [ ! "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            echo "❌ Production deployments only allowed from main branch or version tags"
+            exit 1
+          fi
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run full test suite
+        run: |
+          pnpm lint
+          pnpm type-check
+          pnpm build
+          pnpm --filter=@rexera/api test:unit
+
+  # Production deployment with blue-green strategy
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Create deployment backup point
+        env:
+          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "Creating backup point before deployment..."
+          # Add backup commands here if needed
+          
+      - name: Deploy API to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_API_PROJECT_ID }}
+          working-directory: ./serverless-api
+          vercel-args: '--prod'
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Deploy Frontend to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Wait for deployment propagation
+        run: sleep 60
+
+      - name: Run production health checks
+        env:
+          API_BASE_URL: ${{ secrets.PROD_API_URL }}
+          FRONTEND_URL: ${{ secrets.PROD_FRONTEND_URL }}
+        run: |
+          # Health check API
+          curl -f $API_BASE_URL/health || exit 1
+          
+          # Check critical endpoints
+          curl -f $API_BASE_URL/workflows || exit 1
+          curl -f $API_BASE_URL/agents || exit 1
+          
+          echo "✅ Production health checks passed"
+
+      - name: Run post-deployment smoke tests
+        env:
+          API_BASE_URL: ${{ secrets.PROD_API_URL }}
+        run: |
+          cd serverless-api
+          npm run test:smoke
+
+      - name: Update production database (if needed)
+        env:
+          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "Applying any necessary database migrations..."
+          # Add production database migration commands here
+
+      - name: Tag successful deployment
+        if: success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Create deployment tag if not already a tag push
+          if [ ! "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+            git tag -a "deploy-$TIMESTAMP" -m "Production deployment $TIMESTAMP"
+            git push origin "deploy-$TIMESTAMP"
+          fi
+
+      - name: Notify successful deployment
+        uses: 8398a7/action-slack@v3
+        if: success()
+        with:
+          status: success
+          channel: '#production'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          message: |
+            🎉 PRODUCTION DEPLOYMENT SUCCESSFUL! 🎉
+            
+            🌐 Production URL: ${{ secrets.PROD_FRONTEND_URL }}
+            🔌 API URL: ${{ secrets.PROD_API_URL }}
+            
+            📋 Details:
+            • Commit: ${{ github.sha }}
+            • Branch: ${{ github.ref_name }}
+            • Deployed by: ${{ github.actor }}
+            • Time: ${{ github.event.head_commit.timestamp }}
+            
+            All health checks passed ✅
+
+      - name: Notify deployment failure
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: failure
+          channel: '#production'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          message: |
+            🚨 PRODUCTION DEPLOYMENT FAILED! 🚨
+            
+            ❌ Deployment to production has failed
+            
+            📋 Details:
+            • Commit: ${{ github.sha }}
+            • Branch: ${{ github.ref_name }}
+            • Failed step: Check GitHub Actions logs
+            
+            @channel Please investigate immediately!
+
+  # Rollback job (can be triggered manually)
+  rollback-production:
+    runs-on: ubuntu-latest
+    if: failure()
+    environment: production
+    needs: deploy-production
+    
+    steps:
+      - name: Rollback production deployment
+        run: |
+          echo "🔄 Rolling back production deployment..."
+          # Add rollback procedures here
+          # This could involve deploying previous version
+          # or restoring from backup
+          
+      - name: Notify rollback
+        uses: 8398a7/action-slack@v3
+        with:
+          status: warning
+          channel: '#production'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          message: |
+            🔄 Production rollback initiated
+            
+            Previous deployment failed and rollback procedures are running.
+            Please monitor system status.

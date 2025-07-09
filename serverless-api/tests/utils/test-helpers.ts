@@ -75,9 +75,9 @@ export class APITestHelper {
     app.use(express.json());
 
     // Import and mount API routes
-    const { default: workflowsHandler } = await import('../../api/workflows/index');
+    const { default: workflowsHandler } = await import('../../api/workflows');
     const { default: workflowDetailHandler } = await import('../../api/workflows/[id]');
-    const { default: taskExecutionsHandler } = await import('../../api/taskExecutions');
+    const { default: taskExecutionsHandler } = await import('../../api/task-executions');
     const { default: agentsHandler } = await import('../../api/agents');
 
     // Health check endpoint

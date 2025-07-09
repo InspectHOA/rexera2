@@ -15,7 +15,7 @@ async function apiRequest<T = any>(endpoint: string): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   try {
     const response = await fetch(url);
-    const data = await response.json();
+    const data = await response.json() as T;
     return { response, data, error: null };
   } catch (error) {
     return { response: null, data: null, error: error as Error };
