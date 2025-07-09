@@ -5,9 +5,10 @@
   "private": true,
   "scripts": {
     "start": "vercel dev --listen 3001",
-    "dev": "tsx src/server/express-server.ts",
-    "build": "tsc",
-    "test": "jest",
+    "dev": "npm run type-check && tsx src/server/express-server.ts",
+    "dev:watch": "tsx src/server/express-server.ts",
+    "build": "npm run type-check && tsc",
+    "test": "npm run type-check && jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --testPathPattern=integration",
@@ -18,6 +19,7 @@
     "notifications": "tsx scripts/notifications.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
     "clean": "rm -rf .vercel dist coverage"
   },
   "dependencies": {

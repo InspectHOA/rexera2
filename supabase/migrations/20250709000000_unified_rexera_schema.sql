@@ -340,7 +340,7 @@ CREATE TABLE contact_labels (
 CREATE TABLE workflow_contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
-    label TEXT NOT NULL, -- Foreign key to contact_labels.
+    label TEXT NOT NULL,
     name TEXT NOT NULL,
     email TEXT,
     phone TEXT,
@@ -358,6 +358,7 @@ CREATE TABLE workflow_contacts (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
+    CONSTRAINT fk_contact_label FOREIGN KEY (label) REFERENCES contact_labels(label),
     CONSTRAINT check_notification_method CHECK (
         notification_method IN ('email', 'sms', 'both', 'none')
     )

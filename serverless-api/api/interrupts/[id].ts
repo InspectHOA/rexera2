@@ -29,7 +29,7 @@ export default async function handler(
   }
 
   const supabase = createServerClient();
-  const { id } = req.query as InterruptQueryParams;
+  const { id } = req.query as unknown as InterruptQueryParams;
 
   if (typeof id !== 'string') {
     return res.status(400).json({

@@ -5,6 +5,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createServerClient } from '../../src/utils/database';
 import { handleError } from '../../src/utils/errors';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 interface WorkflowQueryParams {
   id: string;
@@ -65,15 +66,16 @@ export default async function handler(
         .eq('id', id)
         .single();
 
-      if (workflowError || !workflow) {
-        if (workflowError?.code === 'PGRST116' || !workflow) {
-          return res.status(404).json({
-            success: false,
-            error: 'Workflow not found'
-          });
-        }
+      if (workflowError?.code === 'PGRST116' || !workflow) {
+        return res.status(404).json({
+          success: false,
+          error: 'Workflow not found'
+        });
+      }
+      
+      if (workflowError) {
         console.error('Failed to fetch workflow:', workflowError);
-        throw new Error(`Failed to fetch workflow: ${workflowError?.message || workflowError || 'Unknown error'}`);
+        throw new Error(`Failed to fetch workflow: ${(workflowError as PostgrestError).message}`);
       }
 
       // Fetch tasks for this workflow (using the actual workflow UUID)
