@@ -42,7 +42,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 };
 
 export function useUnifiedNotifications() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +50,11 @@ export function useUnifiedNotifications() {
 
   // Fetch notifications function
   const fetchNotifications = async () => {
+    // Wait for auth to complete before fetching
+    if (authLoading) {
+      return;
+    }
+    
     if (!user) {
       setNotifications([]);
       setLoading(false);
@@ -197,7 +202,7 @@ export function useUnifiedNotifications() {
   // Initial fetch
   useEffect(() => {
     fetchNotifications();
-  }, [user]);
+  }, [user, authLoading]);
 
   // Real-time subscription for new notifications
   useEffect(() => {

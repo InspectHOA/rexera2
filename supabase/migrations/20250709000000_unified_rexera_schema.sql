@@ -233,7 +233,7 @@ CREATE TABLE counterparties (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Workflow Counterparties
+-- Workflow Counterparties 
 CREATE TABLE workflow_counterparties (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
@@ -321,25 +321,26 @@ CREATE TABLE audit_events (
 );
 
 -- =====================================================
--- 10. ENHANCED FEATURES
+-- 10. WORKFLOW CONTACT MANAGEMENT
+-- Defines standardized labels for contacts and links them to specific workflows.
 -- =====================================================
 
--- Contact Labels
+-- Defines a list of standardized roles for contacts (e.g., 'borrower', 'escrow_officer').
 CREATE TABLE contact_labels (
     label TEXT PRIMARY KEY,
     display_name TEXT NOT NULL,
     description TEXT,
-    workflow_types TEXT[] DEFAULT '{}',
-    is_required BOOLEAN DEFAULT FALSE,
-    default_notifications JSONB DEFAULT '{}',
+    workflow_types TEXT[] DEFAULT '{}', -- Restricts which workflows can use this label.
+    is_required BOOLEAN DEFAULT FALSE, -- If true, a contact with this label must exist for the workflow.
+    default_notifications JSONB DEFAULT '{}', -- Default notification settings for this role.
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Workflow Contacts
+-- Stores contact information for individuals related to a workflow (e.g., borrower, escrow officer).
 CREATE TABLE workflow_contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
-    label TEXT NOT NULL,
+    label TEXT NOT NULL, -- Foreign key to contact_labels.
     name TEXT NOT NULL,
     email TEXT,
     phone TEXT,
@@ -362,7 +363,12 @@ CREATE TABLE workflow_contacts (
     )
 );
 
--- HIL Notes
+-- =====================================================
+-- 11. HIL (HUMAN-IN-THE-LOOP) SUPPORT
+-- Tables for managing notes and notifications for human agents.
+-- =====================================================
+
+-- Allows HIL users to add notes, mention others, and track resolution status.
 CREATE TABLE hil_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
@@ -370,13 +376,13 @@ CREATE TABLE hil_notes (
     content TEXT NOT NULL,
     priority priority_level NOT NULL DEFAULT 'NORMAL',
     is_resolved BOOLEAN NOT NULL DEFAULT FALSE,
-    parent_note_id UUID REFERENCES hil_notes(id),
-    mentions UUID[] DEFAULT '{}',
+    parent_note_id UUID REFERENCES hil_notes(id), -- For threading notes.
+    mentions UUID[] DEFAULT '{}', -- Stores UUIDs of mentioned users.
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- HIL Notifications
+-- Stores notifications for HIL users regarding important events.
 CREATE TABLE hil_notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES user_profiles(id),
@@ -384,14 +390,19 @@ CREATE TABLE hil_notifications (
     priority priority_level NOT NULL,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
-    action_url TEXT,
+    action_url TEXT, -- A URL for the user to take action.
     metadata JSONB,
     read BOOLEAN NOT NULL DEFAULT FALSE,
     read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- User Preferences
+-- =====================================================
+-- 12. USER CUSTOMIZATION
+-- Stores user-specific preferences for UI and notifications.
+-- =====================================================
+
+-- Allows users to customize their experience (e.g., theme, language).
 CREATE TABLE user_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES user_profiles(id) UNIQUE,
@@ -405,7 +416,7 @@ CREATE TABLE user_preferences (
 );
 
 -- =====================================================
--- 11. INDEXES FOR PERFORMANCE
+-- 13. INDEXES FOR PERFORMANCE
 -- =====================================================
 
 -- Core indexes
@@ -446,7 +457,7 @@ CREATE INDEX idx_workflows_search ON workflows USING gin(to_tsvector('english', 
 CREATE INDEX idx_task_executions_search ON task_executions USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')));
 
 -- =====================================================
--- 12. ROW LEVEL SECURITY
+-- 14. ROW LEVEL SECURITY
 -- =====================================================
 
 -- Enable RLS on all tables
@@ -494,7 +505,7 @@ CREATE POLICY "Enable all access for authenticated users" ON hil_notifications F
 CREATE POLICY "Enable all access for authenticated users" ON user_preferences FOR ALL USING (auth.role() = 'authenticated');
 
 -- =====================================================
--- 13. TRIGGERS AND FUNCTIONS
+-- 15. TRIGGERS AND FUNCTIONS
 -- =====================================================
 
 -- Update timestamp trigger function
@@ -552,7 +563,7 @@ CREATE TRIGGER trigger_update_sla_due_at
     EXECUTE FUNCTION update_sla_due_at();
 
 -- =====================================================
--- 14. VIEWS FOR CONVENIENCE
+-- 16. VIEWS FOR CONVENIENCE
 -- =====================================================
 
 -- SLA monitoring view
@@ -582,7 +593,7 @@ FROM task_executions
 WHERE status != 'COMPLETED';
 
 -- =====================================================
--- 15. COMMENTS
+-- 17. COMMENTS
 -- =====================================================
 
 -- Table comments

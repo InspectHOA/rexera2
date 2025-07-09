@@ -138,8 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (shouldBypassAuth) {
       // Create mock user for localhost development
+      const mockUserId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'; // Fixed UUID for development
       const mockUser = {
-        id: 'localhost-dev-user',
+        id: mockUserId,
         email: 'dev@localhost.com',
         app_metadata: {},
         aud: 'authenticated',
@@ -154,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } as User;
 
       const mockProfile: UserProfile = {
-        id: 'localhost-dev-user',
+        id: mockUserId,
         user_type: 'hil_user',
         email: 'dev@localhost.com',
         full_name: 'Development User',
