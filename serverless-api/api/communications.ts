@@ -9,7 +9,7 @@ import { createServerClient } from '../src/utils/database';
 import { handleError } from '../src/utils/errors';
 
 const getCommunicationsSchema = z.object({
-  workflow_id: z.string().uuid().optional(),
+  workflow_id: z.string().optional(), // Accept human-readable ID or UUID
   type: z.enum(['email', 'phone', 'sms', 'internal_note']).optional(),
   direction: z.enum(['INBOUND', 'OUTBOUND']).optional(),
   limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
@@ -69,7 +69,36 @@ export default async function handler(
 
       // Apply filters
       if (query.workflow_id) {
-        dbQuery = dbQuery.eq('workflow_id', query.workflow_id);
+        console.log(`Communications API: Looking up workflow_id: ${query.workflow_id}`);
+        
+        // Check if workflow_id is a UUID or human-readable ID
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(query.workflow_id);
+        console.log(`Communications API: isUUID: ${isUUID}`);
+        
+        if (isUUID) {
+          // Use UUID directly
+          console.log(`Communications API: Using UUID directly: ${query.workflow_id}`);
+          dbQuery = dbQuery.eq('workflow_id', query.workflow_id);
+        } else {
+          // Look up UUID by human_readable_id
+          console.log(`Communications API: Looking up human-readable ID: ${query.workflow_id}`);
+          const { data: workflow, error: workflowError } = await supabase
+            .from('workflows')
+            .select('id')
+            .eq('human_readable_id', query.workflow_id)
+            .single();
+            
+          if (workflowError || !workflow) {
+            console.log(`Communications API: Workflow not found - error:`, workflowError);
+            return res.status(404).json({
+              success: false,
+              error: `Workflow not found with ID: ${query.workflow_id}`
+            });
+          }
+          
+          console.log(`Communications API: Found workflow UUID: ${workflow.id}`);
+          dbQuery = dbQuery.eq('workflow_id', workflow.id);
+        }
       }
       
       if (query.type) {

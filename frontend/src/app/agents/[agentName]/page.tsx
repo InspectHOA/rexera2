@@ -1,9 +1,9 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import { EmailInterface } from '@/components/agents/mia/EmailInterface';
-import { CounterpartySelector } from '@/components/agents/nina/CounterpartySelector';
-import { DocumentExtractor } from '@/components/agents/iris/DocumentExtractor';
+import { EmailInterface } from '@/components/agents/mia/email-interface';
+import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
+import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
 
 interface AgentPageProps {
   params: {
@@ -49,11 +49,4 @@ export default function AgentPage({ params, searchParams }: AgentPageProps) {
   }
 }
 
-// Generate static params for known agents
-export function generateStaticParams() {
-  return [
-    { agentName: 'mia' },
-    { agentName: 'nina' },
-    { agentName: 'iris' }
-  ];
-}
+// Known agents - static params removed since this is a client component

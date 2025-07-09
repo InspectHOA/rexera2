@@ -28,10 +28,33 @@ export default async function handler(
       case 'GET':
         // listByWorkflow
         if (typedQuery.workflowId) {
+          let actualWorkflowId = typedQuery.workflowId;
+          
+          // Check if workflowId is a UUID or human-readable ID
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(typedQuery.workflowId);
+          
+          if (!isUUID) {
+            // Look up UUID by human_readable_id
+            const { data: workflow, error: workflowError } = await supabase
+              .from('workflows')
+              .select('id')
+              .eq('human_readable_id', typedQuery.workflowId)
+              .single();
+              
+            if (workflowError || !workflow) {
+              return res.status(404).json({
+                success: false,
+                error: `Workflow not found with ID: ${typedQuery.workflowId}`
+              });
+            }
+            
+            actualWorkflowId = workflow.id;
+          }
+          
           const { data, error } = await supabase
             .from('task_executions')
             .select('*')
-            .eq('workflow_id', typedQuery.workflowId)
+            .eq('workflow_id', actualWorkflowId)
             .order('sequence_order', { ascending: true });
 
           if (error) {

@@ -260,7 +260,29 @@ app.get('/api/communications', async (req, res) => {
 
     // Apply filters
     if (workflow_id) {
-      query = query.eq('workflow_id', workflow_id);
+      // Check if workflow_id is a UUID or human-readable ID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workflow_id);
+      
+      if (isUUID) {
+        // Use UUID directly
+        query = query.eq('workflow_id', workflow_id);
+      } else {
+        // Look up UUID by human_readable_id
+        const { data: workflow, error: workflowError } = await supabase
+          .from('workflows')
+          .select('id')
+          .eq('human_readable_id', workflow_id)
+          .single();
+          
+        if (workflowError || !workflow) {
+          return res.status(404).json({
+            success: false,
+            error: `Workflow not found with ID: ${workflow_id}`
+          });
+        }
+        
+        query = query.eq('workflow_id', workflow.id);
+      }
     }
     
     if (type) {

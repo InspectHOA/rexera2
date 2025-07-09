@@ -39,8 +39,8 @@ const getSlaStatusStyle = (sla: string) => {
 
 export function TaskList({ tasks, selectedTask, onTaskClick, progress }: TaskListProps) {
   return (
-    <div className="h-[30vh] flex flex-col bg-white">
-      <div className="px-3 py-3 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+    <div className="h-[30vh] flex flex-col">
+      <div className="px-3 py-3 border-b border-gray-200/50 bg-gray-50/50 flex-shrink-0">
         <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
           Tasks ({progress})
         </div>

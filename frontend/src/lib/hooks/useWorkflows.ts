@@ -118,6 +118,9 @@ export function useWorkflow(id: string) {
   const { supabase } = useSupabase();
   const queryClient = useQueryClient();
 
+  // Determine if ID is a human-readable number or UUID
+  const isHumanId = /^\d+$/.test(id);
+  
   // Fetch workflow
   const {
     data: workflow,
@@ -126,7 +129,9 @@ export function useWorkflow(id: string) {
     refetch: refetchWorkflow
   } = useQuery({
     queryKey: ['workflow', id],
-    queryFn: () => api.workflows.byId(id, ['client']),
+    queryFn: () => isHumanId 
+      ? api.workflows.byHumanId(id, ['client'])
+      : api.workflows.byId(id, ['client']),
     enabled: !!id,
     staleTime: 30000,
   });

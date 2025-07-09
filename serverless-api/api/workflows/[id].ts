@@ -31,19 +31,31 @@ export default async function handler(
 
   try {
     if (req.method === 'GET') {
-      // Only accept UUIDs now - much simpler
+      // Accept both UUIDs and human-readable IDs
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      let actualWorkflowId = id;
       
       if (!isUUID) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid workflow ID. Please use a valid UUID.'
-        });
+        // Look up UUID by human_readable_id
+        const { data: workflow, error: workflowError } = await supabase
+          .from('workflows')
+          .select('id')
+          .eq('human_readable_id', id)
+          .single();
+          
+        if (workflowError || !workflow) {
+          return res.status(404).json({
+            success: false,
+            error: `Workflow not found with ID: ${id}`
+          });
+        }
+        
+        actualWorkflowId = workflow.id;
       }
       
-      console.log(`Workflow lookup: ${id}`);
+      console.log(`Workflow lookup: ${id} -> ${actualWorkflowId}`);
       
-      // Fetch workflow with related data using UUID only
+      // Fetch workflow with related data using resolved UUID
       const { data: workflow, error: workflowError } = await supabase
         .from('workflows')
         .select(`
@@ -63,7 +75,7 @@ export default async function handler(
           due_date,
           clients(id, name, domain)
         `)
-        .eq('id', id)
+        .eq('id', actualWorkflowId)
         .single();
 
       if (workflowError?.code === 'PGRST116' || !workflow) {

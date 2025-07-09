@@ -111,6 +111,10 @@ module.exports = {
           "50%": { opacity: "0.8" },
         },
       },
+      backgroundImage: {
+        'rexera-gradient': 'linear-gradient(to bottom right, white, #E6F2F2, #D9E9E9)',
+        'noise-texture': 'url(https://www.transparenttextures.com/patterns/noisy-grid.png)',
+      },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",

@@ -101,12 +101,12 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="bg-white border border-gray-200 p-3 mb-5 flex justify-between items-center shadow-sm">
+    <header className="bg-white/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-2xl border border-gray-200/50">
       <div className="flex items-center gap-2">
-        <img 
-          src="https://rexera.com/wp-content/uploads/2025/03/Rexera_Logo.svg" 
-          alt="Rexera Logo" 
-          className="h-6 w-auto"
+        <img
+          src="/rexera-logo.svg"
+          alt="Rexera Logo"
+          className="h-8 w-auto"
         />
       </div>
       

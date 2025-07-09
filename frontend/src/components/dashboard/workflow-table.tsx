@@ -41,8 +41,24 @@ export function WorkflowTable() {
     const interruptCount = tasks.filter((t: any) => t.status === 'AWAITING_REVIEW')?.length || 0;
     const hasInterrupts = interruptCount > 0;
     
+    // Use human_readable_id field with type prefix (e.g., "HOA-1001")
+    let displayId;
+    
+    if (workflow.human_readable_id) {
+      const typeConfig = {
+        'PAYOFF': 'PAY',
+        'HOA_ACQUISITION': 'HOA', 
+        'MUNI_LIEN_SEARCH': 'MUNI'
+      };
+      const prefix = typeConfig[workflow.workflow_type as keyof typeof typeConfig] || 'WF';
+      displayId = `${prefix}-${workflow.human_readable_id}`;
+    } else {
+      // Fallback to formatted UUID if no human-readable ID
+      displayId = formatWorkflowIdWithType(workflow.id, workflow.workflow_type);
+    }
+    
     return {
-      id: formatWorkflowIdWithType(workflow.id, workflow.workflow_type),
+      id: displayId,
       workflowId: workflow.id, // Use UUID for navigation
       created: formatCreatedDate(workflow.created_at),
       createdRaw: workflow.created_at, // For sorting
@@ -205,10 +221,27 @@ export function WorkflowTable() {
       'municipal_search': '🏛️'
     };
     
-    return tasks.slice(0, 3).map(task => {
+    return tasks.slice(0, 3).map((task: any) => {
       const taskType = task.task_type || task.type || 'unknown';
-      return taskTypeIcons[taskType] || '⚠️';
-    }).join('');
+      const icon = taskTypeIcons[taskType] || '⚠️';
+      const agent = getAgentDisplay(task);
+      return { icon, agent };
+    });
+  }
+
+  function getAgentDisplay(task: any) {
+    if (task.executor_type === 'HIL') {
+      return 'HIL Monitor';
+    }
+    if (task.agents && task.agents.name) {
+      return task.agents.name;
+    }
+    const agentName = task.agent_name ||
+                     task.metadata?.agent_name ||
+                     task.assigned_agent ||
+                     task.metadata?.assigned_agent ||
+                     'Agent';
+    return agentName;
   }
 
   function formatDate(dateStr: string | null) {
@@ -260,13 +293,20 @@ export function WorkflowTable() {
 
 
   const handleWorkflowClick = (workflowId: string) => {
+    // Find the workflow to get human_readable_id
+    const workflow = workflowData.find((w: any) => w.id === workflowId);
+    if (workflow?.human_readable_id) {
+      router.push(`/workflow/${workflow.human_readable_id}`);
+      return;
+    }
+    // Fallback to UUID if no human-readable ID found
     router.push(`/workflow/${workflowId}`);
   };
 
   return (
-    <div className="workflows-section bg-white border border-slate-200 shadow-sm overflow-hidden">
+    <div className="workflows-section bg-white/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-gray-200/50 overflow-hidden">
       {/* Table Controls */}
-      <div className="table-controls px-5 py-4 border-b border-slate-200 bg-white flex justify-start items-center">
+      <div className="table-controls px-5 py-4 border-b border-slate-200/50 flex justify-start items-center">
         <div className="filters flex gap-2 items-center flex-wrap">
           <select 
             className="filter-select px-2 py-1 border border-slate-100 bg-white text-slate-400 text-xs min-w-[100px]"
@@ -328,31 +368,31 @@ export function WorkflowTable() {
       <table className="workflows-table w-full border-collapse">
         <thead>
           <tr>
-            <th onClick={() => handleSort('id')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('id')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Workflow ID <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('id')}</span>
             </th>
-            <th onClick={() => handleSort('created_at')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('created_at')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Created <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('created_at')}</span>
             </th>
-            <th onClick={() => handleSort('type')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('type')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Type <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('type')}</span>
             </th>
-            <th onClick={() => handleSort('property')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('property')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Property <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('property')}</span>
             </th>
-            <th onClick={() => handleSort('client')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('client')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Client <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('client')}</span>
             </th>
-            <th onClick={() => handleSort('status')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('status')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Status <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('status')}</span>
             </th>
-            <th onClick={() => handleSort('interrupts')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('interrupts')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Interrupts <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('interrupts')}</span>
             </th>
-            <th onClick={() => handleSort('due')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('due')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               DUE <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('due')}</span>
             </th>
-            <th onClick={() => handleSort('due')} className="px-3 py-1.5 text-left bg-white border-b border-slate-200 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
+            <th onClick={() => handleSort('due')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               ETA <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('due')}</span>
             </th>
           </tr>
@@ -384,17 +424,21 @@ export function WorkflowTable() {
                   {workflow.status}
                 </span>
               </td>
-              <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+              <td className="px-3 py-2 border-b border-slate-200/50 text-xs align-middle whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
                 {workflow.interrupts ? (
-                  <div className={`interrupt-indicator ${workflow.interrupts.type} flex items-center gap-1 text-[10px]`}>
-                    <span 
+                  <div className={`interrupt-indicator ${workflow.interrupts.type} flex items-center gap-1`}>
+                    <span
                       className={`interrupt-count ${workflow.interrupts.type === 'critical' ? 'bg-red-500' : 'bg-amber-500'} text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-semibold flex-shrink-0`}
                     >
                       {workflow.interrupts.count}
                     </span>
-                    <span className="interrupt-text text-slate-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                      {workflow.interrupts.icons}
-                    </span>
+                    <div className="interrupt-text text-slate-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1.5">
+                      {workflow.interrupts.icons.map((interrupt: any, index: number) => (
+                        <span key={index} title={interrupt.agent} className="text-lg">
+                          {interrupt.icon}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <span className="no-interrupts text-slate-400 text-center text-xs">
@@ -414,7 +458,7 @@ export function WorkflowTable() {
       </table>
 
       {/* Pagination */}
-      <div className="pagination px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center">
+      <div className="pagination px-5 py-3 border-t border-slate-200/50 flex justify-between items-center">
         <div className="pagination-info text-xs text-slate-400">
           Showing 1-{workflows.length} of {workflows.length} workflows{filteredWorkflows.length !== transformedWorkflows.length ? ` (filtered from ${transformedWorkflows.length})` : ''}
         </div>

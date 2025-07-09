@@ -116,6 +116,19 @@ export const workflowsApi = {
     return apiRequest(`/workflows/${id}?${params}`);
   },
 
+  async byHumanId(humanId: string, include: string[] = []) {
+    // Find workflow by human_readable_id column (much more efficient)
+    const workflows = await this.list({ limit: 1000 });
+    const workflow = workflows.data.find((w: any) => w.human_readable_id === humanId);
+    
+    if (!workflow) {
+      throw new ApiError('Workflow not found', 404);
+    }
+    
+    // Now get the full workflow with includes
+    return this.byId(workflow.id, include);
+  },
+
   async create(data: {
     workflow_type: 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF';
     client_id: string;

@@ -27,8 +27,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-sm">
-      <div className="max-w-full m-0 p-2 min-h-screen w-screen">
+    <div className="min-h-screen bg-rexera-gradient relative overflow-hidden font-sans text-sm">
+      <div className="absolute inset-0 z-0 bg-noise-texture opacity-20"></div>
+      <div className="relative z-10 max-w-full m-0 p-2 min-h-screen w-screen">
         {children}
       </div>
     </div>
