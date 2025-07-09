@@ -5,7 +5,7 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "serverless-api", 
+    "serverless-api",
     "workflows",
     "packages/shared"
   ],
@@ -16,7 +16,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "test:smoke": "turbo run test:smoke",
-    "test:integration": "turbo run test:integration", 
+    "test:integration": "turbo run test:integration",
     "seed": "turbo run seed",
     "notifications": "turbo run notifications",
     "lint": "turbo run lint",
@@ -54,6 +54,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
     "dotenv": "^17.0.1",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "tsx": "^4.20.3"
   }
 }
