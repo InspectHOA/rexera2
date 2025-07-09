@@ -227,6 +227,64 @@ app.get('/api/agents', async (req, res) => {
   }
 });
 
+// Communications endpoint for email interface
+app.get('/api/communications', async (req, res) => {
+  try {
+    const { workflow_id, type, direction, limit = '50' } = req.query as Record<string, string>;
+    
+    let query = supabase
+      .from('communications')
+      .select(`
+        id,
+        workflow_id,
+        thread_id,
+        sender_id,
+        recipient_email,
+        subject,
+        body,
+        communication_type,
+        direction,
+        status,
+        metadata,
+        created_at,
+        updated_at,
+        email_metadata(
+          message_id,
+          in_reply_to,
+          email_references,
+          attachments,
+          headers
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (workflow_id) {
+      query = query.eq('workflow_id', workflow_id);
+    }
+    
+    if (type) {
+      query = query.eq('communication_type', type);
+    }
+    
+    if (direction) {
+      query = query.eq('direction', direction);
+    }
+    
+    query = query.limit(parseInt(limit, 10));
+
+    const { data, error } = await query;
+
+    if (error) {
+      return handleError(res, error);
+    }
+
+    sendSuccess(res, data || []);
+  } catch (error) {
+    handleError(res, error as ApiError);
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Simple API server running on http://localhost:${PORT}`);
@@ -234,4 +292,5 @@ app.listen(PORT, () => {
   console.log(`📋 Workflows: http://localhost:${PORT}/api/workflows`);
   console.log(`⚡ Task Executions: http://localhost:${PORT}/api/task-executions`);
   console.log(`🤖 Agents: http://localhost:${PORT}/api/agents`);
+  console.log(`📧 Communications: http://localhost:${PORT}/api/communications`);
 });

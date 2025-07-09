@@ -464,6 +464,60 @@ export const incomingEmailApi = {
   },
 };
 
+// Communications API functions
+export const communicationsApi = {
+  async list(filters: {
+    workflow_id?: string;
+    type?: 'email' | 'phone' | 'sms' | 'internal_note';
+    direction?: 'INBOUND' | 'OUTBOUND';
+    limit?: number;
+  } = {}) {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined) {
+        params.append(key, String(value));
+      }
+    });
+
+    const response = await fetch(`${API_BASE_URL}/communications?${params}`);
+    const data: ApiResponse = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new ApiError(
+        data.error || `HTTP ${response.status}`,
+        response.status,
+        data.details
+      );
+    }
+
+    return {
+      data: data.data || [],
+      pagination: {
+        page: 1,
+        limit: parseInt(String(filters.limit || 50)),
+        total: Array.isArray(data.data) ? data.data.length : 0,
+        totalPages: 1
+      }
+    };
+  },
+
+  async create(data: {
+    workflow_id: string;
+    recipient_email: string;
+    subject: string;
+    body: string;
+    communication_type: 'email' | 'phone' | 'sms' | 'internal_note';
+    direction: 'INBOUND' | 'OUTBOUND';
+    thread_id?: string;
+  }) {
+    return apiRequest('/communications', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
 // Export main API object
 export const api = {
   workflows: workflowsApi,
@@ -472,6 +526,7 @@ export const api = {
   agents: agentsApi,
   interrupts: interruptsApi,
   incomingEmail: incomingEmailApi,
+  communications: communicationsApi,
   health: healthApi,
 };
 

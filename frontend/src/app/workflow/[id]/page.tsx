@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { WorkflowHeader } from '@/components/workflow/workflow-header';
 import { TaskList } from '@/components/workflow/task-list';
 import { TabNavigation } from '@/components/workflow/tab-navigation';
@@ -10,6 +11,9 @@ import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflow } from '@/lib/hooks/useWorkflows';
 import { formatWorkflowIdWithType } from '@rexera/shared';
+import { EmailInterface } from '@/components/agents/mia/email-interface';
+import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
+import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
 
 // Types
 interface Task {
@@ -40,6 +44,7 @@ export default function WorkflowDetailPage() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('details');
   const [rightPanelTab, setRightPanelTab] = useState('task-details');
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
 
   const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
   
@@ -69,7 +74,7 @@ export default function WorkflowDetailPage() {
     };
   }, [workflow?.title, workflowData?.id]);
 
-  const tasks = tasksData && tasksData.length > 0 ? tasksData.map((task: any) => ({
+  const tasks: Task[] = tasksData && tasksData.length > 0 ? tasksData.map((task: any) => ({
     id: task.id,
     name: task.title,
     agent: getAgentDisplay(task),
@@ -201,58 +206,70 @@ export default function WorkflowDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <WorkflowHeader workflow={workflow} onBackClick={handleBackClick} />
-      
-      <div className="grid grid-cols-[40%_60%] gap-0 h-[calc(100vh-60px)]">
-        {/* Left Panel */}
-        <div className="bg-white border-r border-gray-200 overflow-y-auto flex flex-col">
-          <TaskList
-            tasks={tasks}
-            selectedTask={selectedTask}
-            onTaskClick={setSelectedTask}
-            progress={workflow.progress}
-          />
-          
-          <div className="flex-1 border-t border-gray-100 p-4 space-y-4">
-            <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-            
-            <TabContent activeTab={activeTab} workflowData={workflowData} />
-          </div>
-        </div>
+      <div className="relative h-[calc(100vh-60px)]">
+        <button
+          onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
+          className="absolute top-1/2 z-20 bg-white border border-gray-300 rounded-full p-1 shadow-md hover:bg-gray-100 transition-all duration-300 ease-in-out"
+          style={{
+            left: isLeftPanelCollapsed ? '24px' : '40%',
+            transform: `translate(-50%, -50%) ${isLeftPanelCollapsed ? 'rotate(180deg)' : ''}`,
+          }}
+        >
+          <ChevronLeft className="h-4 w-4 text-gray-600" />
+        </button>
 
-        {/* Right Panel */}
-        <div className="bg-white overflow-y-auto flex flex-col">
-          {/* Right Panel Tabs */}
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex gap-6">
-            <button
-              onClick={() => setRightPanelTab('task-details')}
-              className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
-                rightPanelTab === 'task-details'
-                  ? 'text-gray-700'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              📋 Task Details
-            </button>
-            <button
-              onClick={() => setRightPanelTab('agent-interface')}
-              className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
-                rightPanelTab === 'agent-interface'
-                  ? 'text-gray-700'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              🤖 Agent Interface
-            </button>
+        <div className={`grid ${isLeftPanelCollapsed ? 'grid-cols-[0fr_1fr]' : 'grid-cols-[40%_1fr]'} h-full transition-all duration-300 ease-in-out`}>
+          {/* Left Panel */}
+          <div className="bg-white border-r border-gray-200 overflow-y-auto flex flex-col overflow-hidden">
+            <TaskList
+              tasks={tasks}
+              selectedTask={selectedTask}
+              onTaskClick={setSelectedTask}
+              progress={workflow.progress}
+            />
+            
+            <div className="flex-1 border-t border-gray-100 p-4 space-y-4">
+              <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+              
+              <TabContent activeTab={activeTab} workflowData={workflowData} />
+            </div>
           </div>
-          
-          {/* Right Panel Content */}
-          <div className="flex-1 overflow-y-auto">
-            {rightPanelTab === 'task-details' && (
-              <TaskDetailView selectedTask={selectedTask} tasks={tasks} />
-            )}
-            {rightPanelTab === 'agent-interface' && (
-              <AgentInterfaceView selectedTask={selectedTask} tasks={tasks} />
-            )}
+
+          {/* Right Panel */}
+          <div className="bg-white overflow-y-auto flex flex-col">
+            {/* Right Panel Tabs */}
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex gap-6">
+              <button
+                onClick={() => setRightPanelTab('task-details')}
+                className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  rightPanelTab === 'task-details'
+                    ? 'text-gray-700'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                📋 Task Details
+              </button>
+              <button
+                onClick={() => setRightPanelTab('agent-interface')}
+                className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  rightPanelTab === 'agent-interface'
+                    ? 'text-gray-700'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                🤖 {selectedTask && tasks.find(t => t.id === selectedTask)?.agent ? `${tasks.find(t => t.id === selectedTask)?.agent} Interface` : 'Agent Interface'}
+              </button>
+            </div>
+            
+            {/* Right Panel Content */}
+            <div className="flex-1 overflow-y-auto">
+              {rightPanelTab === 'task-details' && (
+                <TaskDetailView selectedTask={selectedTask} tasks={tasks} />
+              )}
+              {rightPanelTab === 'agent-interface' && (
+                <AgentInterfaceView selectedTask={selectedTask} tasks={tasks} workflowId={params.id as string} />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -312,7 +329,7 @@ function TabContent({ activeTab, workflowData }: { activeTab: string; workflowDa
   }
 }
 
-function AgentInterfaceView({ selectedTask, tasks }: { selectedTask: string | null; tasks: Task[] }) {
+function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask: string | null; tasks: Task[]; workflowId: string }) {
   if (!selectedTask) {
     return (
       <div className="p-6 text-center text-gray-500">
@@ -346,31 +363,63 @@ function AgentInterfaceView({ selectedTask, tasks }: { selectedTask: string | nu
     );
   }
 
-  // Since we simplified getAgentDisplay to return just the agent name, we can use it directly
-  const agentName = task.agent;
+  // Get the agent name and normalize it for comparison
+  const agentName = task.agent.toLowerCase();
+
+  // Route to appropriate agent interface based on agent name
+  const renderAgentInterface = () => {
+    switch (agentName) {
+      case 'mia':
+        return (
+          <EmailInterface 
+            agentId="mia" 
+            workflowId={workflowId}
+          />
+        );
+      
+      case 'nina':
+        return (
+          <CounterpartySelector 
+            agentId="nina" 
+            workflowId={workflowId}
+          />
+        );
+      
+      case 'iris':
+        return (
+          <DocumentExtractor 
+            agentId="iris" 
+            workflowId={workflowId}
+          />
+        );
+      
+      default:
+        return (
+          <div className="p-6 text-center text-gray-500">
+            <div className="mb-4">
+              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                🤖
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Connected to agent: <span className="font-medium">{task.agent}</span>
+              </p>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="text-sm text-gray-600">
+                  Interface not available for agent "{task.agent}".
+                  <br />
+                  Available agents: Mia, Nina, Iris
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
-    <div className="p-6">
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
-          🤖
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Connected to agent for task: <span className="font-medium">{task.name}</span>
-        </p>
-      </div>
-      
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="text-center">
-          <div className="text-lg font-semibold text-gray-900 mb-2">
-            {agentName}
-          </div>
-          <div className="text-sm text-gray-600">
-            Agent interface functionality will be implemented here.
-          </div>
-        </div>
-      </div>
+    <div className="h-full">
+      {renderAgentInterface()}
     </div>
   );
 }
