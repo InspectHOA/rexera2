@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/provider';
 
 export default function DebugNotificationsPage() {
@@ -9,7 +9,7 @@ export default function DebugNotificationsPage() {
   const [debugInfo, setDebugInfo] = useState<any>({});
   const [testResults, setTestResults] = useState<any>({});
   const [isRunning, setIsRunning] = useState(false);
-  const supabase = createClient();
+  // supabase client is imported above
 
   useEffect(() => {
     setDebugInfo({
@@ -66,13 +66,13 @@ export default function DebugNotificationsPage() {
         error: notifError?.message
       };
 
-      // Test 4: Check RLS policies
-      const { data: rpcResult, error: rpcError } = await supabase
-        .rpc('auth.role');
+      // Test 4: Check authentication status
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
         
-      results.rls = {
-        role: rpcResult,
-        error: rpcError?.message
+      results.authCheck = {
+        hasUser: !!authUser,
+        userId: authUser?.id,
+        error: authError?.message
       };
 
       // Test 5: Try to create a test notification
