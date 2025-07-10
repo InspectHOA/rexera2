@@ -279,6 +279,55 @@ async function seedDatabase() {
         });
       }
 
+      // Add extra interrupted tasks for workflows 1, 3, 7, and 12 to create multi-agent interrupts
+      if ([1, 3, 7, 12].includes(i)) {
+        // Add mia email task that's interrupted
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: '77777777-7777-7777-7777-777777777777', // mia
+          title: 'Send Client Notification Email',
+          description: 'Notify client of findings and next steps',
+          sequence_order: 4,
+          task_type: 'send_email',
+          status: 'AWAITING_REVIEW',
+          executor_type: 'AI',
+          priority: 'HIGH',
+          input_data: { email_template: 'lien_results', client_contact: 'primary' },
+          output_data: {},
+          error_message: 'Email template requires legal review before sending to client. Complex lien situation needs approval.',
+          interrupt_type: 'CLIENT_CLARIFICATION',
+          started_at: new Date(Date.now() - ((i - 0.5) * 60 * 60 * 1000)).toISOString(),
+          completed_at: null,
+          execution_time_ms: null,
+          retry_count: 1
+        });
+
+        // Add ria support coordination task that's interrupted for workflows 3, 7, 12
+        if ([3, 7, 12].includes(i)) {
+          taskExecutions.push({
+            id: randomUUID(),
+            workflow_id: workflowId,
+            agent_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', // ria
+            title: 'Coordinate Client Support',
+            description: 'Schedule follow-up call and prepare documentation',
+            sequence_order: 5,
+            task_type: 'client_coordination',
+            status: 'AWAITING_REVIEW',
+            executor_type: 'AI',
+            priority: 'NORMAL',
+            input_data: { client_preference: 'phone_call', urgency: 'standard' },
+            output_data: {},
+            error_message: 'Client has specific communication requirements that need manual review. Accessibility accommodations required.',
+            interrupt_type: 'MANUAL_VERIFICATION',
+            started_at: new Date(Date.now() - ((i - 0.3) * 60 * 60 * 1000)).toISOString(),
+            completed_at: null,
+            execution_time_ms: null,
+            retry_count: 0
+          });
+        }
+      }
+
       // Add costs for all tasks
       costs.push({
         workflow_id: workflowId,
@@ -430,6 +479,55 @@ async function seedDatabase() {
           execution_time_ms: status3 === 'COMPLETED' ? (i * 250000) : null,
           retry_count: 0
         });
+      }
+
+      // Add multi-agent interrupts for HOA workflows 2, 5, 9
+      if ([2, 5, 9].includes(i)) {
+        // Add kosha financial review task that's interrupted
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: 'cccccccc-cccc-cccc-cccc-cccccccccccc', // kosha
+          title: 'Review HOA Financial Statement',
+          description: 'Analyze HOA fees and special assessments',
+          sequence_order: 4,
+          task_type: 'financial_review',
+          status: 'AWAITING_REVIEW',
+          executor_type: 'AI',
+          priority: 'HIGH',
+          input_data: { hoa_fees: true, special_assessments: true },
+          output_data: {},
+          error_message: 'HOA financial statement shows unusual special assessment pattern. Manual review required for client impact analysis.',
+          interrupt_type: 'MANUAL_VERIFICATION',
+          started_at: new Date(Date.now() - ((i - 0.3) * 2 * 60 * 60 * 1000)).toISOString(),
+          completed_at: null,
+          execution_time_ms: null,
+          retry_count: 0
+        });
+
+        // Add florian phone follow-up task that's interrupted for workflows 5, 9
+        if ([5, 9].includes(i)) {
+          taskExecutions.push({
+            id: randomUUID(),
+            workflow_id: workflowId,
+            agent_id: '88888888-8888-8888-8888-888888888888', // florian
+            title: 'Phone Follow-up with HOA',
+            description: 'Call HOA management for expedited processing',
+            sequence_order: 5,
+            task_type: 'phone_call',
+            status: 'AWAITING_REVIEW',
+            executor_type: 'AI',
+            priority: 'URGENT',
+            input_data: { phone_number: 'hoa_management', call_type: 'follow_up' },
+            output_data: {},
+            error_message: 'HOA management phone system requires complex navigation and specific authorization codes. HIL assistance needed.',
+            interrupt_type: 'CLIENT_CLARIFICATION',
+            started_at: new Date(Date.now() - ((i - 0.1) * 2 * 60 * 60 * 1000)).toISOString(),
+            completed_at: null,
+            execution_time_ms: null,
+            retry_count: 2
+          });
+        }
       }
 
       // Add HOA communications for first 3

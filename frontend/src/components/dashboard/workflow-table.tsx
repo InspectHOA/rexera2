@@ -31,13 +31,38 @@ export function WorkflowTable() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   
-  const { workflows: workflowData, loading, error, pagination } = useWorkflows({ 
-    include: ['client', 'tasks'], 
-    limit: 20,
-    page: currentPage,
-    sortBy: getBackendSortField(sortField),
-    sortDirection: sortDirection
-  });
+  // Map frontend filters to backend API parameters
+  const getBackendFilters = () => {
+    const filters: any = {
+      include: ['client', 'tasks'],
+      limit: 20,
+      page: currentPage,
+      sortBy: getBackendSortField(sortField),
+      sortDirection: sortDirection
+    };
+
+    // Workflow type filter
+    if (filterType) {
+      filters.workflow_type = filterType;
+    }
+
+    // Status filter - map frontend values to backend values
+    if (filterStatus) {
+      const statusMap: Record<string, string> = {
+        'urgent': 'BLOCKED,AWAITING_REVIEW', // Map to multiple statuses
+        'progress': 'IN_PROGRESS',
+        'completed': 'COMPLETED'
+      };
+      filters.status = statusMap[filterStatus] || filterStatus;
+    }
+
+    // Note: Search and interrupt filtering will need custom handling
+    // For now, we'll handle them client-side until backend search is implemented
+
+    return filters;
+  };
+
+  const { workflows: workflowData, loading, error, pagination } = useWorkflows(getBackendFilters());
 
   // Sort handler
   const handleSort = (field: string) => {
@@ -48,6 +73,35 @@ export function WorkflowTable() {
       setSortDirection('asc');
     }
     // Reset to page 1 when sorting changes since the order of all records changes
+    setCurrentPage(1);
+  };
+
+  // Filter change handlers that reset to page 1
+  const handleFilterTypeChange = (value: string) => {
+    setFilterType(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterStatusChange = (value: string) => {
+    setFilterStatus(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterInterruptsChange = (value: string) => {
+    setFilterInterrupts(value);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilterType('');
+    setFilterStatus('');
+    setFilterInterrupts('');
+    setSearchQuery('');
     setCurrentPage(1);
   };
 
@@ -104,27 +158,9 @@ export function WorkflowTable() {
     };
   });
 
-  // Filter workflows
+  // Apply remaining client-side filters (search and interrupts) until backend supports them
   const filteredWorkflows = transformedWorkflows.filter((workflow: TransformedWorkflow) => {
-    // Type filter
-    if (filterType && workflow.typeRaw !== filterType) {
-      return false;
-    }
-
-    // Status filter
-    if (filterStatus) {
-      if (filterStatus === 'urgent' && workflow.statusRaw !== 'BLOCKED' && workflow.statusRaw !== 'AWAITING_REVIEW') {
-        return false;
-      }
-      if (filterStatus === 'progress' && workflow.statusRaw !== 'IN_PROGRESS') {
-        return false;
-      }
-      if (filterStatus === 'completed' && workflow.statusRaw !== 'COMPLETED') {
-        return false;
-      }
-    }
-
-    // Interrupts filter
+    // Interrupts filter (client-side until backend implementation)
     if (filterInterrupts) {
       if (filterInterrupts === 'has-interrupts' && workflow.interruptCount === 0) {
         return false;
@@ -134,7 +170,7 @@ export function WorkflowTable() {
       }
     }
 
-    // Search filter
+    // Search filter (client-side until backend implementation)
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const searchableText = [
@@ -152,7 +188,7 @@ export function WorkflowTable() {
     return true;
   });
 
-  // Apply client-side filtering only (server handles sorting and pagination)
+  // Use server-filtered data with remaining client-side filters
   const workflows = filteredWorkflows;
 
   function getDisplayWorkflowType(type: string) {
@@ -281,7 +317,7 @@ export function WorkflowTable() {
           <select 
             className="filter-select px-2 py-1 border border-slate-100 bg-white text-slate-400 text-xs min-w-[100px]"
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => handleFilterTypeChange(e.target.value)}
           >
             <option value="">All Types</option>
             <option value="PAYOFF_REQUEST">Payoff Request</option>
@@ -292,7 +328,7 @@ export function WorkflowTable() {
           <select 
             className="filter-select px-2 py-1 border border-slate-100 bg-white text-slate-400 text-xs min-w-[100px]"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => handleFilterStatusChange(e.target.value)}
           >
             <option value="">All Statuses</option>
             <option value="urgent">Urgent</option>
@@ -303,7 +339,7 @@ export function WorkflowTable() {
           <select 
             className="filter-select px-2 py-1 border border-slate-100 bg-white text-slate-400 text-xs min-w-[100px]"
             value={filterInterrupts}
-            onChange={(e) => setFilterInterrupts(e.target.value)}
+            onChange={(e) => handleFilterInterruptsChange(e.target.value)}
           >
             <option value="">All Interrupts</option>
             <option value="has-interrupts">Has Interrupts</option>
@@ -315,18 +351,13 @@ export function WorkflowTable() {
             className="search-input px-2 py-1 border border-slate-100 bg-white text-slate-400 text-xs min-w-[160px]" 
             placeholder="Search workflows, clients..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
           
           {(filterType || filterStatus || filterInterrupts || searchQuery) && (
             <button
               className="px-2 py-1 border border-slate-100 bg-white text-slate-400 text-xs cursor-pointer"
-              onClick={() => {
-                setFilterType('');
-                setFilterStatus('');
-                setFilterInterrupts('');
-                setSearchQuery('');
-              }}
+              onClick={handleClearFilters}
             >
               Clear
             </button>
@@ -480,7 +511,9 @@ export function WorkflowTable() {
       {/* Pagination */}
       <div className="pagination px-5 py-3 border-t border-slate-200/50 flex justify-between items-center">
         <div className="pagination-info text-xs text-slate-400">
-          Showing {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} workflows{filteredWorkflows.length !== transformedWorkflows.length ? ` (filtered from ${transformedWorkflows.length})` : ''}
+          Showing {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} workflows
+          {(filterType || filterStatus) && ` (filtered)`}
+          {(filterInterrupts || searchQuery) && filteredWorkflows.length !== transformedWorkflows.length && ` (${filteredWorkflows.length} after client filters)`}
         </div>
         {pagination.totalPages > 1 && (
           <div className="pagination-controls flex items-center gap-2">

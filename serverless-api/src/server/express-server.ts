@@ -125,7 +125,13 @@ app.get('/api/workflows', async (req, res) => {
       query = query.eq('workflow_type', workflow_type);
     }
     if (status) {
-      query = query.eq('status', status);
+      // Handle multiple status values separated by comma
+      const statusList = status.split(',').map(s => s.trim());
+      if (statusList.length === 1) {
+        query = query.eq('status', statusList[0]);
+      } else {
+        query = query.in('status', statusList);
+      }
     }
     if (client_id) {
       query = query.eq('client_id', client_id);
