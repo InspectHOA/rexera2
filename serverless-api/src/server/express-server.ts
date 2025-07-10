@@ -150,6 +150,11 @@ app.get('/api/workflows', async (req, res) => {
       query = query.order(sortField, { ascending });
     }
 
+    // Parse pagination parameters once
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offset = (pageNum - 1) * limitNum;
+    
     let workflows, error, count;
 
     if (sortBy === 'interrupts') {
@@ -170,19 +175,11 @@ app.get('/api/workflows', async (req, res) => {
       });
 
       // Apply pagination to sorted results
-      const pageNum = parseInt(page, 10);
-      const limitNum = parseInt(limit, 10);
-      const offset = (pageNum - 1) * limitNum;
-      
       workflows = workflowsWithInterrupts.slice(offset, offset + limitNum);
       error = null;
       count = totalCount;
     } else {
       // Regular sorting with database-level ordering
-      const pageNum = parseInt(page, 10);
-      const limitNum = parseInt(limit, 10);
-      const offset = (pageNum - 1) * limitNum;
-      
       query = query.range(offset, offset + limitNum - 1);
       const result = await query;
       workflows = result.data;

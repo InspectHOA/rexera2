@@ -187,21 +187,23 @@ export function WorkflowTable() {
   }
 
   function getInterruptIcons(tasks: TaskExecution[]) {
-    const taskTypeIcons: Record<string, string> = {
-      'identify_lender_contact': '🔍',
-      'research_lender_contact': '🔍',
-      'submit_payoff_request': '📧',
-      'send_email': '📧',
-      'call_lender': '📞',
-      'process_document': '📄',
-      'verify_data': '✓',
-      'hoa_request': '🏢',
-      'municipal_search': '🏛️'
+    const agentIcons: Record<string, string> = {
+      'mia': '📧',      // Mail emoji for mia (email agent)
+      'ria': '💬',      // Chat emoji for ria (support agent)
+      'nina': '🔍',     // Research icon for nina (research agent)
+      'florian': '📞',  // Phone icon for florian (phone agent)
+      'rex': '🤖',      // Robot icon for rex (automation agent)
+      'iris': '📄',     // Document icon for iris (document processing)
+      'kosha': '💰',    // Money icon for kosha (financial agent)
+      'cassy': '✅',    // Check icon for cassy (quality assurance)
+      'max': '🎧',      // Headphones icon for max (IVR agent)
+      'corey': '🏢',    // Building icon for corey (HOA specialist)
     };
     
     return tasks.slice(0, 3).map((task: TaskExecution) => {
-      const taskType = task.task_type || 'unknown';
-      const icon = taskTypeIcons[taskType] || '⚠️';
+      const taskAny = task as any;
+      const agentName = taskAny.agents?.name || taskAny.agent_name || 'unknown';
+      const icon = agentIcons[agentName] || '⚠️';
       const agent = getAgentDisplay(task);
       return { icon, agent };
     });
@@ -212,14 +214,15 @@ export function WorkflowTable() {
       return 'HIL Monitor';
     }
     
-    // Use joined agent data if available
-    if (task.agents?.name) {
-      return task.agents.name;
+    // Use joined agent data if available (cast to any for runtime data)
+    const taskAny = task as any;
+    if (taskAny.agents?.name) {
+      return taskAny.agents.name;
     }
     
     // Fallback to agent_name if available
-    if (task.agent_name) {
-      return task.agent_name;
+    if (taskAny.agent_name) {
+      return taskAny.agent_name;
     }
     
     // Final fallback
@@ -257,21 +260,7 @@ export function WorkflowTable() {
     return '#0f172a'; // Normal
   }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-48 text-slate-500">
-        Loading workflows...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-48 text-red-500">
-        Error loading workflows: {error}
-      </div>
-    );
-  }
+  // Remove early returns for loading/error - handle these within table structure instead
 
   const handleWorkflowClick = (workflowId: string) => {
     // Find the workflow to get human_readable_id
@@ -379,12 +368,68 @@ export function WorkflowTable() {
           </tr>
         </thead>
         <tbody>
-          {workflows.map((workflow: TransformedWorkflow, index: number) => (
-            <tr 
-              key={index}
-              onClick={() => handleWorkflowClick(workflow.workflowId)}
-              className="cursor-pointer transition-all duration-200 hover:bg-slate-50 hover:-translate-y-px hover:shadow-md"
-            >
+          {loading ? (
+            // Loading skeleton rows that preserve table structure
+            Array.from({ length: 20 }).map((_, index) => (
+              <tr key={`loading-${index}`} className="animate-pulse">
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-24"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-16"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-20"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-32"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-24"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-20"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-200/50 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-16"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-16"></div>
+                </td>
+                <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle">
+                  <div className="h-4 bg-slate-200 rounded w-16"></div>
+                </td>
+              </tr>
+            ))
+          ) : error ? (
+            // Error state that preserves table structure
+            <tr>
+              <td colSpan={9} className="px-3 py-8 text-center text-red-600">
+                <div className="flex flex-col items-center gap-2">
+                  <span>Failed to load workflows</span>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ) : workflows.length === 0 ? (
+            // Empty state that preserves table structure
+            <tr>
+              <td colSpan={9} className="px-3 py-8 text-center text-slate-500">
+                No workflows found
+              </td>
+            </tr>
+          ) : (
+            workflows.map((workflow: TransformedWorkflow, index: number) => (
+              <tr 
+                key={index}
+                onClick={() => handleWorkflowClick(workflow.workflowId)}
+                className="cursor-pointer transition-all duration-200 hover:bg-slate-50 hover:-translate-y-px hover:shadow-md"
+              >
               <td className="px-3 py-2 border-b border-slate-100 text-xs align-middle whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] font-semibold text-slate-900 font-mono">
                 {workflow.id}
               </td>
@@ -407,19 +452,12 @@ export function WorkflowTable() {
               </td>
               <td className="px-3 py-2 border-b border-slate-200/50 text-xs align-middle whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
                 {workflow.interrupts ? (
-                  <div className={`interrupt-indicator ${workflow.interrupts.type} flex items-center gap-1`}>
-                    <span
-                      className={`interrupt-count ${workflow.interrupts.type === 'critical' ? 'bg-red-500' : 'bg-amber-500'} text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-semibold flex-shrink-0`}
-                    >
-                      {workflow.interrupts.count}
-                    </span>
-                    <div className="interrupt-text text-slate-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1.5">
-                      {workflow.interrupts.icons.map((interrupt: { icon: string; agent: string }, index: number) => (
-                        <span key={index} title={interrupt.agent} className="text-lg">
-                          {interrupt.icon}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="interrupt-indicator flex items-center gap-1.5">
+                    {workflow.interrupts.icons.map((interrupt: { icon: string; agent: string }, index: number) => (
+                      <span key={index} title={interrupt.agent} className="text-sm leading-none" style={{ fontSize: '0.9em' }}>
+                        {interrupt.icon}
+                      </span>
+                    ))}
                   </div>
                 ) : (
                   <span className="no-interrupts text-slate-400 text-center text-xs">
@@ -434,7 +472,8 @@ export function WorkflowTable() {
                 {workflow.eta}
               </td>
             </tr>
-          ))}
+            ))
+          )}
         </tbody>
       </table>
 
