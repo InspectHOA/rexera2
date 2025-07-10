@@ -44,7 +44,7 @@ export function InterruptQueue() {
 
   const formatWorkflowType = (workflowType: string): string => {
     const typeMap: Record<string, string> = {
-      'PAYOFF': 'Payoff Request',
+      'PAYOFF_REQUEST': 'Payoff Request',
       'HOA_ACQUISITION': 'HOA Documents',
       'MUNI_LIEN_SEARCH': 'Municipal Lien Search'
     };

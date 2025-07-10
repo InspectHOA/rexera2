@@ -7,6 +7,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { createServerClient } from '../src/utils/database';
 import { handleError } from '../src/utils/errors';
+import { resolveWorkflowId } from '../src/utils/workflow-resolver';
 
 const getCommunicationsSchema = z.object({
   workflow_id: z.string().optional(), // Accept human-readable ID or UUID
@@ -69,35 +70,14 @@ export default async function handler(
 
       // Apply filters
       if (query.workflow_id) {
-        console.log(`Communications API: Looking up workflow_id: ${query.workflow_id}`);
-        
-        // Check if workflow_id is a UUID or human-readable ID
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(query.workflow_id);
-        console.log(`Communications API: isUUID: ${isUUID}`);
-        
-        if (isUUID) {
-          // Use UUID directly
-          console.log(`Communications API: Using UUID directly: ${query.workflow_id}`);
-          dbQuery = dbQuery.eq('workflow_id', query.workflow_id);
-        } else {
-          // Look up UUID by human_readable_id
-          console.log(`Communications API: Looking up human-readable ID: ${query.workflow_id}`);
-          const { data: workflow, error: workflowError } = await supabase
-            .from('workflows')
-            .select('id')
-            .eq('human_readable_id', query.workflow_id)
-            .single();
-            
-          if (workflowError || !workflow) {
-            console.log(`Communications API: Workflow not found - error:`, workflowError);
-            return res.status(404).json({
-              success: false,
-              error: `Workflow not found with ID: ${query.workflow_id}`
-            });
-          }
-          
-          console.log(`Communications API: Found workflow UUID: ${workflow.id}`);
-          dbQuery = dbQuery.eq('workflow_id', workflow.id);
+        try {
+          const workflowUuid = await resolveWorkflowId(supabase, query.workflow_id);
+          dbQuery = dbQuery.eq('workflow_id', workflowUuid);
+        } catch (error) {
+          return res.status(404).json({
+            success: false,
+            error: (error as Error).message
+          });
         }
       }
       

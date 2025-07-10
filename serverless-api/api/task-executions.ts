@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { createServerClient } from '../src/utils/database';
 import { handleError, sendSuccess } from '../src/utils/errors';
+import { resolveWorkflowId } from '../src/utils/workflow-resolver';
 import { CreateTaskExecutionSchema, UpdateTaskExecutionSchema } from '@rexera/shared';
 
 const supabase = createServerClient();
@@ -28,28 +29,7 @@ export default async function handler(
       case 'GET':
         // listByWorkflow
         if (typedQuery.workflowId) {
-          let actualWorkflowId = typedQuery.workflowId;
-          
-          // Check if workflowId is a UUID or human-readable ID
-          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(typedQuery.workflowId);
-          
-          if (!isUUID) {
-            // Look up UUID by human_readable_id
-            const { data: workflow, error: workflowError } = await supabase
-              .from('workflows')
-              .select('id')
-              .eq('human_readable_id', typedQuery.workflowId)
-              .single();
-              
-            if (workflowError || !workflow) {
-              return res.status(404).json({
-                success: false,
-                error: `Workflow not found with ID: ${typedQuery.workflowId}`
-              });
-            }
-            
-            actualWorkflowId = workflow.id;
-          }
+          const actualWorkflowId = await resolveWorkflowId(supabase, typedQuery.workflowId);
           
           const { data, error } = await supabase
             .from('task_executions')
@@ -58,7 +38,6 @@ export default async function handler(
             .order('sequence_order', { ascending: true });
 
           if (error) {
-            console.error('Database query failed:', error);
             throw new Error(`Database query failed: ${error.message}`);
           }
           return sendSuccess(res, data);
@@ -82,7 +61,6 @@ export default async function handler(
             .insert(body)
             .select();
           if (error) {
-            console.error('Failed to bulk create task executions:', error);
             throw new Error(`Failed to bulk create task executions: ${error.message}`);
           }
           return res.status(201).json({
@@ -105,7 +83,6 @@ export default async function handler(
             .select()
             .single();
           if (error) {
-            console.error('Failed to create task execution:', error);
             throw new Error(`Failed to create task execution: ${error.message}`);
           }
           return res.status(201).json({

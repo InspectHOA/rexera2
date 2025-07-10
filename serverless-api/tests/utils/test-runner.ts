@@ -5,7 +5,6 @@
  * Can be run standalone or as part of CI/CD
  */
 
-import { runIntegrationTests } from '../integration.test';
 import { smokeTests } from '../smoke.test';
 
 console.log('🧪 Rexera 2.0 API Test Runner');
@@ -44,10 +43,10 @@ async function runAllTests(): Promise<void> {
       throw new Error('Smoke tests failed');
     }
     
-    console.log('\n2️⃣ Running integration tests...');
-    await runIntegrationTests();
+    console.log('\n✅ Smoke tests completed successfully!');
+    console.log('\n💡 For integration tests, run: npm test');
     
-    console.log('\n🎉 All tests completed successfully!');
+    console.log('\n🎉 Basic tests completed successfully!');
   } catch (error) {
     console.error('\n❌ Test suite failed:', error);
     throw error;

@@ -71,7 +71,6 @@ export default async function handler(
 
     // Trigger processing workflow if workflow_id is provided
     if (input.workflow_id) {
-      console.log(`Processing email for workflow ${input.workflow_id}`);
       
       // Mark as processed for now
       await supabase

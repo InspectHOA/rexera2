@@ -103,7 +103,6 @@ export default async function handler(
     const input = n8nWebhookSchema.parse(req.body);
     const { eventType, data } = input;
 
-    console.log(`n8n webhook received: ${eventType}`, data);
 
     switch (eventType) {
       case 'workflow_completed':

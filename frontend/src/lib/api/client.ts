@@ -3,6 +3,8 @@
  * Provides type-safe HTTP REST calls to the backend API.
  */
 
+import type { WorkflowType, PriorityLevel } from '@rexera/shared';
+
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
 
 interface ApiResponse<T = any> {
@@ -130,11 +132,11 @@ export const workflowsApi = {
   },
 
   async create(data: {
-    workflow_type: 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF';
+    workflow_type: WorkflowType;
     client_id: string;
     title: string;
     description?: string;
-    priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+    priority?: PriorityLevel;
     metadata?: Record<string, any>;
     due_date?: string;
     created_by: string;

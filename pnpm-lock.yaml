@@ -11,6 +11,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.50.3
         version: 2.50.3
+      '@types/pg':
+        specifier: ^8.15.4
+        version: 8.15.4
       dotenv:
         specifier: ^17.0.1
         version: 17.0.1
@@ -1398,6 +1401,9 @@ packages:
 
   '@types/node@20.19.4':
     resolution: {integrity: sha512-OP+We5WV8Xnbuvw0zC2m4qfB/BJvjyCwtNjhHdJxV1639SGSKrLmJkc3fMnp2Qy8nJyHp8RO6umxELN/dS1/EA==}
+
+  '@types/pg@8.15.4':
+    resolution: {integrity: sha512-I6UNVBAoYbvuWkkU3oosC8yxqH21f4/Jc4DK71JLG3dT2mdlGe1z+ep/LQGXaKaOgcvUrsQoPRqfgtMcvZiJhg==}
 
   '@types/phoenix@1.6.6':
     resolution: {integrity: sha512-PIzZZlEppgrpoT2QgbnDU+MMzuR6BbCjllj0bM70lWoejMeNJAxCchxnv7J3XFkI8MpygtRpzXrIlmWUBclP5A==}
@@ -6145,6 +6151,12 @@ snapshots:
   '@types/node@20.19.4':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/pg@8.15.4':
+    dependencies:
+      '@types/node': 20.19.4
+      pg-protocol: 1.10.3
+      pg-types: 2.2.0
 
   '@types/phoenix@1.6.6': {}
 

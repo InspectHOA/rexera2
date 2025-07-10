@@ -14,10 +14,12 @@ export function WorkflowTable() {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterInterrupts, setFilterInterrupts] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
   
-  const { workflows: workflowData, loading, error } = useWorkflows({ 
+  const { workflows: workflowData, loading, error, pagination } = useWorkflows({ 
     include: ['client', 'tasks'], 
-    limit: 20 
+    limit: 20,
+    page: currentPage
   });
 
   // Sort handler
@@ -47,7 +49,7 @@ export function WorkflowTable() {
     
     if (workflow.human_readable_id) {
       const typeConfig = {
-        'PAYOFF': 'PAY',
+        'PAYOFF_REQUEST': 'PAY',
         'HOA_ACQUISITION': 'HOA', 
         'MUNI_LIEN_SEARCH': 'MUNI'
       };
@@ -180,7 +182,7 @@ export function WorkflowTable() {
 
   function getDisplayWorkflowType(type: string) {
     const typeMap: Record<string, string> = {
-      'PAYOFF': 'Payoff Request',
+      'PAYOFF_REQUEST': 'Payoff Request',
       'HOA_ACQUISITION': 'HOA Documents', 
       'MUNI_LIEN_SEARCH': 'Lien Search'
     };
@@ -234,15 +236,9 @@ export function WorkflowTable() {
     if (task.executor_type === 'HIL') {
       return 'HIL Monitor';
     }
-    if (task.agents && task.agents.name) {
-      return task.agents.name;
-    }
-    const agentName = task.agent_name ||
-                     task.metadata?.agent_name ||
-                     task.assigned_agent ||
-                     task.metadata?.assigned_agent ||
-                     'Agent';
-    return agentName;
+    // TaskExecution uses agent_id, but we'd need to look up the agent name
+    // For now, return a generic agent name based on task type
+    return task.agent_id ? 'AI Agent' : 'Unassigned';
   }
 
   function formatDate(dateStr: string | null) {
@@ -304,7 +300,7 @@ export function WorkflowTable() {
   };
 
   return (
-    <div className="workflows-section bg-white/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-gray-200/50 overflow-hidden">
+    <div className="workflows-section bg-white/80 backdrop-blur-sm shadow-2xl rounded-lg border border-gray-200/50 overflow-hidden">
       {/* Table Controls */}
       <div className="table-controls px-5 py-4 border-b border-slate-200/50 flex justify-start items-center">
         <div className="filters flex gap-2 items-center flex-wrap">
@@ -314,7 +310,7 @@ export function WorkflowTable() {
             onChange={(e) => setFilterType(e.target.value)}
           >
             <option value="">All Types</option>
-            <option value="PAYOFF">Payoff Request</option>
+            <option value="PAYOFF_REQUEST">Payoff Request</option>
             <option value="HOA_ACQUISITION">HOA Documents</option>
             <option value="MUNI_LIEN_SEARCH">Municipal Lien</option>
           </select>
@@ -460,22 +456,58 @@ export function WorkflowTable() {
       {/* Pagination */}
       <div className="pagination px-5 py-3 border-t border-slate-200/50 flex justify-between items-center">
         <div className="pagination-info text-xs text-slate-400">
-          Showing 1-{workflows.length} of {workflows.length} workflows{filteredWorkflows.length !== transformedWorkflows.length ? ` (filtered from ${transformedWorkflows.length})` : ''}
+          Showing {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} workflows{filteredWorkflows.length !== transformedWorkflows.length ? ` (filtered from ${transformedWorkflows.length})` : ''}
         </div>
-        {workflows.length > 20 && (
+        {pagination.totalPages > 1 && (
           <div className="pagination-controls flex items-center gap-2">
             <button
-              className="btn btn-secondary btn-small px-3 py-1.5 text-xs font-medium border border-slate-200 cursor-not-allowed no-underline inline-flex items-center justify-center transition-all duration-200 whitespace-nowrap gap-1.5 bg-white text-slate-600 opacity-50"
-              disabled
+              className={`btn btn-secondary btn-small px-3 py-1.5 text-xs font-medium border border-slate-200 no-underline inline-flex items-center justify-center transition-all duration-200 whitespace-nowrap gap-1.5 ${
+                pagination.page <= 1 
+                  ? 'cursor-not-allowed bg-white text-slate-600 opacity-50' 
+                  : 'cursor-pointer bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+              disabled={pagination.page <= 1}
+              onClick={() => pagination.page > 1 && setCurrentPage(pagination.page - 1)}
             >
               « Previous
             </button>
             <span className="page-numbers flex items-center gap-1">
-              <button className="btn btn-primary btn-small px-3 py-1.5 text-xs font-medium border-none cursor-pointer no-underline inline-flex items-center justify-center transition-all duration-200 whitespace-nowrap gap-1.5 bg-[#64B6AC] text-white shadow-sm">
-                1
-              </button>
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    className={`btn btn-small px-3 py-1.5 text-xs font-medium border-none cursor-pointer no-underline inline-flex items-center justify-center transition-all duration-200 whitespace-nowrap gap-1.5 ${
+                      pageNum === pagination.page
+                        ? 'bg-[#64B6AC] text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
             </span>
-            <button className="btn btn-secondary btn-small px-3 py-1.5 text-xs font-medium border border-slate-200 cursor-pointer no-underline inline-flex items-center justify-center transition-all duration-200 whitespace-nowrap gap-1.5 bg-white text-slate-600">
+            <button
+              className={`btn btn-secondary btn-small px-3 py-1.5 text-xs font-medium border border-slate-200 no-underline inline-flex items-center justify-center transition-all duration-200 whitespace-nowrap gap-1.5 ${
+                pagination.page >= pagination.totalPages 
+                  ? 'cursor-not-allowed bg-white text-slate-600 opacity-50' 
+                  : 'cursor-pointer bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => pagination.page < pagination.totalPages && setCurrentPage(pagination.page + 1)}
+            >
               Next »
             </button>
           </div>

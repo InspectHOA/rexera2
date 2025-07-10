@@ -140,7 +140,7 @@ export class APITestHelper {
     // Create test agents  
     const agents = await this.createTestAgents(timestamp);
     
-    // Create test workflows
+    // Create test workflows (without created_by to avoid user dependency)
     const workflows = await this.createTestWorkflows(timestamp, clients);
     
     // Create test task executions
@@ -161,13 +161,11 @@ export class APITestHelper {
     const clientsData = [
       {
         name: `Test Client Alpha ${timestamp}`,
-        domain: `alpha-${timestamp}.test.com`,
-        type: 'ENTERPRISE'
+        domain: `alpha-${timestamp}.test.com`
       },
       {
         name: `Test Client Beta ${timestamp}`,
-        domain: `beta-${timestamp}.test.com`,
-        type: 'BUSINESS'
+        domain: `beta-${timestamp}.test.com`
       }
     ];
 
@@ -192,16 +190,18 @@ export class APITestHelper {
       {
         name: `Test Agent Nina ${timestamp}`,
         type: 'PAYOFF_SPECIALIST',
-        status: 'ACTIVE',
+        description: 'Test agent for payoff processing',
+        is_active: true,
         capabilities: ['document_review', 'lender_communication'],
-        metadata: { test: true, timestamp }
+        configuration: { test: true, timestamp }
       },
       {
         name: `Test Agent Mia ${timestamp}`,
         type: 'COMMUNICATION_SPECIALIST',
-        status: 'ACTIVE',
+        description: 'Test agent for communication',
+        is_active: true,
         capabilities: ['email_composition', 'client_communication'],
-        metadata: { test: true, timestamp }
+        configuration: { test: true, timestamp }
       }
     ];
 
@@ -222,28 +222,42 @@ export class APITestHelper {
    * Create test workflows
    */
   private async createTestWorkflows(timestamp: number, clients: TestClient[]): Promise<TestWorkflow[]> {
+    // Use the real test user from auth.users
+    const testUserId = '82a7d984-485b-4a47-ac28-615a1b448473';
+    
     const workflowsData = [
       {
-        workflow_type: 'PAYOFF',
+        workflow_type: 'MUNI_LIEN_SEARCH',
         client_id: clients[0].id,
-        title: `Test Payoff Workflow ${timestamp}`,
-        description: 'Test payoff request for automated testing',
+        title: `Test Municipal Lien Search ${timestamp}`,
+        description: 'Test municipal lien search for automated testing',
         status: 'IN_PROGRESS',
         priority: 'NORMAL',
-        metadata: { test: true, timestamp, loan_number: `TEST-${timestamp}` },
-        created_by: '00000000-0000-0000-0000-000000000001',
+        metadata: { test: true, timestamp, property_address: `123 Test St ${timestamp}`, parcel_id: `TEST-${timestamp}` },
+        created_by: testUserId,
         due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         workflow_type: 'HOA_ACQUISITION',
         client_id: clients[1].id,
-        title: `Test HOA Workflow ${timestamp}`,
+        title: `Test HOA Acquisition ${timestamp}`,
         description: 'Test HOA acquisition for automated testing',
         status: 'PENDING',
         priority: 'HIGH',
-        metadata: { test: true, timestamp, hoa_name: `Test HOA ${timestamp}` },
-        created_by: '00000000-0000-0000-0000-000000000001',
+        metadata: { test: true, timestamp, hoa_name: `Test HOA ${timestamp}`, unit_number: `Unit ${timestamp}` },
+        created_by: testUserId,
         due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        workflow_type: 'PAYOFF_REQUEST',
+        client_id: clients[0].id,
+        title: `Test Payoff Request ${timestamp}`,
+        description: 'Test payoff request for automated testing',
+        status: 'AWAITING_REVIEW',
+        priority: 'HIGH',
+        metadata: { test: true, timestamp, loan_number: `TEST-${timestamp}`, lender_name: 'Test Bank', estimated_balance: 250000 },
+        created_by: testUserId,
+        due_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
 

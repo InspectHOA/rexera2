@@ -53,25 +53,57 @@ export default async function handler(
         include 
       } = req.query as WorkflowQueryParams;
 
-      let query = supabase
-        .from('workflows')
-        .select(`
+      // Build select string based on includes
+      const includeArray = include ? include.split(',') : [];
+      let selectString = `
+        id,
+        workflow_type,
+        client_id,
+        title,
+        description,
+        status,
+        priority,
+        metadata,
+        created_by,
+        assigned_to,
+        created_at,
+        updated_at,
+        completed_at,
+        due_date,
+        human_readable_id
+      `;
+      
+      if (includeArray.includes('client')) {
+        selectString += `, client:clients(id, name, domain)`;
+      }
+      
+      if (includeArray.includes('tasks')) {
+        selectString += `, task_executions(
           id,
-          workflow_type,
-          client_id,
           title,
           description,
           status,
+          task_type,
+          executor_type,
+          agent_id,
+          sequence_order,
           priority,
-          metadata,
-          created_by,
-          assigned_to,
-          created_at,
-          updated_at,
+          interrupt_type,
+          error_message,
+          input_data,
+          output_data,
+          started_at,
           completed_at,
-          due_date,
-          client:clients(id, name, domain)
-        `, { count: 'exact' });
+          execution_time_ms,
+          retry_count,
+          created_at,
+          workflow_id
+        )`;
+      }
+
+      let query = supabase
+        .from('workflows')
+        .select(selectString, { count: 'exact' });
 
       // Apply filters
       if (workflow_type) {
@@ -102,17 +134,19 @@ export default async function handler(
       const { data: workflows, error, count } = await query;
 
       if (error) {
-        console.error('Database query failed:', error);
         throw new Error(`Database query failed: ${error.message}`);
       }
 
       // Transform workflows for frontend compatibility
-      const transformedWorkflows = workflows?.map(workflow => ({
+      const transformedWorkflows = workflows?.map((workflow: any) => ({
         ...workflow,
-        client: workflow.client
+        clients: workflow.client, // Ensure frontend compatibility with both client and clients
+        tasks: workflow.task_executions || [] // Add tasks alias for frontend compatibility
       })) || [];
 
       const totalPages = Math.ceil((count || 0) / limitNum);
+      
+      console.log('Pagination data:', { page: pageNum, limit: limitNum, total: count, totalPages });
 
       return sendSuccess(res, transformedWorkflows, {
         page: pageNum,
@@ -166,7 +200,6 @@ export default async function handler(
         .single();
 
       if (error) {
-        console.error('Failed to create workflow:', error);
         throw new Error(`Failed to create workflow: ${error.message}`);
       }
 

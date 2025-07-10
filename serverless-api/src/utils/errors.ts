@@ -9,10 +9,16 @@ interface ApiError extends Error {
   statusCode?: number;
 }
 
-interface ApiSuccessResponse<T = any> {
+interface ApiSuccessResponse<T = unknown> {
   success: true;
   data: T;
-  meta?: any;
+  meta?: Record<string, unknown>;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 interface ApiErrorResponse {
@@ -52,10 +58,15 @@ export function handleError(
 /**
  * Sends successful response with data
  */
-export function sendSuccess<T = any>(
+export function sendSuccess<T = unknown>(
   res: NextApiResponse<ApiSuccessResponse<T>>, 
   data: T, 
-  meta?: any,
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  },
   statusCode: number = 200
 ): void {
   const response: ApiSuccessResponse<T> = {
@@ -63,8 +74,8 @@ export function sendSuccess<T = any>(
     data
   };
   
-  if (meta) {
-    response.meta = meta;
+  if (pagination) {
+    response.pagination = pagination;
   }
   
   res.status(statusCode).json(response);

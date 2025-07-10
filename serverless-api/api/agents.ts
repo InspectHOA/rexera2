@@ -52,7 +52,11 @@ export default async function handler(
       // Apply filtering
       if (input.is_active !== undefined) query = query.eq('is_active', input.is_active);
       if (input.type) query = query.eq('type', input.type);
-      if (input.status) query = query.eq('status', input.status);
+      // Note: 'status' parameter maps to 'is_active' field for backward compatibility
+      if (input.status) {
+        const isActive = input.status === 'ACTIVE' || input.status === 'ONLINE';
+        query = query.eq('is_active', isActive);
+      }
 
       // Apply pagination and ordering
       const offset = (input.page - 1) * input.limit;
@@ -102,10 +106,7 @@ export default async function handler(
         throw new Error(`Failed to update agent: ${error.message}`);
       }
 
-      return res.json({
-        success: true,
-        data: agent
-      });
+      return sendSuccess(res, agent);
 
     } else {
       return res.status(405).json({

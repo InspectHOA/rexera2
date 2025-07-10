@@ -323,7 +323,7 @@ export type Database = {
     Enums: {
       task_status: "PENDING" | "AWAITING_REVIEW" | "COMPLETED" | "FAILED"
       workflow_status: "PENDING" | "IN_PROGRESS" | "AWAITING_REVIEW" | "BLOCKED" | "COMPLETED"
-      workflow_type: "MUNI_LIEN_SEARCH" | "HOA_ACQUISITION" | "PAYOFF"
+      workflow_type: "MUNI_LIEN_SEARCH" | "HOA_ACQUISITION" | "PAYOFF_REQUEST"
       priority_level: "LOW" | "NORMAL" | "HIGH" | "URGENT"
       executor_type: "AI" | "HIL"
       user_type: "client_user" | "hil_user"

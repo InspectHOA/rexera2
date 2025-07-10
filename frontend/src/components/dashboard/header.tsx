@@ -101,7 +101,7 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-2xl border border-gray-200/50">
+    <header className="bg-white/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-lg border border-gray-200/50">
       <div className="flex items-center gap-2">
         <img
           src="/rexera-logo.svg"

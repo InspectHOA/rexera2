@@ -52,7 +52,7 @@ export default function WorkflowDetailPage() {
   const workflow: Workflow | null = workflowData ? {
     id: formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type),
     title: workflowData.title || 'Workflow Details',
-    subtitle: `${formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type)} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF')} - ${workflowData.clients?.name || 'Unknown Client'}`,
+    subtitle: `${formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type)} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF_REQUEST')} - ${workflowData.clients?.name || 'Unknown Client'}`,
     status: getDisplayStatus(workflowData.status || 'PENDING'),
     eta: formatDateTime(workflowData.due_date),
     due: formatDate(workflowData.due_date),
@@ -86,7 +86,7 @@ export default function WorkflowDetailPage() {
 
   function getDisplayWorkflowType(type: string) {
     const typeMap: Record<string, string> = {
-      'PAYOFF': 'Payoff Request',
+      'PAYOFF_REQUEST': 'Payoff Request',
       'HOA_ACQUISITION': 'HOA Documents', 
       'MUNI_LIEN_SEARCH': 'Municipal Lien'
     };
@@ -222,7 +222,7 @@ export default function WorkflowDetailPage() {
 
           <div className={`grid ${isLeftPanelCollapsed ? 'grid-cols-[0fr_1fr]' : 'grid-cols-[40%_1fr]'} h-full transition-all duration-300 ease-in-out gap-4`}>
             {/* Left Panel */}
-            <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-gray-200/50 flex flex-col overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-lg border border-gray-200/50 flex flex-col overflow-hidden">
               <div className="flex-shrink-0">
                 <TaskList
                   tasks={tasks}
@@ -238,28 +238,28 @@ export default function WorkflowDetailPage() {
             </div>
 
             {/* Right Panel */}
-            <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-gray-200/50 flex flex-col overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-lg border border-gray-200/50 flex flex-col overflow-hidden">
               {/* Right Panel Tabs */}
-              <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-100 flex-shrink-0 flex items-center h-10">
+              <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-50/50 flex-shrink-0 flex gap-6">
                 <button
                   onClick={() => setRightPanelTab('task-details')}
-                  className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  className={`text-xs font-medium uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'task-details'
-                      ? 'text-gray-800'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-primary-600 border-primary-600'
+                      : 'text-gray-500 hover:text-gray-700 border-transparent'
                   }`}
                 >
-                  📋 Task Details
+                  Task Details
                 </button>
                 <button
                   onClick={() => setRightPanelTab('agent-interface')}
-                  className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  className={`text-xs font-medium uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'agent-interface'
-                      ? 'text-gray-800'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-primary-600 border-primary-600'
+                      : 'text-gray-500 hover:text-gray-700 border-transparent'
                   }`}
                 >
-                  🤖 {selectedTask && tasks.find(t => t.id === selectedTask)?.agent ? `${tasks.find(t => t.id === selectedTask)?.agent} Interface` : 'Agent Interface'}
+                  {selectedTask && tasks.find(t => t.id === selectedTask)?.agent ? `${tasks.find(t => t.id === selectedTask)?.agent} Interface` : 'Agent Interface'}
                 </button>
               </div>
               

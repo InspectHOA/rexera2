@@ -9,7 +9,7 @@
 
 export type UserType = 'client_user' | 'hil_user';
 
-export type WorkflowType = 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF';
+export type WorkflowType = 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF_REQUEST';
 export type WorkflowStatus = 'PENDING' | 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'BLOCKED' | 'COMPLETED';
 export type TaskStatus = 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED';
 export type ExecutorType = 'AI' | 'HIL';
@@ -39,6 +39,8 @@ export type SenderType = 'CLIENT' | 'INTERNAL';
 export type SlaTrackingStatus = 'ACTIVE' | 'COMPLETED' | 'BREACHED' | 'PAUSED';
 export type AlertLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
 
+export type InterruptType = 'MISSING_DOCUMENT' | 'PAYMENT_REQUIRED' | 'CLIENT_CLARIFICATION' | 'MANUAL_VERIFICATION';
+
 // =====================================================
 // AGENT ENUMS
 // =====================================================
@@ -52,7 +54,7 @@ export type AgentType = 'nina' | 'mia' | 'florian' | 'rex' | 'iris' | 'ria' | 'k
 export const SUPPORTED_WORKFLOW_TYPES = [
   'MUNI_LIEN_SEARCH',
   'HOA_ACQUISITION', 
-  'PAYOFF'
+  'PAYOFF_REQUEST'
 ] as const;
 
 export const SUPPORTED_AGENT_TYPES = [

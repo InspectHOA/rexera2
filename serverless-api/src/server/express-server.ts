@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { resolveWorkflowId } from '../utils/workflow-resolver';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,46 +54,125 @@ app.get('/api/health', (req, res) => {
 // Workflows endpoint
 app.get('/api/workflows', async (req, res) => {
   try {
-    const { include, limit = '50', offset = '0', status, client_id } = req.query as Record<string, string>;
+    const { 
+      workflow_type, 
+      status, 
+      client_id, 
+      assigned_to, 
+      priority, 
+      page = '1', 
+      limit = '20',
+      include 
+    } = req.query as Record<string, string>;
+
+    // Build select string based on includes
+    const includeArray = include ? include.split(',') : [];
+    let selectString = `
+      id,
+      workflow_type,
+      client_id,
+      title,
+      description,
+      status,
+      priority,
+      metadata,
+      created_by,
+      assigned_to,
+      created_at,
+      updated_at,
+      completed_at,
+      due_date,
+      human_readable_id
+    `;
     
-    const limitNum = parseInt(limit, 10);
-    const offsetNum = parseInt(offset, 10);
-    
-    // Build select string based on include parameter
-    let selectString = '*';
-    if (include) {
-      const includes = include.split(',');
-      if (includes.includes('client')) {
-        selectString = '*, clients(id, name, domain)';
-      }
-      if (includes.includes('tasks')) {
-        selectString = '*, clients(id, name, domain), task_executions(*)';
-      }
+    if (includeArray.includes('client')) {
+      selectString += `, clients(id, name, domain)`;
     }
     
+    if (includeArray.includes('tasks')) {
+      selectString += `, task_executions(
+        id,
+        title,
+        description,
+        status,
+        task_type,
+        executor_type,
+        agent_id,
+        sequence_order,
+        priority,
+        interrupt_type,
+        error_message,
+        input_data,
+        output_data,
+        started_at,
+        completed_at,
+        execution_time_ms,
+        retry_count,
+        created_at,
+        workflow_id
+      )`;
+    }
+
     let query = supabase
       .from('workflows')
-      .select(selectString);
-    
+      .select(selectString, { count: 'exact' });
+
+    // Apply filters
+    if (workflow_type) {
+      query = query.eq('workflow_type', workflow_type);
+    }
     if (status) {
       query = query.eq('status', status);
     }
-    
     if (client_id) {
       query = query.eq('client_id', client_id);
     }
+    if (assigned_to) {
+      query = query.eq('assigned_to', assigned_to);
+    }
+    if (priority) {
+      query = query.eq('priority', priority);
+    }
+
+    // Apply pagination
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offset = (pageNum - 1) * limitNum;
     
     query = query
-      .range(offsetNum, offsetNum + limitNum - 1)
+      .range(offset, offset + limitNum - 1)
       .order('created_at', { ascending: false });
-    
-    const { data, error } = await query;
-    
+
+    const { data: workflows, error, count } = await query;
+
     if (error) {
       return handleError(res, error);
     }
-    
-    sendSuccess(res, data);
+
+    // Transform workflows for frontend compatibility
+    const transformedWorkflows = workflows?.map((workflow: any) => ({
+      ...workflow,
+      clients: workflow.clients, // clients should already be from the joined query
+      tasks: workflow.task_executions || [] // Add tasks alias for frontend compatibility
+    })) || [];
+
+    const totalPages = Math.ceil((count || 0) / limitNum);
+
+    console.log('Express server - Pagination data:', { page: pageNum, limit: limitNum, total: count, totalPages });
+    console.log('Express server - Workflow types returned:', transformedWorkflows.reduce((acc: any, w: any) => { acc[w.workflow_type] = (acc[w.workflow_type] || 0) + 1; return acc; }, {}));
+
+    const response = {
+      success: true,
+      data: transformedWorkflows,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages
+      }
+    };
+
+    res.json(response);
   } catch (error) {
     handleError(res, error as ApiError);
   }

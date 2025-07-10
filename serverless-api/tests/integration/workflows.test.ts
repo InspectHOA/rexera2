@@ -44,7 +44,7 @@ describe('Workflows API', () => {
       const workflow = response.body.data.find((w: any) => w.id === testData.workflows[0].id);
       expect(workflow).toBeDefined();
       expect(workflow.id).toBeValidUUID();
-      expect(workflow.workflow_type).toMatch(/^(PAYOFF_REQUEST|HOA_ACQUISITION|MUNI_LIEN_SEARCH)$/);
+      expect(workflow.workflow_type).toMatch(/^(HOA_ACQUISITION|MUNI_LIEN_SEARCH)$/);
       expect(workflow.status).toMatch(/^(PENDING|IN_PROGRESS|AWAITING_REVIEW|COMPLETED|BLOCKED)$/);
       expect(workflow.created_at).toBeValidTimestamp();
     });
@@ -215,7 +215,7 @@ describe('Workflows API', () => {
 
     it('should return 400 for non-existent client_id', async () => {
       const invalidWorkflow = {
-        workflow_type: 'PAYOFF_REQUEST',
+        workflow_type: 'MUNI_LIEN_SEARCH',
         client_id: '12345678-1234-1234-1234-123456789012',
         title: 'Test Non-existent Client'
       };

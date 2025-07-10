@@ -5,6 +5,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createServerClient } from '../../src/utils/database';
 import { handleError } from '../../src/utils/errors';
+import { resolveWorkflowId } from '../../src/utils/workflow-resolver';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 interface WorkflowQueryParams {
@@ -31,29 +32,7 @@ export default async function handler(
 
   try {
     if (req.method === 'GET') {
-      // Accept both UUIDs and human-readable IDs
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      let actualWorkflowId = id;
-      
-      if (!isUUID) {
-        // Look up UUID by human_readable_id
-        const { data: workflow, error: workflowError } = await supabase
-          .from('workflows')
-          .select('id')
-          .eq('human_readable_id', id)
-          .single();
-          
-        if (workflowError || !workflow) {
-          return res.status(404).json({
-            success: false,
-            error: `Workflow not found with ID: ${id}`
-          });
-        }
-        
-        actualWorkflowId = workflow.id;
-      }
-      
-      console.log(`Workflow lookup: ${id} -> ${actualWorkflowId}`);
+      const actualWorkflowId = await resolveWorkflowId(supabase, id);
       
       // Fetch workflow with related data using resolved UUID
       const { data: workflow, error: workflowError } = await supabase
@@ -86,7 +65,6 @@ export default async function handler(
       }
       
       if (workflowError) {
-        console.error('Failed to fetch workflow:', workflowError);
         throw new Error(`Failed to fetch workflow: ${(workflowError as PostgrestError).message}`);
       }
 
