@@ -15,6 +15,8 @@ interface WorkflowFilters {
   page?: number;
   limit?: number;
   include?: string[];
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }
 
 interface WorkflowStats {
@@ -65,7 +67,7 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
           ['IN_PROGRESS', 'PENDING', 'AWAITING_REVIEW'].includes(w.status)
         ).length,
         interrupts: workflows.filter((w: WorkflowData) => 
-          w.tasks?.some((t: TaskExecution) => t.status === 'AWAITING_REVIEW')
+          (w.tasks || w.task_executions || []).some((t: TaskExecution) => t.status === 'AWAITING_REVIEW')
         ).length,
         completedToday: workflows.filter((w: WorkflowData) => 
           w.status === 'COMPLETED' && 

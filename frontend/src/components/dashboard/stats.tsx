@@ -3,7 +3,10 @@
 import { useWorkflows } from '@/lib/hooks/useWorkflows';
 
 export function DashboardStats() {
-  const { stats, loading, error } = useWorkflows({ include: ['tasks'] });
+  const { stats, loading, error } = useWorkflows({ 
+    include: ['tasks'], 
+    limit: 1000  // Get all workflows for accurate stats
+  });
   return (
     <div className="bg-white/80 backdrop-blur-sm px-4 py-3 mb-4 shadow-2xl rounded-lg border border-gray-200/50 flex justify-between items-center">
       <div className="flex gap-8 items-center">

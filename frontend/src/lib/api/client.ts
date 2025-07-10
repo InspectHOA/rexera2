@@ -74,6 +74,8 @@ export const workflowsApi = {
     page?: number;
     limit?: number;
     include?: string[];
+    sortBy?: string;
+    sortDirection?: 'asc' | 'desc';
   } = {}) {
     const params = new URLSearchParams();
     

@@ -240,12 +240,12 @@ export default function WorkflowDetailPage() {
             {/* Right Panel */}
             <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-lg border border-gray-200/50 flex flex-col overflow-hidden">
               {/* Right Panel Tabs */}
-              <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-50/50 flex-shrink-0 flex gap-6">
+              <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-100 flex-shrink-0 flex gap-6">
                 <button
                   onClick={() => setRightPanelTab('task-details')}
-                  className={`text-xs font-medium uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
+                  className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'task-details'
-                      ? 'text-primary-600 border-primary-600'
+                      ? 'text-gray-800 border-primary-600'
                       : 'text-gray-500 hover:text-gray-700 border-transparent'
                   }`}
                 >
@@ -253,9 +253,9 @@ export default function WorkflowDetailPage() {
                 </button>
                 <button
                   onClick={() => setRightPanelTab('agent-interface')}
-                  className={`text-xs font-medium uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
+                  className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'agent-interface'
-                      ? 'text-primary-600 border-primary-600'
+                      ? 'text-gray-800 border-primary-600'
                       : 'text-gray-500 hover:text-gray-700 border-transparent'
                   }`}
                 >

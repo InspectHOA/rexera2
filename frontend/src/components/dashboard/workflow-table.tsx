@@ -10,6 +10,21 @@ export function WorkflowTable() {
   const router = useRouter();
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // Map frontend sort fields to backend database columns
+  const getBackendSortField = (frontendField: string): string => {
+    const fieldMap: Record<string, string> = {
+      'id': 'human_readable_id',
+      'created_at': 'created_at',
+      'type': 'workflow_type',
+      'client': 'client_id', // Note: This may need special handling for client name sorting
+      'property': 'title',
+      'status': 'status',
+      'interrupts': 'interrupts', // Server handles interrupt count calculation and sorting
+      'due': 'due_date'
+    };
+    return fieldMap[frontendField] || 'created_at';
+  };
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterInterrupts, setFilterInterrupts] = useState<string>('');
@@ -19,7 +34,9 @@ export function WorkflowTable() {
   const { workflows: workflowData, loading, error, pagination } = useWorkflows({ 
     include: ['client', 'tasks'], 
     limit: 20,
-    page: currentPage
+    page: currentPage,
+    sortBy: getBackendSortField(sortField),
+    sortDirection: sortDirection
   });
 
   // Sort handler
@@ -30,6 +47,8 @@ export function WorkflowTable() {
       setSortField(field);
       setSortDirection('asc');
     }
+    // Reset to page 1 when sorting changes since the order of all records changes
+    setCurrentPage(1);
   };
 
   // Get sort indicator
@@ -38,7 +57,7 @@ export function WorkflowTable() {
     return sortDirection === 'asc' ? '↑' : '↓';
   };
 
-  // Transform and sort API data
+  // Transform API data for display
   const transformedWorkflows: TransformedWorkflow[] = workflowData.map((workflow: WorkflowData) => {
     const tasks: TaskExecution[] = workflow.task_executions || workflow.tasks || [];
     const interruptCount = tasks.filter((t: TaskExecution) => t.status === 'AWAITING_REVIEW')?.length || 0;
@@ -133,52 +152,8 @@ export function WorkflowTable() {
     return true;
   });
 
-  // Sort workflows
-  const workflows = [...filteredWorkflows].sort((a, b) => {
-    let aValue, bValue;
-    
-    switch (sortField) {
-      case 'id':
-        aValue = a.id;
-        bValue = b.id;
-        break;
-      case 'created_at':
-        aValue = new Date(a.createdRaw || 0).getTime();
-        bValue = new Date(b.createdRaw || 0).getTime();
-        break;
-      case 'type':
-        aValue = a.typeRaw;
-        bValue = b.typeRaw;
-        break;
-      case 'client':
-        aValue = a.client;
-        bValue = b.client;
-        break;
-      case 'property':
-        aValue = a.property;
-        bValue = b.property;
-        break;
-      case 'status':
-        aValue = a.statusRaw;
-        bValue = b.statusRaw;
-        break;
-      case 'interrupts':
-        aValue = a.interruptCount;
-        bValue = b.interruptCount;
-        break;
-      case 'due':
-        aValue = a.dueRaw ? new Date(a.dueRaw).getTime() : 0;
-        bValue = b.dueRaw ? new Date(b.dueRaw).getTime() : 0;
-        break;
-      default:
-        aValue = a.id;
-        bValue = b.id;
-    }
-    
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+  // Apply client-side filtering only (server handles sorting and pagination)
+  const workflows = filteredWorkflows;
 
   function getDisplayWorkflowType(type: string) {
     const typeMap: Record<string, string> = {
@@ -236,8 +211,18 @@ export function WorkflowTable() {
     if (task.executor_type === 'HIL') {
       return 'HIL Monitor';
     }
-    // TaskExecution uses agent_id, but we'd need to look up the agent name
-    // For now, return a generic agent name based on task type
+    
+    // Use joined agent data if available
+    if (task.agents?.name) {
+      return task.agents.name;
+    }
+    
+    // Fallback to agent_name if available
+    if (task.agent_name) {
+      return task.agent_name;
+    }
+    
+    // Final fallback
     return task.agent_id ? 'AI Agent' : 'Unassigned';
   }
 

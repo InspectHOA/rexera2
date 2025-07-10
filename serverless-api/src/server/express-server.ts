@@ -62,7 +62,9 @@ app.get('/api/workflows', async (req, res) => {
       priority, 
       page = '1', 
       limit = '20',
-      include 
+      include,
+      sortBy = 'created_at',
+      sortDirection = 'desc'
     } = req.query as Record<string, string>;
 
     // Build select string based on includes
@@ -109,7 +111,8 @@ app.get('/api/workflows', async (req, res) => {
         execution_time_ms,
         retry_count,
         created_at,
-        workflow_id
+        workflow_id,
+        agents(id, name, type)
       )`;
     }
 
@@ -134,16 +137,58 @@ app.get('/api/workflows', async (req, res) => {
       query = query.eq('priority', priority);
     }
 
-    // Apply pagination
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const offset = (pageNum - 1) * limitNum;
+    // Apply sorting
+    const validSortFields = ['created_at', 'updated_at', 'title', 'status', 'priority', 'due_date', 'workflow_type', 'human_readable_id', 'interrupts'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const ascending = sortDirection.toLowerCase() === 'asc';
     
-    query = query
-      .range(offset, offset + limitNum - 1)
-      .order('created_at', { ascending: false });
+    // Special handling for interrupt sorting
+    if (sortBy === 'interrupts') {
+      // We'll need to fetch all data first, calculate interrupt counts, then sort and paginate
+      // This is less efficient but necessary for interrupt count sorting
+    } else {
+      query = query.order(sortField, { ascending });
+    }
 
-    const { data: workflows, error, count } = await query;
+    let workflows, error, count;
+
+    if (sortBy === 'interrupts') {
+      // For interrupt sorting, we need to fetch all data, calculate counts, sort, then paginate
+      const { data: allWorkflows, error: allError, count: totalCount } = await query;
+      
+      if (allError) {
+        return handleError(res, allError);
+      }
+
+      // Calculate interrupt counts and sort
+      const workflowsWithInterrupts = (allWorkflows || []).map((workflow: any) => ({
+        ...workflow,
+        interrupt_count: (workflow.task_executions || []).filter((task: any) => task.status === 'AWAITING_REVIEW').length
+      })).sort((a: any, b: any) => {
+        const diff = a.interrupt_count - b.interrupt_count;
+        return ascending ? diff : -diff;
+      });
+
+      // Apply pagination to sorted results
+      const pageNum = parseInt(page, 10);
+      const limitNum = parseInt(limit, 10);
+      const offset = (pageNum - 1) * limitNum;
+      
+      workflows = workflowsWithInterrupts.slice(offset, offset + limitNum);
+      error = null;
+      count = totalCount;
+    } else {
+      // Regular sorting with database-level ordering
+      const pageNum = parseInt(page, 10);
+      const limitNum = parseInt(limit, 10);
+      const offset = (pageNum - 1) * limitNum;
+      
+      query = query.range(offset, offset + limitNum - 1);
+      const result = await query;
+      workflows = result.data;
+      error = result.error;
+      count = result.count;
+    }
 
     if (error) {
       return handleError(res, error);

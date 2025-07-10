@@ -134,11 +134,44 @@ async function seedDatabase() {
   const taskExecutions = [];
   const communications = [];
   const costs = [];
+  const hilNotifications = [];
   
   const workflowStatuses = ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'];
   const taskStatuses = ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED'];
   const priorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
   const clientIds = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555', '66666666-6666-6666-6666-666666666666', '77777777-7777-7777-7777-777777777777', '88888888-8888-8888-8888-888888888888'];
+
+  // Helper function to create HIL notification for interrupted task
+  function createHilNotification(taskExecution: any, workflowId: string, workflowTitle: string) {
+    if (taskExecution.status === 'AWAITING_REVIEW' && taskExecution.interrupt_type) {
+      const interruptTypeMessages: Record<string, string> = {
+        'CLIENT_CLARIFICATION': 'Client clarification required',
+        'MISSING_DOCUMENT': 'Missing required documentation',
+        'PAYMENT_REQUIRED': 'Payment required to proceed',
+        'MANUAL_VERIFICATION': 'Manual verification needed'
+      };
+      
+      hilNotifications.push({
+        id: randomUUID(),
+        user_id: testUserId, // Assign to test HIL user
+        type: 'TASK_INTERRUPT',
+        priority: taskExecution.priority,
+        title: `${interruptTypeMessages[taskExecution.interrupt_type]} - ${taskExecution.title}`,
+        message: taskExecution.error_message || `Task requires HIL attention: ${taskExecution.description}`,
+        action_url: `/workflow/${workflowId}`,
+        metadata: {
+          workflow_id: workflowId,
+          task_id: taskExecution.id,
+          interrupt_type: taskExecution.interrupt_type,
+          workflow_title: workflowTitle,
+          task_type: taskExecution.task_type
+        },
+        read: false,
+        read_at: null,
+        created_at: taskExecution.started_at
+      });
+    }
+  }
 
   // 20 Municipal Lien Search workflows
   for (let i = 1; i <= 20; i++) {
@@ -163,9 +196,13 @@ async function seedDatabase() {
       due_date: new Date(Date.now() + (i * 24 * 60 * 60 * 1000)).toISOString()
     });
 
-    // Add task executions for first 10 workflows
-    if (i <= 10) {
-      taskExecutions.push({
+    // Add task executions for first 15 workflows with multiple tasks each
+    if (i <= 15) {
+      // Primary research task
+      const status1 = taskStatuses[i % taskStatuses.length];
+      const hasInterrupt1 = status1 === 'AWAITING_REVIEW' || i % 4 === 0;
+      
+      const task1 = {
         id: randomUUID(),
         workflow_id: workflowId,
         agent_id: '66666666-6666-6666-6666-666666666666',
@@ -173,18 +210,76 @@ async function seedDatabase() {
         description: 'Search municipal databases for liens and assessments',
         sequence_order: 1,
         task_type: 'research_municipal_records',
-        status: taskStatuses[i % taskStatuses.length],
+        status: status1,
         executor_type: 'AI',
         priority: priorities[i % priorities.length],
         input_data: { parcel_id: `${i.toString().padStart(3, '0')}-${(i * 11).toString().padStart(2, '0')}-${(i * 7).toString().padStart(3, '0')}`, municipality: `City ${i}` },
-        output_data: i % 3 === 0 ? { liens_found: i % 4, total_amount: i * 250.50 } : {},
+        output_data: status1 === 'COMPLETED' ? { liens_found: i % 4, total_amount: i * 250.50 } : {},
+        error_message: hasInterrupt1 ? `Property records incomplete for parcel ${i.toString().padStart(3, '0')}-${(i * 11).toString().padStart(2, '0')}-${(i * 7).toString().padStart(3, '0')}. Manual verification required.` : null,
+        interrupt_type: hasInterrupt1 ? (i % 4 === 0 ? 'CLIENT_CLARIFICATION' : i % 4 === 1 ? 'MISSING_DOCUMENT' : i % 4 === 2 ? 'PAYMENT_REQUIRED' : 'MANUAL_VERIFICATION') : null,
         started_at: new Date(Date.now() - (i * 60 * 60 * 1000)).toISOString(),
-        completed_at: i % 3 === 0 ? new Date(Date.now() - ((i - 1) * 60 * 60 * 1000)).toISOString() : null,
-        execution_time_ms: i % 3 === 0 ? (i * 300000) : null,
-        retry_count: 0
-      });
+        completed_at: status1 === 'COMPLETED' ? new Date(Date.now() - ((i - 1) * 60 * 60 * 1000)).toISOString() : null,
+        execution_time_ms: status1 === 'COMPLETED' ? (i * 300000) : null,
+        retry_count: hasInterrupt1 ? (i % 2) : 0
+      };
+      
+      taskExecutions.push(task1);
 
-      // Add costs
+      // Secondary verification task for workflows 8-15 (creates more interrupts)
+      if (i >= 8) {
+        const status2 = i % 5 === 0 ? 'AWAITING_REVIEW' : (i % 3 === 0 ? 'FAILED' : 'PENDING');
+        const hasInterrupt2 = status2 === 'AWAITING_REVIEW' || status2 === 'FAILED';
+        
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+          title: 'Verify Municipal Data',
+          description: 'Cross-check municipal records with county database',
+          sequence_order: 2,
+          task_type: 'verify_municipal_data',
+          status: status2,
+          executor_type: 'AI',
+          priority: priorities[(i + 1) % priorities.length],
+          input_data: { source_data: `municipal_records_${i}`, verification_required: true },
+          output_data: status2 === 'COMPLETED' ? { verification_status: 'CONFIRMED', confidence: 0.95 } : {},
+          error_message: hasInterrupt2 ? `Data discrepancy found in municipal vs county records. HIL review needed for final determination.` : null,
+          interrupt_type: hasInterrupt2 ? (i % 2 === 0 ? 'MISSING_DOCUMENT' : 'CLIENT_CLARIFICATION') : null,
+          started_at: new Date(Date.now() - ((i - 2) * 60 * 60 * 1000)).toISOString(),
+          completed_at: status2 === 'COMPLETED' ? new Date(Date.now() - ((i - 1.5) * 60 * 60 * 1000)).toISOString() : null,
+          execution_time_ms: status2 === 'COMPLETED' ? (i * 200000) : null,
+          retry_count: hasInterrupt2 ? 1 : 0
+        });
+      }
+
+      // Document generation task for workflows 5-15 (more potential interrupts)
+      if (i >= 5) {
+        const status3 = i % 6 === 0 ? 'AWAITING_REVIEW' : (i % 4 === 0 ? 'PENDING' : 'COMPLETED');
+        const hasInterrupt3 = status3 === 'AWAITING_REVIEW';
+        
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+          title: 'Generate Lien Report',
+          description: 'Compile findings into formal lien search report',
+          sequence_order: 3,
+          task_type: 'generate_lien_report',
+          status: status3,
+          executor_type: 'AI',
+          priority: priorities[(i + 2) % priorities.length],
+          input_data: { template_type: 'standard_lien_report', include_maps: true },
+          output_data: status3 === 'COMPLETED' ? { report_id: `LIEN_RPT_${i}_${Date.now()}`, pages: 3 + (i % 3) } : {},
+          error_message: hasInterrupt3 ? `Report template requires manual customization for complex lien structure. HIL input needed.` : null,
+          interrupt_type: hasInterrupt3 ? 'CLIENT_CLARIFICATION' : null,
+          started_at: new Date(Date.now() - ((i - 1) * 60 * 60 * 1000)).toISOString(),
+          completed_at: status3 === 'COMPLETED' ? new Date(Date.now() - ((i - 0.5) * 60 * 60 * 1000)).toISOString() : null,
+          execution_time_ms: status3 === 'COMPLETED' ? (i * 150000) : null,
+          retry_count: 0
+        });
+      }
+
+      // Add costs for all tasks
       costs.push({
         workflow_id: workflowId,
         description: `Agent execution - Nina (municipal research ${i})`,
@@ -192,6 +287,26 @@ async function seedDatabase() {
         cost_type: 'AGENT_EXECUTION',
         incurred_at: new Date(Date.now() - (i * 60 * 60 * 1000)).toISOString()
       });
+      
+      if (i >= 8) {
+        costs.push({
+          workflow_id: workflowId,
+          description: `Agent execution - Cassy (data verification ${i})`,
+          amount: 8.50 + (i * 1.25),
+          cost_type: 'AGENT_EXECUTION',
+          incurred_at: new Date(Date.now() - ((i - 1) * 60 * 60 * 1000)).toISOString()
+        });
+      }
+      
+      if (i >= 5) {
+        costs.push({
+          workflow_id: workflowId,
+          description: `Agent execution - Ria (report generation ${i})`,
+          amount: 12.00 + (i * 1.75),
+          cost_type: 'AGENT_EXECUTION',
+          incurred_at: new Date(Date.now() - ((i - 0.5) * 60 * 60 * 1000)).toISOString()
+        });
+      }
     }
   }
 
@@ -220,8 +335,12 @@ async function seedDatabase() {
       due_date: new Date(Date.now() + ((i + 2) * 24 * 60 * 60 * 1000)).toISOString()
     });
 
-    // Add task executions for first 8 workflows
-    if (i <= 8) {
+    // Add task executions for first 12 workflows with multiple tasks each
+    if (i <= 12) {
+      // Primary HOA identification task
+      const status1 = taskStatuses[i % taskStatuses.length];
+      const hasInterrupt1 = status1 === 'AWAITING_REVIEW' || i % 3 === 0;
+      
       taskExecutions.push({
         id: randomUUID(),
         workflow_id: workflowId,
@@ -230,18 +349,88 @@ async function seedDatabase() {
         description: 'Research HOA management company details',
         sequence_order: 1,
         task_type: 'identify_hoa_management',
-        status: taskStatuses[i % taskStatuses.length],
+        status: status1,
         executor_type: 'AI',
         priority: priorities[i % priorities.length],
         input_data: { hoa_name: `${hoaNames[i - 1]} HOA`, property_address: `${200 + i * 30} ${hoaNames[i - 1]} Way` },
-        output_data: i % 4 === 1 ? { management_company: `${hoaNames[i - 1]} Management Services`, confidence: 0.85 + (i * 0.01) } : {},
-        error_message: i % 4 === 0 ? 'Contact information outdated. Manual verification required.' : null,
-        interrupt_type: i % 4 === 0 ? 'CLIENT_CLARIFICATION' : null,
+        output_data: status1 === 'COMPLETED' ? { management_company: `${hoaNames[i - 1]} Management Services`, confidence: 0.85 + (i * 0.01) } : {},
+        error_message: hasInterrupt1 ? `HOA management contact info outdated or conflicting. Multiple management companies found for ${hoaNames[i - 1]} HOA.` : null,
+        interrupt_type: hasInterrupt1 ? (i % 4 === 0 ? 'CLIENT_CLARIFICATION' : i % 4 === 1 ? 'MISSING_DOCUMENT' : i % 4 === 2 ? 'PAYMENT_REQUIRED' : 'MANUAL_VERIFICATION') : null,
         started_at: new Date(Date.now() - (i * 2 * 60 * 60 * 1000)).toISOString(),
-        completed_at: i % 4 <= 1 ? new Date(Date.now() - ((i - 1) * 2 * 60 * 60 * 1000)).toISOString() : null,
-        execution_time_ms: i % 4 <= 1 ? (i * 450000) : null,
-        retry_count: 0
+        completed_at: status1 === 'COMPLETED' ? new Date(Date.now() - ((i - 1) * 2 * 60 * 60 * 1000)).toISOString() : null,
+        execution_time_ms: status1 === 'COMPLETED' ? (i * 450000) : null,
+        retry_count: hasInterrupt1 ? (i % 2) : 0
       });
+
+      // Request estoppel documents task for workflows 6-12 (more interrupts)
+      if (i >= 6) {
+        const status2 = i % 4 === 0 ? 'AWAITING_REVIEW' : (i % 5 === 0 ? 'FAILED' : 'PENDING');
+        const hasInterrupt2 = status2 === 'AWAITING_REVIEW' || status2 === 'FAILED';
+        
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: '77777777-7777-7777-7777-777777777777',
+          title: 'Request Estoppel Certificate',
+          description: 'Submit formal request for HOA estoppel documents',
+          sequence_order: 2,
+          task_type: 'request_estoppel_certificate',
+          status: status2,
+          executor_type: 'AI',
+          priority: priorities[(i + 1) % priorities.length],
+          input_data: { 
+            management_company: `${hoaNames[i - 1]} Management Services`,
+            unit_info: `${200 + i * 30} ${hoaNames[i - 1]} Way ${['Unit', 'Apt', 'Condo', 'Villa', 'Townhouse'][i % 5]} ${i}`,
+            closing_date: new Date(Date.now() + ((i + 10) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          },
+          output_data: status2 === 'COMPLETED' ? { 
+            request_sent: true,
+            confirmation_number: `EST_${i}_${Date.now().toString().slice(-6)}`,
+            expected_delivery: new Date(Date.now() + ((i + 3) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          } : {},
+          error_message: hasInterrupt2 ? `HOA requires additional documentation or owner authorization before processing estoppel request. Manual intervention needed.` : null,
+          interrupt_type: hasInterrupt2 ? (i % 2 === 0 ? 'CLIENT_CLARIFICATION' : 'DATA_QUALITY') : null,
+          started_at: new Date(Date.now() - ((i - 1) * 2 * 60 * 60 * 1000)).toISOString(),
+          completed_at: status2 === 'COMPLETED' ? new Date(Date.now() - ((i - 0.5) * 2 * 60 * 60 * 1000)).toISOString() : null,
+          execution_time_ms: status2 === 'COMPLETED' ? (i * 300000) : null,
+          retry_count: hasInterrupt2 ? 1 : 0
+        });
+      }
+
+      // Follow up and document processing task for workflows 3-12
+      if (i >= 3) {
+        const status3 = i % 7 === 0 ? 'AWAITING_REVIEW' : (i % 5 === 0 ? 'PENDING' : 'COMPLETED');
+        const hasInterrupt3 = status3 === 'AWAITING_REVIEW';
+        
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          title: 'Process HOA Documents',
+          description: 'Review and validate received HOA documentation',
+          sequence_order: 3,
+          task_type: 'process_hoa_documents',
+          status: status3,
+          executor_type: 'AI',
+          priority: priorities[(i + 2) % priorities.length],
+          input_data: { 
+            document_types: ['estoppel_certificate', 'bylaws', 'financial_statement'],
+            validation_required: true
+          },
+          output_data: status3 === 'COMPLETED' ? { 
+            documents_processed: 3,
+            validation_status: 'APPROVED',
+            outstanding_fees: i * 45.00,
+            special_assessments: i % 3 === 0 ? i * 150.00 : 0
+          } : {},
+          error_message: hasInterrupt3 ? `HOA documents contain discrepancies or missing information. Manual review required for accuracy verification.` : null,
+          interrupt_type: hasInterrupt3 ? 'MANUAL_VERIFICATION' : null,
+          started_at: new Date(Date.now() - ((i - 0.5) * 2 * 60 * 60 * 1000)).toISOString(),
+          completed_at: status3 === 'COMPLETED' ? new Date(Date.now() - ((i - 0.2) * 2 * 60 * 60 * 1000)).toISOString() : null,
+          execution_time_ms: status3 === 'COMPLETED' ? (i * 250000) : null,
+          retry_count: 0
+        });
+      }
 
       // Add HOA communications for first 3
       if (i <= 3) {
@@ -299,9 +488,12 @@ async function seedDatabase() {
       due_date: new Date(Date.now() + ((i + 1) * 24 * 60 * 60 * 1000)).toISOString()
     });
 
-    // Add task executions for first 10 workflows
-    if (i <= 10) {
-      // Lender research task
+    // Add task executions for first 12 workflows with multiple tasks each
+    if (i <= 12) {
+      // Primary lender research task
+      const status1 = taskStatuses[i % taskStatuses.length];
+      const hasInterrupt1 = status1 === 'AWAITING_REVIEW' || i % 3 === 0;
+      
       taskExecutions.push({
         id: randomUUID(),
         workflow_id: workflowId,
@@ -310,23 +502,95 @@ async function seedDatabase() {
         description: 'Research correct payoff department contact',
         sequence_order: 1,
         task_type: 'identify_lender_contact',
-        status: taskStatuses[i % taskStatuses.length],
+        status: status1,
         executor_type: 'AI',
         priority: priorities[i % priorities.length],
         input_data: { lender_name: lenders[i - 1], loan_number: `${lenders[i - 1].split(' ')[0].toUpperCase().substring(0, 3)}${2024000000 + i * 123456}` },
-        output_data: i % 3 === 0 ? { 
+        output_data: status1 === 'COMPLETED' ? { 
           contact_email: `payoffs@${lenders[i - 1].toLowerCase().replace(' ', '').replace('&', 'and')}.com`, 
           phone: `1-800-555-${String(i * 100).padStart(4, '0')}`,
           department: 'Payoff Department',
           confidence: 0.90 + (i * 0.005)
         } : {},
+        error_message: hasInterrupt1 ? `Multiple payoff departments found for ${lenders[i - 1]}. Unable to determine correct contact for loan type. Manual verification required.` : null,
+        interrupt_type: hasInterrupt1 ? (i % 4 === 0 ? 'CLIENT_CLARIFICATION' : i % 4 === 1 ? 'MISSING_DOCUMENT' : i % 4 === 2 ? 'PAYMENT_REQUIRED' : 'MANUAL_VERIFICATION') : null,
         started_at: new Date(Date.now() - (i * 60 * 60 * 1000)).toISOString(),
-        completed_at: i % 3 !== 2 ? new Date(Date.now() - ((i - 0.5) * 60 * 60 * 1000)).toISOString() : null,
-        execution_time_ms: i % 3 !== 2 ? (i * 200000) : null,
-        retry_count: 0
+        completed_at: status1 === 'COMPLETED' ? new Date(Date.now() - ((i - 0.5) * 60 * 60 * 1000)).toISOString() : null,
+        execution_time_ms: status1 === 'COMPLETED' ? (i * 200000) : null,
+        retry_count: hasInterrupt1 ? (i % 2) : 0
       });
 
-      // Add costs
+      // Submit payoff request task for workflows 7-12 (more interrupts)
+      if (i >= 7) {
+        const status2 = i % 5 === 0 ? 'AWAITING_REVIEW' : (i % 4 === 0 ? 'FAILED' : 'PENDING');
+        const hasInterrupt2 = status2 === 'AWAITING_REVIEW' || status2 === 'FAILED';
+        
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: '77777777-7777-7777-7777-777777777777',
+          title: 'Submit Payoff Request',
+          description: 'Send formal payoff request to lender',
+          sequence_order: 2,
+          task_type: 'submit_payoff_request',
+          status: status2,
+          executor_type: 'AI',
+          priority: priorities[(i + 1) % priorities.length],
+          input_data: { 
+            lender: lenders[i - 1],
+            loan_number: `${lenders[i - 1].split(' ')[0].toUpperCase().substring(0, 3)}${2024000000 + i * 123456}`,
+            requested_date: new Date(Date.now() + ((i + 5) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          },
+          output_data: status2 === 'COMPLETED' ? { 
+            request_submitted: true,
+            confirmation_number: `PAY_${i}_${Date.now().toString().slice(-6)}`,
+            estimated_response: new Date(Date.now() + ((i + 2) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          } : {},
+          error_message: hasInterrupt2 ? `Payoff request rejected by ${lenders[i - 1]}. Additional borrower authorization or documentation required before processing.` : null,
+          interrupt_type: hasInterrupt2 ? (i % 2 === 0 ? 'CLIENT_CLARIFICATION' : 'DATA_QUALITY') : null,
+          started_at: new Date(Date.now() - ((i - 1) * 60 * 60 * 1000)).toISOString(),
+          completed_at: status2 === 'COMPLETED' ? new Date(Date.now() - ((i - 0.3) * 60 * 60 * 1000)).toISOString() : null,
+          execution_time_ms: status2 === 'COMPLETED' ? (i * 180000) : null,
+          retry_count: hasInterrupt2 ? 1 : 0
+        });
+      }
+
+      // Follow up and process response task for workflows 4-12
+      if (i >= 4) {
+        const status3 = i % 6 === 0 ? 'AWAITING_REVIEW' : (i % 7 === 0 ? 'PENDING' : 'COMPLETED');
+        const hasInterrupt3 = status3 === 'AWAITING_REVIEW';
+        
+        taskExecutions.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          agent_id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+          title: 'Process Payoff Statement',
+          description: 'Review and validate payoff statement from lender',
+          sequence_order: 3,
+          task_type: 'process_payoff_statement',
+          status: status3,
+          executor_type: 'AI',
+          priority: priorities[(i + 2) % priorities.length],
+          input_data: { 
+            expected_balance: 150000 + (i * 25000),
+            closing_date: new Date(Date.now() + ((i + 5) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          },
+          output_data: status3 === 'COMPLETED' ? { 
+            payoff_amount: 150000 + (i * 25000) + (i * 45.50),
+            per_diem: 15.50 + (i * 0.75),
+            good_through_date: new Date(Date.now() + ((i + 7) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+            validation_status: 'APPROVED'
+          } : {},
+          error_message: hasInterrupt3 ? `Payoff statement shows significant discrepancy from estimated balance. Manual review required for verification and client notification.` : null,
+          interrupt_type: hasInterrupt3 ? 'MANUAL_VERIFICATION' : null,
+          started_at: new Date(Date.now() - ((i - 0.3) * 60 * 60 * 1000)).toISOString(),
+          completed_at: status3 === 'COMPLETED' ? new Date(Date.now() - ((i - 0.1) * 60 * 60 * 1000)).toISOString() : null,
+          execution_time_ms: status3 === 'COMPLETED' ? (i * 160000) : null,
+          retry_count: 0
+        });
+      }
+
+      // Add costs for all tasks
       costs.push({
         workflow_id: workflowId,
         description: `Agent execution - Nina (lender research ${i})`,
@@ -334,6 +598,26 @@ async function seedDatabase() {
         cost_type: 'AGENT_EXECUTION',
         incurred_at: new Date(Date.now() - (i * 60 * 60 * 1000)).toISOString()
       });
+      
+      if (i >= 7) {
+        costs.push({
+          workflow_id: workflowId,
+          description: `Agent execution - Mia (payoff submission ${i})`,
+          amount: 9.75 + (i * 1.25),
+          cost_type: 'AGENT_EXECUTION',
+          incurred_at: new Date(Date.now() - ((i - 0.5) * 60 * 60 * 1000)).toISOString()
+        });
+      }
+      
+      if (i >= 4) {
+        costs.push({
+          workflow_id: workflowId,
+          description: `Agent execution - Kosha (statement processing ${i})`,
+          amount: 11.50 + (i * 1.00),
+          cost_type: 'AGENT_EXECUTION',
+          incurred_at: new Date(Date.now() - ((i - 0.2) * 60 * 60 * 1000)).toISOString()
+        });
+      }
     }
   }
 
@@ -374,6 +658,27 @@ async function seedDatabase() {
       throw costError;
     }
     console.log(`✅ Created ${costData?.length || 0} cost entries`);
+  }
+
+  // Create HIL notifications for all interrupted tasks (after task executions are inserted)
+  console.log('📝 Creating HIL notifications for interrupted tasks...');
+  const interruptedTasks = taskExecutions.filter(task => task.status === 'AWAITING_REVIEW' && task.interrupt_type);
+  
+  for (const task of interruptedTasks) {
+    const workflow = workflows.find(w => w.id === task.workflow_id);
+    if (workflow) {
+      createHilNotification(task, workflow.id, workflow.title);
+    }
+  }
+
+  if (hilNotifications.length > 0) {
+    console.log('📝 Inserting HIL notifications...');
+    const { data: notificationData, error: notificationError } = await supabase.from('hil_notifications').upsert(hilNotifications).select();
+    if (notificationError) {
+      console.error('❌ Failed to create HIL notifications:', notificationError);
+      throw notificationError;
+    }
+    console.log(`✅ Created ${notificationData?.length || 0} HIL notifications`);
   }
 
   // Add sample documents
@@ -434,6 +739,10 @@ async function verifyData() {
     .from('documents')
     .select('filename, status');
 
+  const { data: notifications } = await supabase
+    .from('hil_notifications')
+    .select('type, priority, read');
+
   console.log('\n📊 Comprehensive Seeding Summary:');
   console.log(`📋 Workflows: ${workflows?.length || 0}`);
   
@@ -450,8 +759,16 @@ async function verifyData() {
   console.log(`🤖 Active agents: ${agents?.length || 0}`);
   console.log(`🏢 Clients: ${clients?.length || 0}`);
   console.log(`📝 Task executions: ${tasks?.length || 0}`);
+  
+  // Count interrupts
+  const interruptTasks = tasks?.filter(t => t.status === 'AWAITING_REVIEW') || [];
+  const failedTasks = tasks?.filter(t => t.status === 'FAILED') || [];
+  console.log(`⚠️ Tasks with interrupts: ${interruptTasks.length} (AWAITING_REVIEW)`);
+  console.log(`❌ Failed tasks: ${failedTasks.length}`);
+  
   console.log(`📧 Communications: ${comms?.length || 0}`);
   console.log(`📄 Documents: ${docs?.length || 0}`);
+  console.log(`🔔 HIL Notifications: ${notifications?.length || 0} (${notifications?.filter(n => !n.read).length || 0} unread)`);
 
   // Show sample workflows
   console.log('\n📋 Sample Workflows:');
