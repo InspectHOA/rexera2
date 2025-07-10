@@ -83,8 +83,7 @@ export function useUnifiedNotifications() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
       setError(errorMessage);
-      console.error('Unified notifications fetch error:', err);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };
@@ -113,8 +112,7 @@ export function useUnifiedNotifications() {
         )
       );
     } catch (err) {
-      console.error('Error marking notification as read:', err);
-    }
+      }
   };
 
   // Mark all notifications as read
@@ -147,8 +145,7 @@ export function useUnifiedNotifications() {
         }))
       );
     } catch (err) {
-      console.error('Error marking all notifications as read:', err);
-    }
+      }
   };
 
   // Determine if notification should show popup

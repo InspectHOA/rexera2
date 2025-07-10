@@ -96,47 +96,7 @@
   border-radius: 0 !important;
 }
 
-.status-pending {
-  @apply bg-yellow-100 text-yellow-800;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.status-progress {
-  @apply bg-blue-100 text-blue-800;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.status-review {
-  @apply bg-red-100 text-red-800;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.status-completed {
-  @apply bg-green-100 text-green-800;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.status-urgent {
-  @apply bg-red-100 text-red-700;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.status-blocked {
-  @apply bg-gray-100 text-gray-700;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.status-awaiting-review {
-  @apply bg-orange-100 text-orange-800;
-  border: none !important;
-  border-radius: 0 !important;
-}
+/* Status classes moved to globals.css for consistency */
 
 /* Task Status Dots */
 .status-dot {

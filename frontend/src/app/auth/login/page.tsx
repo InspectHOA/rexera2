@@ -59,12 +59,7 @@ export default function LoginPage() {
         ? `${window.location.origin}/auth/callback`
         : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
 
-      console.log('Initiating Google OAuth:', {
-        nodeEnv: process.env.NODE_ENV,
-        redirectTo,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-        origin: typeof window !== 'undefined' ? window.location.origin : 'unknown'
-      });
+      // OAuth configuration prepared
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -74,14 +69,11 @@ export default function LoginPage() {
       });
 
       if (error) {
-        console.error('OAuth initiation error:', error);
         setError(error.message);
-      } else {
-        console.log('OAuth initiated successfully');
       }
     } catch (err) {
       setError('An unexpected error occurred');
-      console.error('Login error:', err);
+      // Error handled by setting error state
     } finally {
       setLoading(false);
     }

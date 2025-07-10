@@ -34,8 +34,7 @@ export function AgentStatus() {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load agent status';
         setError(errorMessage);
-        console.error('Agent status error:', err);
-      } finally {
+        } finally {
         setLoading(false);
       }
     };

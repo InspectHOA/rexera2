@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/lib/supabase/provider';
 import { api } from '@/lib/api/client';
+import type { WorkflowData, TaskExecution } from '@/types/workflow';
 
 interface WorkflowFilters {
   workflow_type?: string;
@@ -60,15 +61,15 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
       const today = new Date().toDateString();
       const calculatedStats = {
         total: pagination.total,
-        active: workflows.filter((w: any) => 
+        active: workflows.filter((w: WorkflowData) => 
           ['IN_PROGRESS', 'PENDING', 'AWAITING_REVIEW'].includes(w.status)
         ).length,
-        interrupts: workflows.filter((w: any) => 
-          w.tasks?.some((t: any) => t.status === 'AWAITING_REVIEW')
+        interrupts: workflows.filter((w: WorkflowData) => 
+          w.tasks?.some((t: TaskExecution) => t.status === 'AWAITING_REVIEW')
         ).length,
-        completedToday: workflows.filter((w: any) => 
+        completedToday: workflows.filter((w: WorkflowData) => 
           w.status === 'COMPLETED' && 
-          new Date(w.completed_at).toDateString() === today
+          w.updated_at && new Date(w.updated_at).toDateString() === today
         ).length
       };
       setStats(calculatedStats);

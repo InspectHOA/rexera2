@@ -111,7 +111,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
         }
         
       } catch (error) {
-        console.error('Error fetching emails:', error);
+        // Error is handled by setting empty state
         setEmails([]);
         setThreads([]);
       }
@@ -280,8 +280,8 @@ ${latestEmail.body}`);
                     className="p-2 text-gray-600 hover:bg-gray-100 rounded"
                     title="Archive this conversation"
                     onClick={() => {
-                      // TODO: Implement archive functionality
-                      console.log('Archive conversation:', selectedThreadData.thread_id);
+                      // Archive functionality not implemented yet
+                      // Archive functionality to be implemented
                     }}
                   >
                     <Archive className="w-4 h-4" />
@@ -437,8 +437,8 @@ ${latestEmail.body}`);
                           }`}
                           onClick={() => {
                             if (replyText.trim() && replyTo.trim()) {
-                              // TODO: Handle reply sending
-                              console.log('Sending reply to:', replyTo, 'Message:', replyText);
+                              // Reply sending to be implemented
+                              // Send reply implementation pending
                               setReplyOpen(false);
                               setReplyText('');
                               setReplyTo('');
@@ -547,8 +547,8 @@ ${latestEmail.body}`);
                           }`}
                           onClick={() => {
                             if (forwardText.trim() && forwardTo.trim() && forwardSubject.trim()) {
-                              // TODO: Handle forward sending
-                              console.log('Forwarding email to:', forwardTo, 'Subject:', forwardSubject, 'Message:', forwardText);
+                              // Forward sending to be implemented
+                              // Forward implementation pending
                               setForwardOpen(false);
                               setForwardText('');
                               setForwardTo('');

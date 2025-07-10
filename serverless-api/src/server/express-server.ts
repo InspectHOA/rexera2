@@ -104,17 +104,29 @@ app.get('/api/workflows/:id', async (req, res) => {
     const { id } = req.params;
     const { include } = req.query as Record<string, string>;
     
-    // Validate UUID format
+    // Check if ID is a UUID or human-readable ID
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let actualWorkflowId = id;
     
     if (!isUUID) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Invalid workflow ID. Please use a valid UUID.',
-          code: 'INVALID_UUID'
-        }
-      });
+      // Look up UUID by human_readable_id
+      const { data: workflow, error: workflowError } = await supabase
+        .from('workflows')
+        .select('id')
+        .eq('human_readable_id', id)
+        .single();
+        
+      if (workflowError || !workflow) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: `Workflow not found with ID: ${id}`,
+            code: 'WORKFLOW_NOT_FOUND'
+          }
+        });
+      }
+      
+      actualWorkflowId = workflow.id;
     }
     
     // Build select string based on include parameter
@@ -132,7 +144,7 @@ app.get('/api/workflows/:id', async (req, res) => {
     const { data, error } = await supabase
       .from('workflows')
       .select(selectString)
-      .eq('id', id)
+      .eq('id', actualWorkflowId)
       .single();
     
     if (error) {
@@ -167,7 +179,29 @@ app.get('/api/task-executions', async (req, res) => {
       .select(selectString);
     
     if (workflowId) {
-      query = query.eq('workflow_id', workflowId);
+      // Check if workflowId is a UUID or human-readable ID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workflowId);
+      
+      if (isUUID) {
+        // Use UUID directly
+        query = query.eq('workflow_id', workflowId);
+      } else {
+        // Look up UUID by human_readable_id
+        const { data: workflow, error: workflowError } = await supabase
+          .from('workflows')
+          .select('id')
+          .eq('human_readable_id', workflowId)
+          .single();
+          
+        if (workflowError || !workflow) {
+          return res.status(404).json({
+            success: false,
+            error: `Workflow not found with ID: ${workflowId}`
+          });
+        }
+        
+        query = query.eq('workflow_id', workflow.id);
+      }
     }
     
     query = query

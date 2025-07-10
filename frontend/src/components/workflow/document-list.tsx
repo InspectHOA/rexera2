@@ -50,7 +50,6 @@ export function DocumentList({ workflowId, taskId, onDocumentDeleted }: Document
 
       setDocuments((data || []) as any);
     } catch (err) {
-      console.error('Error loading documents:', err);
       setError(err instanceof Error ? err.message : 'Failed to load documents');
     } finally {
       setLoading(false);
@@ -87,8 +86,7 @@ export function DocumentList({ workflowId, taskId, onDocumentDeleted }: Document
         link.click();
       }
     } catch (err) {
-      console.error('Download error:', err);
-    }
+      }
   };
 
   const handleDelete = async (document: Document) => {
@@ -122,7 +120,6 @@ export function DocumentList({ workflowId, taskId, onDocumentDeleted }: Document
       await loadDocuments();
       onDocumentDeleted?.();
     } catch (err) {
-      console.error('Delete error:', err);
       alert('Failed to delete document: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };

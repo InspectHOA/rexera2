@@ -6,16 +6,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
 
-  console.log('Auth callback called:', {
-    code: code ? 'present' : 'missing',
-    next,
-    origin,
-    searchParams: Object.fromEntries(searchParams.entries())
-  });
-
   if (code) {
-    console.log('Processing auth code exchange...');
-    
     // Create a response object to modify
     const response = NextResponse.redirect(`${origin}${next}`);
 
@@ -45,23 +36,13 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    console.log('Exchanging code for session...');
-    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      console.log('Auth exchange successful:', {
-        userId: data?.user?.id,
-        email: data?.user?.email
-      });
       return response;
-    } else {
-      console.error('Auth exchange failed:', error);
     }
-  } else {
-    console.log('No auth code provided in callback');
   }
 
   // Return the user to an error page with instructions
-  console.log('Redirecting to error page');
   return NextResponse.redirect(`${origin}/auth/error`);
 }

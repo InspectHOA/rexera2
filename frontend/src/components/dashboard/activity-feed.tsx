@@ -34,8 +34,7 @@ export function ActivityFeed() {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
         setError(errorMessage);
-        console.error('Activity feed error:', err);
-      } finally {
+        } finally {
         setLoading(false);
       }
     };

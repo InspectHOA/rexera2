@@ -86,7 +86,6 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
       onUploadComplete?.(document);
 
     } catch (err) {
-      console.error('File upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);

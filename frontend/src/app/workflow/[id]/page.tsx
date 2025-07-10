@@ -11,6 +11,7 @@ import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflow } from '@/lib/hooks/useWorkflows';
 import { formatWorkflowIdWithType } from '@rexera/shared';
+import type { WorkflowData } from '@/types/workflow';
 import { EmailInterface } from '@/components/agents/mia/email-interface';
 import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
 import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
@@ -36,7 +37,6 @@ interface Workflow {
   closing: string;
   progress: string;
 }
-
 
 export default function WorkflowDetailPage() {
   const params = useParams();
@@ -240,13 +240,13 @@ export default function WorkflowDetailPage() {
             {/* Right Panel */}
             <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-gray-200/50 flex flex-col overflow-hidden">
               {/* Right Panel Tabs */}
-              <div className="px-4 py-3 border-b border-gray-200/50 bg-gray-50/50 flex-shrink-0">
+              <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-100 flex-shrink-0 flex items-center h-10">
                 <button
                   onClick={() => setRightPanelTab('task-details')}
                   className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
                     rightPanelTab === 'task-details'
-                      ? 'text-gray-700'
-                      : 'text-gray-400 hover:text-gray-600'
+                      ? 'text-gray-800'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   📋 Task Details
@@ -255,8 +255,8 @@ export default function WorkflowDetailPage() {
                   onClick={() => setRightPanelTab('agent-interface')}
                   className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
                     rightPanelTab === 'agent-interface'
-                      ? 'text-gray-700'
-                      : 'text-gray-400 hover:text-gray-600'
+                      ? 'text-gray-800'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   🤖 {selectedTask && tasks.find(t => t.id === selectedTask)?.agent ? `${tasks.find(t => t.id === selectedTask)?.agent} Interface` : 'Agent Interface'}
@@ -280,7 +280,7 @@ export default function WorkflowDetailPage() {
   );
 }
 
-function TabContent({ activeTab, workflowData }: { activeTab: string; workflowData?: any }) {
+function TabContent({ activeTab, workflowData }: { activeTab: string; workflowData?: WorkflowData }): JSX.Element | null {
   switch (activeTab) {
     case 'details':
       const detailFields = workflowData ? [
@@ -332,7 +332,7 @@ function TabContent({ activeTab, workflowData }: { activeTab: string; workflowDa
   }
 }
 
-function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask: string | null; tasks: Task[]; workflowId: string }) {
+function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask: string | null; tasks: Task[]; workflowId: string }): JSX.Element {
   if (!selectedTask) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWorkflows } from '@/lib/hooks/useWorkflows';
 import { formatWorkflowIdWithType } from '@rexera/shared';
+import type { WorkflowData, TaskExecution, TransformedWorkflow } from '@/types/workflow';
 
 export function WorkflowTable() {
   const router = useRouter();
@@ -36,9 +37,9 @@ export function WorkflowTable() {
   };
 
   // Transform and sort API data
-  const transformedWorkflows = workflowData.map((workflow: any) => {
-    const tasks = workflow.task_executions || workflow.tasks || [];
-    const interruptCount = tasks.filter((t: any) => t.status === 'AWAITING_REVIEW')?.length || 0;
+  const transformedWorkflows: TransformedWorkflow[] = workflowData.map((workflow: WorkflowData) => {
+    const tasks: TaskExecution[] = workflow.task_executions || workflow.tasks || [];
+    const interruptCount = tasks.filter((t: TaskExecution) => t.status === 'AWAITING_REVIEW')?.length || 0;
     const hasInterrupts = interruptCount > 0;
     
     // Use human_readable_id field with type prefix (e.g., "HOA-1001")
@@ -72,7 +73,7 @@ export function WorkflowTable() {
       interrupts: hasInterrupts ? {
         type: workflow.priority === 'URGENT' ? 'critical' : 'standard',
         count: interruptCount,
-        icons: getInterruptIcons(tasks.filter((t: any) => t.status === 'AWAITING_REVIEW') || [])
+        icons: getInterruptIcons(tasks.filter((t: TaskExecution) => t.status === 'AWAITING_REVIEW') || [])
       } : null,
       interruptCount: interruptCount, // For sorting
       due: formatDate(workflow.due_date),
@@ -83,7 +84,7 @@ export function WorkflowTable() {
   });
 
   // Filter workflows
-  const filteredWorkflows = transformedWorkflows.filter((workflow: any) => {
+  const filteredWorkflows = transformedWorkflows.filter((workflow: TransformedWorkflow) => {
     // Type filter
     if (filterType && workflow.typeRaw !== filterType) {
       return false;
@@ -208,7 +209,7 @@ export function WorkflowTable() {
     return classMap[status] || 'status-pending';
   }
 
-  function getInterruptIcons(tasks: any[]) {
+  function getInterruptIcons(tasks: TaskExecution[]) {
     const taskTypeIcons: Record<string, string> = {
       'identify_lender_contact': '🔍',
       'research_lender_contact': '🔍',
@@ -221,15 +222,15 @@ export function WorkflowTable() {
       'municipal_search': '🏛️'
     };
     
-    return tasks.slice(0, 3).map((task: any) => {
-      const taskType = task.task_type || task.type || 'unknown';
+    return tasks.slice(0, 3).map((task: TaskExecution) => {
+      const taskType = task.task_type || 'unknown';
       const icon = taskTypeIcons[taskType] || '⚠️';
       const agent = getAgentDisplay(task);
       return { icon, agent };
     });
   }
 
-  function getAgentDisplay(task: any) {
+  function getAgentDisplay(task: TaskExecution) {
     if (task.executor_type === 'HIL') {
       return 'HIL Monitor';
     }
@@ -291,10 +292,9 @@ export function WorkflowTable() {
     );
   }
 
-
   const handleWorkflowClick = (workflowId: string) => {
     // Find the workflow to get human_readable_id
-    const workflow = workflowData.find((w: any) => w.id === workflowId);
+    const workflow = workflowData.find((w: WorkflowData) => w.id === workflowId);
     if (workflow?.human_readable_id) {
       router.push(`/workflow/${workflow.human_readable_id}`);
       return;
@@ -398,7 +398,7 @@ export function WorkflowTable() {
           </tr>
         </thead>
         <tbody>
-          {workflows.map((workflow: any, index: number) => (
+          {workflows.map((workflow: TransformedWorkflow, index: number) => (
             <tr 
               key={index}
               onClick={() => handleWorkflowClick(workflow.workflowId)}
@@ -433,7 +433,7 @@ export function WorkflowTable() {
                       {workflow.interrupts.count}
                     </span>
                     <div className="interrupt-text text-slate-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1.5">
-                      {workflow.interrupts.icons.map((interrupt: any, index: number) => (
+                      {workflow.interrupts.icons.map((interrupt: { icon: string; agent: string }, index: number) => (
                         <span key={index} title={interrupt.agent} className="text-lg">
                           {interrupt.icon}
                         </span>

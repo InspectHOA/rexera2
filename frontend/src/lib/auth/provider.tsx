@@ -42,12 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (!user) {
-      console.log('refreshProfile: No user, setting profile to null');
       setProfile(null);
       return;
     }
-
-    console.log('refreshProfile: Fetching profile for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -57,10 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
         setProfile(null);
       } else {
-        console.log('refreshProfile: Profile fetched successfully:', data);
         // Convert null values to undefined to match UserProfile type
         const profile: UserProfile = {
           ...data,
@@ -72,7 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(profile);
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
       setProfile(null);
     }
   };
@@ -102,8 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
         if (error) {
-          console.error('Error creating user profile:', error);
-        }
+          }
       } else {
         // Update existing profile with latest OAuth data
         const { error } = await supabase
@@ -116,12 +109,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('id', user.id);
 
         if (error) {
-          console.error('Error updating user profile:', error);
-        }
+          }
       }
     } catch (error) {
-      console.error('Error ensuring user profile:', error);
-    }
+      }
   };
 
   const signOut = async () => {
@@ -131,8 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       router.push('/auth/login' as Route);
     } catch (error) {
-      console.error('Error signing out:', error);
-    }
+      }
   };
 
   useEffect(() => {
@@ -172,9 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Get initial session
     const getSession = async () => {
-      console.log('getSession: Checking initial session...');
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('getSession: Session found:', !!session, session?.user?.email);
       setUser(session?.user ?? null);
       setLoading(false);
     };
@@ -203,7 +191,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user && !profile) {
-      console.log('useEffect: User exists but no profile, calling refreshProfile...');
       refreshProfile();
     }
   }, [user]);
