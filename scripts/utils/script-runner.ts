@@ -66,13 +66,13 @@ const SCRIPT_REGISTRY = {
   },
   
   // Workflow management
-  'workflow:import': {
-    path: 'scripts/workflows/import-workflow.ts',
-    description: 'Import workflow definitions to n8n'
+  'workflow:manager': {
+    path: 'workflows/scripts/n8n-workflow-manager.ts',
+    description: 'Comprehensive n8n workflow management CLI'
   },
-  'workflow:deploy': {
-    path: 'scripts/workflows/deploy-workflows.ts',
-    description: 'Deploy workflows to n8n Cloud'
+  'workflow:test-integration': {
+    path: 'workflows/scripts/test-integration.ts',
+    description: 'End-to-end workflow integration testing'
   },
   'workflow:backup': {
     path: 'scripts/workflows/backup-workflows.ts',

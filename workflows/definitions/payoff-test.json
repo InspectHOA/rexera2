@@ -3,7 +3,6 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
         "path": "payoff-test",
         "responseMode": "responseNode",
         "options": {}
@@ -11,9 +10,11 @@
       "id": "webhook-trigger",
       "name": "Payoff Test Trigger",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.4,
       "position": [240, 300],
-      "webhookId": "payoff-test-webhook"
+      "webhookId": "payoff-test-webhook",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -71,7 +72,7 @@
           "parameters": [
             {
               "name": "json",
-              "value": "={{ [ { \"workflow_id\": $json.data.id, \"task_type\": \"identify_lender_contact\", \"action_type\": \"execute\", \"status\": \"PENDING\", \"sequence_order\": 1, \"agent_name\": \"nina\", \"input_data\": { \"property_address\": $('webhook-trigger').item.json.body.property_address || \"123 Test St\", \"loan_number\": $('webhook-trigger').item.json.body.loan_number || \"TEST-LOAN-001\" } }, { \"workflow_id\": $json.data.id, \"task_type\": \"send_payoff_request\", \"action_type\": \"execute\", \"status\": \"PENDING\", \"sequence_order\": 2, \"agent_name\": \"mia\", \"input_data\": {} }, { \"workflow_id\": $json.data.id, \"task_type\": \"extract_payoff_data\", \"action_type\": \"execute\", \"status\": \"PENDING\", \"sequence_order\": 3, \"agent_name\": \"iris\", \"input_data\": {} } ] }}"
+              "value": "={{ [ { \"workflow_id\": $json.data.id, \"task_type\": \"identify_lender_contact\", \"action_type\": \"execute\", \"status\": \"PENDING\", \"sequence_order\": 1, \"agent_name\": \"nina\", \"input_data\": { \"property_address\": $('Payoff Test Trigger').item.json.body.property_address || \"123 Test St\", \"loan_number\": $('Payoff Test Trigger').item.json.body.loan_number || \"TEST-LOAN-001\" } }, { \"workflow_id\": $json.data.id, \"task_type\": \"send_payoff_request\", \"action_type\": \"execute\", \"status\": \"PENDING\", \"sequence_order\": 2, \"agent_name\": \"mia\", \"input_data\": {} }, { \"workflow_id\": $json.data.id, \"task_type\": \"extract_payoff_data\", \"action_type\": \"execute\", \"status\": \"PENDING\", \"sequence_order\": 3, \"agent_name\": \"iris\", \"input_data\": {} } ] }}"
             }
           ]
         },
@@ -128,7 +129,7 @@
       "id": "simulate-work-1",
       "name": "Simulate Nina Work",
       "type": "n8n-nodes-base.wait",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [1120, 200]
     },
     {
@@ -171,7 +172,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('create-tasks').item.json.data[0].id }}",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('Create Test Tasks').item.json.data[0].id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -206,7 +207,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('create-tasks').item.json.data[1].id }}",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('Create Test Tasks').item.json.data[1].id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -247,7 +248,7 @@
       "id": "simulate-work-2",
       "name": "Simulate Mia Work",
       "type": "n8n-nodes-base.wait",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [1120, 400]
     },
     {
@@ -280,7 +281,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('create-tasks').item.json.data[1].id }}",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('Create Test Tasks').item.json.data[1].id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -315,7 +316,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('create-tasks').item.json.data[2].id }}",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('Create Test Tasks').item.json.data[2].id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -356,7 +357,7 @@
       "id": "simulate-work-3",
       "name": "Simulate Iris Work",
       "type": "n8n-nodes-base.wait",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [1120, 600]
     },
     {
@@ -393,7 +394,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('create-tasks').item.json.data[2].id }}",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions?id={{ $('Create Test Tasks').item.json.data[2].id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -428,7 +429,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.REXERA_API_URL }}/api/workflows/{{ $('create-workflow').item.json.data.id }}",
+        "url": "={{ $env.REXERA_API_URL }}/api/workflows/{{ $('Create Test Workflow').item.json.data.id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -464,196 +465,196 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"workflow_id\": $('create-workflow').item.json.data.id, \"status\": \"COMPLETED\", \"message\": \"Payoff test workflow completed successfully\", \"test_results\": { \"lender_contact\": $('mock-nina-result').item.json, \"email_sent\": $('mock-mia-result').item.json, \"payoff_data\": $('mock-iris-result').item.json }, \"completed_at\": new Date().toISOString() } }}"
+        "responseBody": "={{ { \"success\": true, \"workflow_id\": $('Create Test Workflow').item.json.data.id, \"status\": \"COMPLETED\", \"message\": \"Payoff test workflow completed successfully\", \"test_results\": { \"lender_contact\": $('Mock Nina Result').item.json, \"email_sent\": $('Mock Mia Result').item.json, \"payoff_data\": $('Mock Iris Result').item.json }, \"completed_at\": new Date().toISOString() } }}"
       },
       "id": "success-response",
       "name": "Success Response",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
+      "typeVersion": 1.4,
       "position": [2000, 400]
     }
   ],
   "connections": {
-    "webhook-trigger": {
+    "Payoff Test Trigger": {
       "main": [
         [
           {
-            "node": "create-workflow",
+            "node": "Create Test Workflow",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "create-workflow": {
+    "Create Test Workflow": {
       "main": [
         [
           {
-            "node": "create-tasks",
+            "node": "Create Test Tasks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "create-tasks": {
+    "Create Test Tasks": {
       "main": [
         [
           {
-            "node": "start-task-1",
+            "node": "Start Task 1",
             "type": "main",
             "index": 0
           },
           {
-            "node": "start-task-2",
+            "node": "Start Task 2",
             "type": "main",
             "index": 0
           },
           {
-            "node": "start-task-3",
+            "node": "Start Task 3",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "start-task-1": {
+    "Start Task 1": {
       "main": [
         [
           {
-            "node": "simulate-work-1",
+            "node": "Simulate Nina Work",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "simulate-work-1": {
+    "Simulate Nina Work": {
       "main": [
         [
           {
-            "node": "mock-nina-result",
+            "node": "Mock Nina Result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "mock-nina-result": {
+    "Mock Nina Result": {
       "main": [
         [
           {
-            "node": "complete-task-1",
+            "node": "Complete Task 1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "start-task-2": {
+    "Start Task 2": {
       "main": [
         [
           {
-            "node": "simulate-work-2",
+            "node": "Simulate Mia Work",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "simulate-work-2": {
+    "Simulate Mia Work": {
       "main": [
         [
           {
-            "node": "mock-mia-result",
+            "node": "Mock Mia Result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "mock-mia-result": {
+    "Mock Mia Result": {
       "main": [
         [
           {
-            "node": "complete-task-2",
+            "node": "Complete Task 2",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "start-task-3": {
+    "Start Task 3": {
       "main": [
         [
           {
-            "node": "simulate-work-3",
+            "node": "Simulate Iris Work",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "simulate-work-3": {
+    "Simulate Iris Work": {
       "main": [
         [
           {
-            "node": "mock-iris-result",
+            "node": "Mock Iris Result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "mock-iris-result": {
+    "Mock Iris Result": {
       "main": [
         [
           {
-            "node": "complete-task-3",
+            "node": "Complete Task 3",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "complete-task-1": {
+    "Complete Task 1": {
       "main": [
         [
           {
-            "node": "complete-workflow",
+            "node": "Complete Workflow",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "complete-task-2": {
+    "Complete Task 2": {
       "main": [
         [
           {
-            "node": "complete-workflow",
+            "node": "Complete Workflow",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "complete-task-3": {
+    "Complete Task 3": {
       "main": [
         [
           {
-            "node": "complete-workflow",
+            "node": "Complete Workflow",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "complete-workflow": {
+    "Complete Workflow": {
       "main": [
         [
           {
-            "node": "success-response",
+            "node": "Success Response",
             "type": "main",
             "index": 0
           }

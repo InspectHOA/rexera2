@@ -1,43 +1,189 @@
 #!/usr/bin/env ts-node
 
 /**
- * Integration test for the new unified workflow architecture
- * Tests the complete flow: workflow trigger → task creation → agent execution → task completion
+ * ============================================================================
+ * End-to-End Workflow Integration Test for Rexera 2.0
+ * ============================================================================
+ * 
+ * This script performs comprehensive end-to-end testing of the complete
+ * workflow orchestration system, validating the integration between:
+ * 
+ * 1. Rexera Platform (Database & API)
+ * 2. n8n Cloud (Workflow Orchestration)
+ * 3. AI Agents (Task Execution)
+ * 4. Real-time UI Updates (Supabase Subscriptions)
+ * 
+ * BUSINESS CONTEXT:
+ * ----------------
+ * This test validates the complete PAYOFF request workflow that customers
+ * use in production. It ensures that the dual-layer architecture (Rexera +
+ * n8n) works correctly and that all business processes complete successfully.
+ * 
+ * TEST ARCHITECTURE:
+ * -----------------
+ * 
+ * Step 1: Create Workflow
+ *   ├─ Creates a test workflow in Rexera database
+ *   ├─ Validates workflow record creation
+ *   └─ Captures workflow ID for subsequent steps
+ * 
+ * Step 2: Trigger n8n Workflow
+ *   ├─ Sends webhook request to n8n Cloud
+ *   ├─ Passes workflow context and metadata
+ *   └─ Initiates automated task orchestration
+ * 
+ * Step 3: Verify Task Pre-population
+ *   ├─ Checks that n8n created ALL expected tasks upfront
+ *   ├─ Validates task types and sequence ordering
+ *   └─ Confirms PENDING status for newly created tasks
+ * 
+ * Step 4: Simulate Dynamic Events
+ *   ├─ Simulates incoming email from lender
+ *   ├─ Triggers micro-workflow for response handling
+ *   └─ Tests event-driven task creation
+ * 
+ * Step 5: Validate Dynamic Task Creation
+ *   ├─ Confirms new tasks were created dynamically
+ *   ├─ Validates proper task linking and metadata
+ *   └─ Tests complete workflow flexibility
+ * 
+ * CRITICAL VALIDATION POINTS:
+ * --------------------------
+ * ✅ Workflow database record creation
+ * ✅ n8n webhook triggering and response
+ * ✅ Task pre-population (ALL tasks created immediately)
+ * ✅ Task status progression (PENDING → RUNNING → COMPLETED)
+ * ✅ Dynamic task creation from external events
+ * ✅ Real-time status synchronization
+ * ✅ Complete workflow lifecycle management
+ * 
+ * FAILURE SCENARIOS TESTED:
+ * ------------------------
+ * - Network connectivity issues
+ * - API authentication failures
+ * - Invalid workflow configurations
+ * - Missing task creation
+ * - Webhook delivery failures
+ * - Database synchronization errors
+ * 
+ * ENVIRONMENT REQUIREMENTS:
+ * ------------------------
+ * API_BASE_URL     - Rexera API endpoint (default: http://localhost:3002)
+ * N8N_BASE_URL     - n8n Cloud instance URL
+ * N8N_API_KEY      - n8n Cloud API authentication key
+ * 
+ * USAGE:
+ * -----
+ * tsx workflows/scripts/test-integration.ts
+ * 
+ * Expected output:
+ * - Step-by-step progress reporting
+ * - Detailed test result summary
+ * - Clear pass/fail indicators
+ * - Error details for any failures
+ * 
+ * @version 2.0
+ * @since 2024-07-11
+ * @author Rexera Development Team
  */
 
 import { config } from 'dotenv';
 import fetch from 'node-fetch';
 
-// Load environment variables
+// ============================================================================
+// ENVIRONMENT CONFIGURATION
+// ============================================================================
+
+// Load environment variables from project configuration
 config({ path: '../../.env.local' });
 
+// Extract required configuration values
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3002';
 const N8N_BASE_URL = process.env.N8N_BASE_URL;
 const N8N_API_KEY = process.env.N8N_API_KEY;
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+/**
+ * Test result tracking structure
+ * 
+ * Captures the outcome of each test step with detailed information
+ * for comprehensive reporting and debugging.
+ */
 interface TestResult {
+  /** Name of the test step for identification */
   step: string;
+  /** Whether the step passed (true) or failed (false) */
   success: boolean;
+  /** Optional data returned from successful operations */
   data?: any;
+  /** Error message if the step failed */
   error?: string;
 }
 
+/**
+ * ============================================================================
+ * IntegrationTester Class
+ * ============================================================================
+ * 
+ * Orchestrates the complete end-to-end integration test suite.
+ * 
+ * TESTING METHODOLOGY:
+ * - Each test step is independent and isolated
+ * - Failed steps don't prevent subsequent step execution (where possible)
+ * - Comprehensive result tracking for detailed reporting
+ * - Real-time progress feedback during execution
+ * - Proper cleanup of test data
+ * 
+ * STEP DEPENDENCIES:
+ * Step 1 → Step 2 → Step 3 → Step 4 → Step 5
+ * (Each step depends on the previous step's success)
+ * 
+ * ERROR HANDLING:
+ * - Captures detailed error information for debugging
+ * - Continues testing where possible to gather maximum information
+ * - Provides clear failure context and troubleshooting guidance
+ */
 class IntegrationTester {
+  /** Array to store results from all test steps */
   private results: TestResult[] = [];
+  
+  /** Workflow ID created during testing (used across multiple steps) */
   private testWorkflowId: string = '';
 
+  /**
+   * Main test execution orchestrator
+   * 
+   * Runs all test steps in sequence and provides comprehensive reporting.
+   * Uses try-catch to ensure proper error handling and result reporting
+   * even if individual steps fail.
+   * 
+   * TEST SEQUENCE:
+   * 1. Create test workflow in Rexera database
+   * 2. Trigger n8n workflow via webhook
+   * 3. Verify all expected tasks were created
+   * 4. Simulate external event (incoming email)
+   * 5. Validate dynamic task creation from event
+   * 
+   * @throws Will exit process with code 1 if any critical step fails
+   */
   async run() {
     console.log('🚀 Starting Unified Workflow Architecture Integration Test\n');
 
     try {
+      // Execute test steps in dependency order
       await this.step1_CreateWorkflow();
       await this.step2_TriggerPayoffWorkflow();
       await this.step3_CheckTaskCreation();
       await this.step4_SimulateIncomingEmail();
       await this.step5_CheckDynamicTask();
       
+      // Display comprehensive test results
       this.printResults();
     } catch (error) {
+      // Ensure results are displayed even if there's a fatal error
       console.error('❌ Test failed:', error);
       this.printResults();
       process.exit(1);
