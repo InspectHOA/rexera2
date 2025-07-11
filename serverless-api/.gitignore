@@ -1,1 +1,9 @@
+# Vercel deployment
 .vercel
+
+# Build artifacts
+dist/
+*.tsbuildinfo
+
+# Test coverage reports
+coverage/

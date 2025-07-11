@@ -18,10 +18,8 @@
     "declarationMap": true,
     "baseUrl": ".",
     "paths": {
-      "@rexera/types": ["./types/src"],
-      "@rexera/types/*": ["./types/src/*"],
-      "@rexera/workflows": ["./workflows/src"],
-      "@rexera/workflows/*": ["./workflows/src/*"]
+      "@rexera/shared": ["./packages/shared/src"],
+      "@rexera/shared/*": ["./packages/shared/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

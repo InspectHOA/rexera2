@@ -1,10 +1,18 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 
-const fs = require('fs');
-const path = require('path');
+/**
+ * Console Statement Cleanup Utility
+ * 
+ * Purpose: Remove console.* statements from TypeScript/JavaScript files
+ * Usage: tsx scripts/utils/cleanup-console.ts
+ * Requirements: Run from project root directory
+ */
 
-function cleanupConsoleStatements(filePath) {
-  let content = fs.readFileSync(filePath, 'utf8');
+import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
+import { join } from 'path';
+
+function cleanupConsoleStatements(filePath: string): boolean {
+  let content = readFileSync(filePath, 'utf8');
   const originalContent = content;
   
   // Remove console.log statements (multiline and single line)
@@ -20,20 +28,20 @@ function cleanupConsoleStatements(filePath) {
   content = content.replace(/\n\s*\n\s*\n/g, '\n\n');
   
   if (content !== originalContent) {
-    fs.writeFileSync(filePath, content);
+    writeFileSync(filePath, content);
     console.log(`Cleaned: ${filePath}`);
     return true;
   }
   return false;
 }
 
-function processDirectory(dirPath) {
-  const files = fs.readdirSync(dirPath);
+function processDirectory(dirPath: string): number {
+  const files = readdirSync(dirPath);
   let cleaned = 0;
   
   for (const file of files) {
-    const fullPath = path.join(dirPath, file);
-    const stat = fs.statSync(fullPath);
+    const fullPath = join(dirPath, file);
+    const stat = statSync(fullPath);
     
     if (stat.isDirectory() && !file.includes('node_modules') && !file.includes('.git')) {
       cleaned += processDirectory(fullPath);
@@ -47,6 +55,17 @@ function processDirectory(dirPath) {
   return cleaned;
 }
 
-console.log('🧹 Cleaning up console statements...');
-const cleaned = processDirectory('./frontend/src');
-console.log(`✅ Cleaned ${cleaned} files`);
+async function main() {
+  try {
+    console.log('🧹 Cleaning up console statements...');
+    const cleaned = processDirectory('./frontend/src');
+    console.log(`✅ Cleaned ${cleaned} files`);
+  } catch (error) {
+    console.error('❌ Cleanup failed:', error);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main();
+}

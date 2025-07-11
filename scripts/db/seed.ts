@@ -282,8 +282,9 @@ async function seedDatabase() {
       // Add extra interrupted tasks for workflows 1, 3, 7, and 12 to create multi-agent interrupts
       if ([1, 3, 7, 12].includes(i)) {
         // Add mia email task that's interrupted
+        const miaTaskId = randomUUID();
         taskExecutions.push({
-          id: randomUUID(),
+          id: miaTaskId,
           workflow_id: workflowId,
           agent_id: '77777777-7777-7777-7777-777777777777', // mia
           title: 'Send Client Notification Email',
@@ -301,6 +302,124 @@ async function seedDatabase() {
           completed_at: null,
           execution_time_ms: null,
           retry_count: 1
+        });
+
+        // Create threaded email conversation for this Mia task
+        const threadId = randomUUID();
+        const clientEmails = ['john.smith@email.com', 'sarah.johnson@email.com', 'mike.brown@email.com', 'lisa.davis@email.com'];
+        const clientNames = ['John Smith', 'Sarah Johnson', 'Mike Brown', 'Lisa Davis'];
+        const propertyAddresses = ['125 Main St', '175 Pine Rd', '275 First St', '400 Market St'];
+        const addressIndex = [1, 3, 7, 12].indexOf(i);
+        const lienAmount = (Math.random() * 2000 + 500).toFixed(2);
+        
+        // Email 1: Initial lien search results (3 days ago)
+        communications.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          thread_id: threadId,
+          sender_id: null,
+          recipient_email: clientEmails[addressIndex],
+          subject: `Lien Search Results - ${propertyAddresses[addressIndex]}`,
+          body: `Dear ${clientNames[addressIndex]},\n\nWe have completed the initial municipal lien search for ${propertyAddresses[addressIndex]}.\n\nFINDINGS SUMMARY:\n- Water/Sewer liens: $${lienAmount}\n- Property tax status: Current with pending assessment\n- Code violations: 1 minor violation (fence height) - resolved 2019\n- Assessment liens: None found\n- Special district assessments: $145.50 (street lighting)\n\nNEXT STEPS:\nWe need to verify the water/sewer lien amount and obtain payoff quotes. This may affect your closing timeline.\n\nI'll follow up with detailed documentation within 24 hours.\n\nBest regards,\nMia Chen\nEmail Communication Agent\nRexera Title Services\n(555) 123-4567`,
+          communication_type: 'email',
+          direction: 'OUTBOUND',
+          status: 'SENT',
+          metadata: { 
+            agent: 'mia',
+            task_id: miaTaskId,
+            to_name: clientNames[addressIndex],
+            thread_position: 1
+          },
+          created_at: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)).toISOString()
+        });
+
+        // Email 2: Client response asking questions (2 days ago)
+        communications.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          thread_id: threadId,
+          sender_id: null,
+          recipient_email: 'mia.chen@rexera.com',
+          subject: `RE: Lien Search Results - ${propertyAddresses[addressIndex]}`,
+          body: `Hi Mia,\n\nThank you for the preliminary results. I have a few questions:\n\n1. Can you clarify the water/sewer lien amount? Is this an actual lien or just an outstanding balance?\n\n2. How long will it take to get the payoff quote from the water department?\n\n3. Will this delay our closing scheduled for next Friday?\n\n4. What documentation do you need from me to proceed?\n\nI'm concerned about the timeline since we have a tight closing schedule.\n\nThanks,\n${clientNames[addressIndex]}\n${clientEmails[addressIndex]}\n(555) 987-6543`,
+          communication_type: 'email',
+          direction: 'INBOUND',
+          status: 'READ',
+          metadata: { 
+            from_name: clientNames[addressIndex],
+            thread_position: 2,
+            client_concern: 'timeline'
+          },
+          created_at: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString()
+        });
+
+        // Email 3: Mia's detailed response (1 day ago)
+        communications.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          thread_id: threadId,
+          sender_id: null,
+          recipient_email: clientEmails[addressIndex],
+          subject: `RE: Lien Search Results - ${propertyAddresses[addressIndex]}`,
+          body: `Dear ${clientNames[addressIndex]},\n\nThank you for your questions. Here are the detailed answers:\n\n1. WATER/SEWER LIEN: This is an actual recorded lien filed 6 months ago for unpaid utilities. Amount: $${lienAmount} plus interest.\n\n2. PAYOFF TIMELINE: Water department requires 3-5 business days for official payoff letters. I've already submitted the request.\n\n3. CLOSING IMPACT: This should not delay your Friday closing if we receive payoff confirmation by Wednesday.\n\n4. DOCUMENTATION NEEDED: None from you at this time. I'm handling all municipal coordination.\n\nADDITIONAL FINDINGS:\n- Contacted City Planning Dept: No pending special assessments\n- Verified property tax payments current through 2024\n- Obtained certified copy of lien documentation\n\nACTION ITEMS:\n- Monday: Follow up with Water Dept (Priority)\n- Tuesday: Obtain final payoff amount\n- Wednesday: Coordinate payment with closing agent\n\nI'll send updates daily until resolution. Please let me know if you have other concerns.\n\nBest regards,\nMia Chen\nEmail Communication Agent\nRexera Title Services\nDirect: (555) 123-4567\nCell: (555) 123-4568`,
+          communication_type: 'email',
+          direction: 'OUTBOUND',
+          status: 'DELIVERED',
+          metadata: { 
+            agent: 'mia',
+            task_id: miaTaskId,
+            to_name: clientNames[addressIndex],
+            thread_position: 3,
+            priority: 'high'
+          },
+          created_at: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString()
+        });
+
+        // Email 4: Update with complications (8 hours ago)
+        communications.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          thread_id: threadId,
+          sender_id: null,
+          recipient_email: clientEmails[addressIndex],
+          subject: `URGENT: Lien Update - ${propertyAddresses[addressIndex]}`,
+          body: `Dear ${clientNames[addressIndex]},\n\nIMPORTANT UPDATE:\n\nI received the official payoff letter from the Water Department. There's a complication that requires immediate attention:\n\nORIGINAL LIEN: $${lienAmount}\nACCRUED INTEREST: $${(parseFloat(lienAmount) * 0.15).toFixed(2)}\nADMIN FEES: $125.00\nTOTAL PAYOFF: $${(parseFloat(lienAmount) * 1.15 + 125).toFixed(2)}\n\nCOMPLICATION:\nThe water department discovered an additional service connection fee from 2022 that wasn't included in the original lien filing. This creates a title issue that requires legal review.\n\nREQUIRED ACTIONS:\n1. Our legal team must review the additional fee ($487.50)\n2. Title company needs to approve modified commitment\n3. Lender notification of additional title requirements\n\nTIMELINE IMPACT:\nThis may delay closing by 2-3 business days for proper legal clearance.\n\nI'm scheduling an emergency call with all parties for tomorrow morning at 9 AM. Please confirm your availability.\n\nUrgent questions: Call my cell immediately (555) 123-4568\n\nMia Chen\nEmail Communication Agent\nRexera Title Services\nEMERGENCY LINE: (555) 123-4568`,
+          communication_type: 'email',
+          direction: 'OUTBOUND',
+          status: 'DELIVERED',
+          metadata: { 
+            agent: 'mia',
+            task_id: miaTaskId,
+            to_name: clientNames[addressIndex],
+            thread_position: 4,
+            urgency: 'critical',
+            total_payoff: (parseFloat(lienAmount) * 1.15 + 125).toFixed(2)
+          },
+          created_at: new Date(Date.now() - (8 * 60 * 60 * 1000)).toISOString()
+        });
+
+        // Email 5: Current draft requiring legal review (FAILED status)
+        communications.push({
+          id: randomUUID(),
+          workflow_id: workflowId,
+          thread_id: threadId,
+          sender_id: null,
+          recipient_email: clientEmails[addressIndex],
+          subject: `DRAFT: Legal Review Required - ${propertyAddresses[addressIndex]}`,
+          body: `Dear ${clientNames[addressIndex]},\n\n[DRAFT - AWAITING LEGAL REVIEW]\n\nFOLLOW-UP ON EMERGENCY CONFERENCE CALL:\n\nAfter consultation with our legal team and title company, we have identified resolution options for the additional service connection fee:\n\nOPTION 1 - FULL CLEARANCE:\n- Pay additional fee: $487.50\n- Obtain legal release documentation\n- Close on original timeline (Friday)\n- Total additional cost: $612.50 (includes legal fees)\n\nOPTION 2 - TITLE INSURANCE EXCEPTION:\n- Proceed with closing as scheduled\n- Add exception to title policy\n- Buyer assumes responsibility for fee resolution\n- Additional premium: $250.00\n\nOPTION 3 - DELAYED CLOSING:\n- Request 1-week extension\n- Full legal resolution with city\n- Clean title delivery\n- No additional buyer costs\n\nRECOMMENDATION:\n[LEGAL TEAM INPUT REQUIRED]\nOur preliminary recommendation is Option 1, but this requires review of municipal code section 14.7.3 regarding retroactive service fees and their enforceability.\n\nLEGAL RESEARCH PENDING:\n- Municipal ordinance review\n- Statute of limitations analysis\n- Title insurance underwriter consultation\n- Lender requirement verification\n\nI will provide final recommendation within 24 hours pending legal team analysis.\n\n[THIS EMAIL REQUIRES LEGAL DEPARTMENT APPROVAL BEFORE SENDING]\n\nMia Chen\nEmail Communication Agent\nRexera Title Services\n(555) 123-4567\n\n--- INTERNAL NOTES ---\nLegal Review Items:\n- Verify municipal authority for retroactive fees\n- Confirm title insurance coverage options\n- Review lender policy on additional liens\n- Prepare client consultation call script`,
+          communication_type: 'email',
+          direction: 'OUTBOUND',
+          status: 'FAILED',
+          metadata: { 
+            agent: 'mia',
+            task_id: miaTaskId,
+            to_name: clientNames[addressIndex],
+            thread_position: 5,
+            requires_legal_review: true,
+            draft_status: 'pending_approval',
+            legal_items: ['municipal_authority', 'title_coverage', 'lender_policy']
+          },
+          created_at: new Date(Date.now() - (2 * 60 * 60 * 1000)).toISOString()
         });
 
         // Add ria support coordination task that's interrupted for workflows 3, 7, 12

@@ -1,10 +1,14 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 
 /**
- * Quick API validation script for human-readable ID support
+ * API Validation Script
+ * 
+ * Purpose: Quick validation script for human-readable ID support
+ * Usage: tsx scripts/testing/test-apis.ts
+ * Requirements: API server running on localhost:3001
  */
 
-async function testAPIs() {
+async function testAPIs(): Promise<void> {
   console.log('🧪 Testing Human-Readable ID Support\n');
   
   const tests = [
@@ -24,10 +28,22 @@ async function testAPIs() {
       } else {
         console.log(`❌ FAILED: ${data.error?.message || data.error}\n`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(`❌ ERROR: ${error.message}\n`);
     }
   }
 }
 
-testAPIs().catch(console.error);
+async function main() {
+  try {
+    await testAPIs();
+    console.log('🎉 API testing completed');
+  } catch (error) {
+    console.error('❌ Testing failed:', error);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main();
+}
