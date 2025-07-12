@@ -125,7 +125,8 @@ export const corsMiddleware = async (c: Context, next: Next) => {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://rexera.vercel.app'
+    'https://rexera.vercel.app',
+    'https://rexera2-frontend.vercel.app'
   ];
 
   if (origin && allowedOrigins.includes(origin)) {

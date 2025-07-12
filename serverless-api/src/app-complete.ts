@@ -58,7 +58,7 @@ app.get('/api/health', (c) => {
 // Apply authentication middleware to all protected routes
 app.use('/api/agents/*', authMiddleware);
 app.use('/api/workflows/*', authMiddleware);
-app.use('/api/taskExecutions/*', authMiddleware);
+app.use('/api/task-executions/*', authMiddleware);
 app.use('/api/communications/*', authMiddleware);
 app.use('/api/documents/*', authMiddleware);
 app.use('/api/interrupts/*', authMiddleware);

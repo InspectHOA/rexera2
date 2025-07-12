@@ -206,7 +206,7 @@ export const tasksApi = {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
       
-      const response = await fetch(`${API_BASE_URL}/taskExecutions?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/task-executions?${params}`, {
         headers
       });
       const data = await response.json();
@@ -253,7 +253,7 @@ export const tasksApi = {
     priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
     input_data?: Record<string, any>;
   }) {
-    return apiRequest('/taskExecutions', {
+    return apiRequest('/task-executions', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -268,7 +268,7 @@ export const tasksApi = {
     execution_time_ms?: number;
     retry_count?: number;
   }) {
-    return apiRequest(`/taskExecutions?id=${id}`, {
+    return apiRequest(`/task-executions/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
