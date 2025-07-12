@@ -17,10 +17,9 @@ export function WorkflowTable() {
       'id': 'human_readable_id',
       'created_at': 'created_at',
       'type': 'workflow_type',
-      'client': 'client_id', // Note: This may need special handling for client name sorting
+      'client': 'client_id',
       'property': 'title',
       'status': 'status',
-      'interrupts': 'interrupts', // Server handles interrupt count calculation and sorting
       'due': 'due_date'
     };
     return fieldMap[frontendField] || 'created_at';
@@ -223,6 +222,20 @@ export function WorkflowTable() {
   }
 
   function getInterruptIcons(tasks: TaskExecution[]) {
+    // Agent ID to name mapping (from actual database)
+    const agentIdToName: Record<string, string> = {
+      'dddddddd-dddd-dddd-dddd-dddddddddddd': 'cassy',
+      'ffffffff-ffff-ffff-ffff-ffffffffffff': 'corey',
+      '88888888-8888-8888-8888-888888888888': 'florian',
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa': 'iris',
+      'cccccccc-cccc-cccc-cccc-cccccccccccc': 'kosha',
+      'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee': 'max',
+      '77777777-7777-7777-7777-777777777777': 'mia',
+      '66666666-6666-6666-6666-666666666666': 'nina',
+      '99999999-9999-9999-9999-999999999999': 'rex',
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb': 'ria'
+    };
+
     const agentIcons: Record<string, string> = {
       'mia': '📧',      // Mail emoji for mia (email agent)
       'ria': '💬',      // Chat emoji for ria (support agent)
@@ -238,7 +251,11 @@ export function WorkflowTable() {
     
     return tasks.slice(0, 3).map((task: TaskExecution) => {
       const taskAny = task as any;
-      const agentName = taskAny.agents?.name || taskAny.agent_name || 'unknown';
+      // Get agent name from API data or fallback to ID mapping
+      const agentName = taskAny.agents?.name || 
+                       taskAny.agent_name || 
+                       (taskAny.agent_id ? agentIdToName[taskAny.agent_id] : null) ||
+                       'unknown';
       const icon = agentIcons[agentName] || '⚠️';
       const agent = getAgentDisplay(task);
       return { icon, agent };
@@ -246,9 +263,21 @@ export function WorkflowTable() {
   }
 
   function getAgentDisplay(task: TaskExecution) {
-    if (task.executor_type === 'HIL') {
-      return 'HIL Monitor';
-    }
+    // Remove HIL Monitor override - use agent mapping for all tasks
+    
+    // Agent ID to name mapping (from actual database)
+    const agentIdToName: Record<string, string> = {
+      'dddddddd-dddd-dddd-dddd-dddddddddddd': 'Cassy',
+      'ffffffff-ffff-ffff-ffff-ffffffffffff': 'Corey',
+      '88888888-8888-8888-8888-888888888888': 'Florian',
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa': 'Iris',
+      'cccccccc-cccc-cccc-cccc-cccccccccccc': 'Kosha',
+      'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee': 'Max',
+      '77777777-7777-7777-7777-777777777777': 'Mia',
+      '66666666-6666-6666-6666-666666666666': 'Nina',
+      '99999999-9999-9999-9999-999999999999': 'Rex',
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb': 'Ria'
+    };
     
     // Use joined agent data if available (cast to any for runtime data)
     const taskAny = task as any;
@@ -259,6 +288,11 @@ export function WorkflowTable() {
     // Fallback to agent_name if available
     if (taskAny.agent_name) {
       return taskAny.agent_name;
+    }
+    
+    // Use agent ID mapping
+    if (taskAny.agent_id && agentIdToName[taskAny.agent_id]) {
+      return agentIdToName[taskAny.agent_id];
     }
     
     // Final fallback
@@ -387,8 +421,8 @@ export function WorkflowTable() {
             <th onClick={() => handleSort('status')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               Status <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('status')}</span>
             </th>
-            <th onClick={() => handleSort('interrupts')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
-              Interrupts <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('interrupts')}</span>
+            <th className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider">
+              Interrupts
             </th>
             <th onClick={() => handleSort('due')} className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer">
               DUE <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('due')}</span>

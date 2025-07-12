@@ -21,6 +21,7 @@ export * from './types/database';
 
 // Zod validation schemas
 export * from './schemas/taskExecutions';
+export * from './schemas/workflows';
 
 // Utility functions
 export * from './utils/uuid-formatter';

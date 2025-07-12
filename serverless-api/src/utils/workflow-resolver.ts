@@ -36,3 +36,23 @@ export async function resolveWorkflowId(
 
   return workflow.id;
 }
+
+/**
+ * Direct lookup by human-readable ID (more efficient than resolveWorkflowId for API endpoints)
+ */
+export async function getWorkflowByHumanId(supabase: SupabaseClient, humanId: string, selectString: string = '*') {
+  const { data: workflow, error } = await supabase
+    .from('workflows')
+    .select(selectString)
+    .eq('human_readable_id', humanId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null; // Not found
+    }
+    throw error;
+  }
+
+  return workflow;
+}

@@ -3,16 +3,16 @@
 import { useWorkflows } from '@/lib/hooks/useWorkflows';
 
 export function DashboardStats() {
-  const { stats, loading, error } = useWorkflows({ 
+  const { stats, loading, error, pagination } = useWorkflows({ 
     include: ['tasks'], 
-    limit: 1000  // Get all workflows for accurate stats
+    limit: 100  // Use max allowed limit for stats calculation
   });
   return (
     <div className="bg-white/80 backdrop-blur-sm px-4 py-3 mb-4 shadow-2xl rounded-lg border border-gray-200/50 flex justify-between items-center">
       <div className="flex gap-8 items-center">
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-gray-900">
-            {loading ? '...' : error ? 'Error' : stats.total}
+            {loading ? '...' : error ? 'Error' : pagination.total}
           </span>
           <span className="text-xs text-gray-600 font-medium">Total Workflows</span>
         </div>

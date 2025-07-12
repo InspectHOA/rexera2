@@ -4,9 +4,9 @@
   "description": "API endpoints for Rexera 2.0",
   "private": true,
   "scripts": {
-    "start": "vercel dev --listen 3001",
-    "dev": "npm run type-check && tsx src/server/express-server.ts",
-    "dev:watch": "tsx src/server/express-server.ts",
+    "start": "tsx src/dev-server.ts",
+    "dev": "npm run type-check && tsx src/dev-server.ts",
+    "dev:watch": "tsx watch src/dev-server.ts",
     "build": "npm run type-check && tsc",
     "test": "npm run type-check && jest",
     "test:watch": "jest --watch",
@@ -23,13 +23,18 @@
     "clean": "rm -rf .vercel dist coverage"
   },
   "dependencies": {
+    "@hono/node-server": "^1.15.0",
+    "@hono/swagger-ui": "^0.5.2",
+    "@hono/zod-openapi": "^0.19.9",
     "@rexera/shared": "workspace:*",
     "@supabase/supabase-js": "^2.38.0",
     "@vercel/node": "^3.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.0.1",
     "express": "^5.1.0",
+    "hono": "^4.8.4",
     "next": "^14.0.0",
-    "zod": "^3.22.4"
+    "zod": "^3.25.74"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -5,23 +5,11 @@
 ```
 serverless-api/
 ├── 📂 api/                          # Vercel Serverless Functions (TypeScript)
-│   ├── health.ts                    # Health check endpoint
-│   ├── workflows.ts                 # Workflow CRUD operations
-│   ├── task-executions.ts           # Task execution management
-│   ├── agents.ts                    # AI agent endpoints
-│   ├── activities.ts                # Activity logging
-│   ├── incoming-email.ts            # Email processing
-│   ├── interrupts.ts                # HIL interrupts
-│   ├── options.ts                   # CORS preflight
-│   ├── 📂 workflows/
-│   │   └── [id].ts                  # Individual workflow
-│   ├── 📂 interrupts/
-│   │   └── [id].ts                  # Individual interrupt
-│   └── 📂 webhooks/
-│       └── n8n.ts                   # n8n workflow integration
+│   ├── index.ts                     # Unified Hono API entry point
+│   └── 📂 cron/
+│       └── sla-monitor.ts           # SLA monitoring background task
 ├── 📂 src/                          # Source Code (TypeScript)
-│   ├── 📂 server/
-│   │   └── express-server.ts        # Development Express server
+│   ├── app-complete.ts              # Complete Hono API implementation
 │   ├── 📂 utils/
 │   │   ├── database.ts              # Supabase client utilities
 │   │   └── errors.ts                # Error handling utilities

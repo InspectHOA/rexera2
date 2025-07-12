@@ -121,16 +121,8 @@ export const workflowsApi = {
   },
 
   async byHumanId(humanId: string, include: string[] = []) {
-    // Find workflow by human_readable_id column (much more efficient)
-    const workflows = await this.list({ limit: 1000 });
-    const workflow = workflows.data.find((w: any) => w.human_readable_id === humanId);
-    
-    if (!workflow) {
-      throw new ApiError('Workflow not found', 404);
-    }
-    
-    // Now get the full workflow with includes
-    return this.byId(workflow.id, include);
+    // Use the optimized API endpoint that handles human-readable IDs directly
+    return this.byId(humanId, include);
   },
 
   async create(data: {
