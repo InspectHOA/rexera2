@@ -77,17 +77,34 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   
-  // Content Security Policy
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "connect-src 'self' https://api.supabase.io https://*.supabase.co",
-    "font-src 'self'"
-  ].join('; ');
+  // Content Security Policy - Allow Swagger UI CDN for docs endpoint
+  const isDocsEndpoint = c.req.path === '/api/docs';
   
-  c.header('Content-Security-Policy', csp);
+  let csp: string[];
+  
+  if (isDocsEndpoint) {
+    // Relaxed CSP for Swagger UI
+    csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "img-src 'self' data: https:",
+      "connect-src 'self' https://api.supabase.io https://*.supabase.co",
+      "font-src 'self' https://cdn.jsdelivr.net"
+    ];
+  } else {
+    // Strict CSP for other endpoints
+    csp = [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "connect-src 'self' https://api.supabase.io https://*.supabase.co",
+      "font-src 'self'"
+    ];
+  }
+  
+  c.header('Content-Security-Policy', csp.join('; '));
 };
 
 /**
