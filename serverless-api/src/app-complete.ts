@@ -1319,91 +1319,56 @@ app.get('/api/options', (c) => {
 // OpenAPI specification  
 // ============================================================================
 
-app.get('/api/openapi.json', (c) => c.json({
-  openapi: '3.0.0',
-  info: {
-    version: '2.0.0',
-    title: 'Rexera API',
-    description: 'Complete Real Estate Workflow Automation Platform API - Dual-layer architecture with n8n Cloud integration',
-    contact: {
-      name: 'Rexera Development Team',
-      email: 'dev@rexera.com',
-    },
-  },
-  servers: [
-    {
-      url: 'http://localhost:3001',
-      description: 'Development server',
-    },
-    {
-      url: 'https://api.rexera.com',
-      description: 'Production server',
-    },
-  ],
-  tags: [
-    { name: 'System', description: 'System health and status endpoints' },
-    { name: 'Agents', description: 'AI agent management and monitoring' },
-    { name: 'Workflows', description: 'Workflow management endpoints' },
-    { name: 'Task Executions', description: 'Task execution management' },
-    { name: 'Activities', description: 'Activity logging and tracking' },
-    { name: 'Communications', description: 'Email and communication management' },
-    { name: 'Interrupts', description: 'Workflow interrupt management' },
-    { name: 'Webhooks', description: 'External system integrations' },
-  ],
-  paths: {
-    '/api/health': {
-      get: {
-        summary: 'Health Check',
-        tags: ['System'],
-        responses: {
-          200: {
-            description: 'API is healthy',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    message: { type: 'string' },
-                    timestamp: { type: 'string', format: 'date-time' },
-                    environment: { type: 'string' }
-                  }
-                }
-              }
+app.get('/api/openapi.json', async (c) => {
+  try {
+    // Import the comprehensive OpenAPI specification
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const specPath = path.join(__dirname, 'docs', 'openapi-spec.json');
+    const specContent = await fs.readFile(specPath, 'utf-8');
+    const spec = JSON.parse(specContent);
+    
+    // Update server URLs based on environment
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://api.rexera.com' 
+      : 'http://localhost:3001';
+    
+    spec.servers = [
+      {
+        url: baseUrl,
+        description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development'
+      }
+    ];
+    
+    return c.json(spec);
+  } catch (error) {
+    // Fallback to basic spec if file reading fails
+    return c.json({
+      openapi: '3.0.0',
+      info: {
+        version: '2.0.0',
+        title: 'Rexera API',
+        description: 'Real Estate Workflow Automation Platform API',
+      },
+      servers: [
+        {
+          url: process.env.NODE_ENV === 'production' ? 'https://api.rexera.com' : 'http://localhost:3001',
+          description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development'
+        }
+      ],
+      paths: {
+        '/api/health': {
+          get: {
+            summary: 'Health Check',
+            responses: {
+              200: { description: 'API is healthy' }
             }
           }
         }
       }
-    },
-    '/api/agents': {
-      get: {
-        summary: 'List agents',
-        tags: ['Agents'],
-        parameters: [
-          { name: 'is_active', in: 'query', schema: { type: 'boolean' } },
-          { name: 'type', in: 'query', schema: { type: 'string' } },
-          { name: 'status', in: 'query', schema: { type: 'string' } },
-          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
-          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } },
-        ],
-        responses: {
-          200: { description: 'Agents retrieved successfully' }
-        }
-      },
-      post: {
-        summary: 'Update agent status',
-        tags: ['Agents'],
-        parameters: [
-          { name: 'id', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }
-        ],
-        responses: {
-          200: { description: 'Agent updated successfully' }
-        }
-      }
-    },
-    // Additional paths would be added for all other endpoints...
+    });
   }
-}));
+});
 
 // Swagger UI
 app.get('/api/docs', swaggerUI({ 
