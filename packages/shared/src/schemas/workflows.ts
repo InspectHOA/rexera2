@@ -55,7 +55,7 @@ export const WorkflowFiltersSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   include: z.string().optional(),
-  sortBy: z.enum(['created_at', 'updated_at', 'due_date', 'status', 'workflow_type', 'human_readable_id', 'title', 'client_id']).optional(),
+  sortBy: z.enum(['created_at', 'updated_at', 'due_date', 'status', 'workflow_type', 'human_readable_id', 'title', 'client_id', 'interrupt_count']).optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
 });
 

@@ -206,6 +206,19 @@ describe('Shared Workflow Schemas', () => {
       const result = WorkflowFiltersSchema.safeParse(filtersWithInvalidDirection);
       expect(result.success).toBe(false);
     });
+
+    it('should validate interrupt_count sorting', () => {
+      const filtersWithInterruptSort = { 
+        sortBy: 'interrupt_count',
+        sortDirection: 'desc'
+      };
+      const result = WorkflowFiltersSchema.safeParse(filtersWithInterruptSort);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.sortBy).toBe('interrupt_count');
+        expect(result.data.sortDirection).toBe('desc');
+      }
+    });
   });
 
   describe('WorkflowWithRelationsSchema', () => {

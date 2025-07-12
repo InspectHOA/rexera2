@@ -7,7 +7,8 @@
 import 'dotenv/config';
 
 import { serve } from '@hono/node-server';
-import { app } from './app-complete';
+import app from './app';
+import testApp from './app-test';
 
 const port = parseInt(process.env.PORT || '3001', 10);
 
@@ -16,9 +17,14 @@ console.log(`📍 Server will be available at: http://localhost:${port}`);
 console.log(`📋 API Documentation: http://localhost:${port}/api/docs`);
 console.log(`🔍 Health Check: http://localhost:${port}/api/health`);
 
+const selectedApp = process.env.NODE_ENV === 'test' ? testApp : app;
+
 serve({
-  fetch: app.fetch,
+  fetch: selectedApp.fetch,
   port,
 }, (info) => {
   console.log(`✅ Server is running on http://localhost:${info.port}`);
+  if (process.env.NODE_ENV === 'test') {
+    console.log('🧪 Running in TEST mode (no authentication required)');
+  }
 });

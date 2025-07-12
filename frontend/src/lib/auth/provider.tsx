@@ -54,8 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
+        console.error('Error loading user profile:', error);
         setProfile(null);
       } else {
+        console.log('Loaded user profile from database:', data);
         // Convert null values to undefined to match UserProfile type
         const profile: UserProfile = {
           ...data,
@@ -82,6 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!existingProfile) {
         // Create profile with Google OAuth data
+        console.log('Creating user profile with OAuth data:', {
+          user_id: user.id,
+          email: user.email,
+          user_metadata: user.user_metadata
+        });
+        
         const { error } = await supabase
           .from('user_profiles')
           .insert({
@@ -89,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user_type: 'hil_user',  // Default to HIL user type
             email: user.email!,
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-            role: 'HIL',  // Use valid role from schema
+            role: 'HIL_ADMIN',  // Use HIL_ADMIN as default role for HIL users
             company_id: null,  // HIL users don't have company_id
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -99,6 +107,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
       } else {
         // Update existing profile with latest OAuth data
+        console.log('Updating existing user profile:', {
+          existing_full_name: existingProfile.full_name,
+          oauth_full_name: user.user_metadata?.full_name,
+          oauth_name: user.user_metadata?.name
+        });
+        
         const { error } = await supabase
           .from('user_profiles')
           .update({

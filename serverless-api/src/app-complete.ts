@@ -13,21 +13,33 @@ import {
   UpdateTaskExecutionSchema 
 } from '@rexera/shared';
 import { z } from 'zod';
+import {
+  authMiddleware,
+  hilOnlyMiddleware,
+  clientDataMiddleware,
+  getCompanyFilter,
+  rateLimitMiddleware,
+  securityHeadersMiddleware,
+  requestValidationMiddleware,
+  errorHandlerMiddleware,
+  corsMiddleware,
+  getEndpointRateLimit,
+  type AuthUser
+} from './middleware';
 
 const app = new Hono();
 
-// Middleware
+// Global Middleware
+app.use('*', errorHandlerMiddleware);
 app.use('*', logger());
 app.use('*', prettyJSON());
-app.use('*', cors({
-  origin: ['http://localhost:3000', 'https://*.vercel.app'],
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-}));
+app.use('*', corsMiddleware);
+app.use('*', securityHeadersMiddleware);
+app.use('*', requestValidationMiddleware);
+app.use('*', rateLimitMiddleware());
 
 // ============================================================================
-// HEALTH CHECK
+// PUBLIC ENDPOINTS (No Auth Required)
 // ============================================================================
 
 app.get('/api/health', (c) => {
@@ -38,6 +50,24 @@ app.get('/api/health', (c) => {
     environment: process.env.NODE_ENV || 'development',
   });
 });
+
+// ============================================================================
+// PROTECTED ENDPOINTS (Authentication Required)
+// ============================================================================
+
+// Apply authentication middleware to all protected routes
+app.use('/api/agents/*', authMiddleware);
+app.use('/api/workflows/*', authMiddleware);
+app.use('/api/taskExecutions/*', authMiddleware);
+app.use('/api/communications/*', authMiddleware);
+app.use('/api/documents/*', authMiddleware);
+app.use('/api/interrupts/*', authMiddleware);
+app.use('/api/costs/*', authMiddleware);
+app.use('/api/activities/*', authMiddleware);
+
+// Apply HIL-only middleware to admin endpoints
+app.use('/api/agents', hilOnlyMiddleware);
+app.use('/api/cron/*', hilOnlyMiddleware);
 
 // ============================================================================
 // AGENTS ENDPOINTS
@@ -229,6 +259,7 @@ app.post('/api/agents', async (c) => {
 app.get('/api/workflows', async (c) => {
   try {
     const supabase = createServerClient();
+    const user = c.get('user') as AuthUser;
     const rawQuery = c.req.query();
     const result = WorkflowFiltersSchema.safeParse(rawQuery);
     
@@ -288,18 +319,36 @@ app.get('/api/workflows', async (c) => {
     // Apply filters
     if (workflow_type) dbQuery = dbQuery.eq('workflow_type', workflow_type);
     if (status) dbQuery = dbQuery.eq('status', status);
-    if (client_id) dbQuery = dbQuery.eq('client_id', client_id);
     if (assigned_to) dbQuery = dbQuery.eq('assigned_to', assigned_to);
     if (priority) dbQuery = dbQuery.eq('priority', priority);
+
+    // Apply client access control
+    const companyFilter = getCompanyFilter(user);
+    if (companyFilter) {
+      // Client users can only see their own company's workflows
+      dbQuery = dbQuery.eq('client_id', companyFilter);
+    } else if (client_id) {
+      // HIL users can filter by specific client_id if provided
+      dbQuery = dbQuery.eq('client_id', client_id);
+    }
 
     // Apply sorting
     const sortField = sortBy || 'created_at';
     const ascending = sortDirection === 'asc';
-    dbQuery = dbQuery.order(sortField, { ascending });
+    
+    // Handle interrupt count sorting specially since it requires aggregation
+    if (sortField === 'interrupt_count') {
+      // For interrupt count, we need to sort by the count of AWAITING_REVIEW tasks
+      // This is more complex and will be handled after the main query
+    } else {
+      dbQuery = dbQuery.order(sortField, { ascending });
+    }
 
-    // Apply pagination
-    const offset = (page - 1) * limit;
-    dbQuery = dbQuery.range(offset, offset + limit - 1);
+    // Apply pagination (skip for interrupt_count sorting as we need all data first)
+    if (sortField !== 'interrupt_count') {
+      const offset = (page - 1) * limit;
+      dbQuery = dbQuery.range(offset, offset + limit - 1);
+    }
 
     const { data: workflows, error, count } = await dbQuery;
 
@@ -354,6 +403,26 @@ app.get('/api/workflows', async (c) => {
         clients: workflow.client,
         tasks: workflow.task_executions || [],
       })) || [];
+    }
+
+    // Handle interrupt count sorting after main query
+    if (sortField === 'interrupt_count') {
+      transformedWorkflows = transformedWorkflows
+        .map((workflow: any) => {
+          // Calculate interrupt count for each workflow
+          const interruptCount = (workflow.task_executions || workflow.tasks || [])
+            .filter((task: any) => task.status === 'AWAITING_REVIEW').length;
+          return { ...workflow, interrupt_count: interruptCount };
+        })
+        .sort((a: any, b: any) => {
+          // Sort by interrupt count
+          const diff = a.interrupt_count - b.interrupt_count;
+          return ascending ? diff : -diff;
+        });
+      
+      // Apply pagination after sorting for interrupt_count
+      const offset = (page - 1) * limit;
+      transformedWorkflows = transformedWorkflows.slice(offset, offset + limit);
     }
 
     const totalPages = Math.ceil((count || 0) / limit);
@@ -459,6 +528,7 @@ app.post('/api/workflows', async (c) => {
 app.get('/api/workflows/:id', async (c) => {
   try {
     const supabase = createServerClient();
+    const user = c.get('user') as AuthUser;
     const id = c.req.param('id');
 
     const selectString = `
@@ -485,11 +555,18 @@ app.get('/api/workflows/:id', async (c) => {
     
     // If it's a UUID, query directly by ID
     if (isUUID(id)) {
-      const { data, error } = await supabase
+      let query = supabase
         .from('workflows')
         .select(selectString)
-        .eq('id', id)
-        .single();
+        .eq('id', id);
+
+      // Apply client access control
+      const companyFilter = getCompanyFilter(user);
+      if (companyFilter) {
+        query = query.eq('client_id', companyFilter);
+      }
+
+      const { data, error } = await query.single();
       
       if (error) {
         if (error.code === 'PGRST116') {
@@ -504,6 +581,15 @@ app.get('/api/workflows/:id', async (c) => {
     } else {
       // Otherwise, look up by human-readable ID
       workflow = await getWorkflowByHumanId(supabase, id, selectString);
+      
+      // Apply client access control for human-readable ID lookup
+      const companyFilter = getCompanyFilter(user);
+      if (companyFilter && workflow && workflow.client_id !== companyFilter) {
+        return c.json({
+          success: false,
+          error: 'Workflow not found',
+        }, 404);
+      }
       
       if (!workflow) {
         return c.json({

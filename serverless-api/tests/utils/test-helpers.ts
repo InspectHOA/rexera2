@@ -5,8 +5,8 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { createServer, Server } from 'http';
-import express from 'express';
-import cors from 'cors';
+import { serve } from '@hono/node-server';
+import testApp from '../../src/app-test';
 
 export interface TestClient {
   id: string;
@@ -44,7 +44,7 @@ export interface TestDataSet {
 
 export class APITestHelper {
   private supabase: SupabaseClient;
-  private server: Server | null = null;
+  private server: any = null;
   private testDataIds: string[] = [];
   
   constructor() {
@@ -56,59 +56,19 @@ export class APITestHelper {
 
   /**
    * Start test server for integration testing
-   * Note: This creates a simple test server since the main API is now Hono-based
+   * Uses the actual Hono app-test.ts (without authentication)
    */
   async startTestServer(port: number = 3002): Promise<string> {
     if (this.server) {
       throw new Error('Test server is already running');
     }
 
-    const app = express();
-    
-    // CORS configuration
-    app.use(cors({
-      origin: ['http://localhost:3000', 'http://localhost:3001', `http://localhost:${port}`],
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-client-info', 'apikey'],
-      credentials: true
-    }));
-
-    app.use(express.json());
-
-    // Simple health check endpoint for testing
-    app.get('/api/health', (req, res) => {
-      res.json({ 
-        success: true,
-        message: 'Test API server is running',
-        timestamp: new Date().toISOString(),
-        environment: 'test'
-      });
-    });
-
-    // Placeholder endpoints for testing - these would normally call Supabase directly
-    app.get('/api/workflows', (req, res) => {
-      res.json({ 
-        success: true, 
-        data: [],
-        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }
-      });
-    });
-
-    app.get('/api/agents', (req, res) => {
-      res.json({ 
-        success: true, 
-        data: [],
-        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }
-      });
-    });
-
     return new Promise((resolve, reject) => {
-      this.server = app.listen(port, (err?: Error) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(`http://localhost:${port}`);
-        }
+      this.server = serve({
+        fetch: testApp.fetch,
+        port: port,
+      }, () => {
+        resolve(`http://localhost:${port}`);
       });
     });
   }
@@ -119,7 +79,7 @@ export class APITestHelper {
   async stopTestServer(): Promise<void> {
     if (this.server) {
       return new Promise((resolve) => {
-        this.server!.close(() => {
+        this.server.close(() => {
           this.server = null;
           resolve();
         });

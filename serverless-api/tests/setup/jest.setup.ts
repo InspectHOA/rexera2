@@ -11,7 +11,10 @@ config();
 // Global test configuration
 beforeAll(async () => {
   // Set test environment variables
-  Object.assign(process.env, { NODE_ENV: 'test' });
+  Object.assign(process.env, { 
+    NODE_ENV: 'test',
+    TEST_ENV: 'local'
+  });
   
   // Ensure required environment variables exist
   const requiredEnvVars = [

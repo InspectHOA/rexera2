@@ -4,6 +4,7 @@
  */
 
 import type { WorkflowType, PriorityLevel } from '@rexera/shared';
+import { supabase } from '@/lib/supabase/client';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
 
@@ -37,10 +38,20 @@ async function apiRequest<T = any>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  // Only set Content-Type for requests with body (POST, PUT, PATCH)
+  // Get current session and JWT token
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  // Build headers with authentication
   const headers: Record<string, string> = { 
     ...(options.headers as Record<string, string> || {}) 
   };
+  
+  // Add Authorization header if we have a session
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+  
+  // Only set Content-Type for requests with body (POST, PUT, PATCH)
   if (options.body && !headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = 'application/json';
   }
@@ -89,7 +100,17 @@ export const workflowsApi = {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/workflows?${params}`);
+    // Get current session and JWT token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/workflows?${params}`, {
+      headers
+    });
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
@@ -177,7 +198,17 @@ export const tasksApi = {
         params.append('include', filters.include.join(','));
       }
       
-      const response = await fetch(`${API_BASE_URL}/task-executions?${params}`);
+      // Get current session and JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/taskExecutions?${params}`, {
+        headers
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -222,7 +253,7 @@ export const tasksApi = {
     priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
     input_data?: Record<string, any>;
   }) {
-    return apiRequest('/task-executions', {
+    return apiRequest('/taskExecutions', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -237,7 +268,7 @@ export const tasksApi = {
     execution_time_ms?: number;
     retry_count?: number;
   }) {
-    return apiRequest(`/task-executions?id=${id}`, {
+    return apiRequest(`/taskExecutions?id=${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -274,7 +305,17 @@ export const activitiesApi = {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/activities?${params}`);
+    // Get current session and JWT token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/activities?${params}`, {
+      headers
+    });
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
@@ -334,7 +375,17 @@ export const agentsApi = {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/agents?${params}`);
+    // Get current session and JWT token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/agents?${params}`, {
+      headers
+    });
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
@@ -393,7 +444,17 @@ export const interruptsApi = {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/interrupts?${params}`);
+    // Get current session and JWT token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/interrupts?${params}`, {
+      headers
+    });
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
@@ -489,7 +550,17 @@ export const communicationsApi = {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/communications?${params}`);
+    // Get current session and JWT token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/communications?${params}`, {
+      headers
+    });
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
