@@ -118,7 +118,7 @@ export const requestValidationMiddleware = async (c: Context, next: Next) => {
 };
 
 /**
- * CORS middleware for development
+ * CORS middleware for development and production
  */
 export const corsMiddleware = async (c: Context, next: Next) => {
   const origin = c.req.header('origin');
