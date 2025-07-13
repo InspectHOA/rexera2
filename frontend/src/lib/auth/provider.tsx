@@ -104,7 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
         if (error) {
-          }
+          console.error('Error creating user profile:', error);
+        }
       } else {
         // Update existing profile with latest OAuth data
         console.log('Updating existing user profile:', {
@@ -123,10 +124,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('id', user.id);
 
         if (error) {
-          }
+          console.error('Error updating user profile:', error);
+        }
       }
     } catch (error) {
-      }
+      console.error('Error in ensureUserProfile:', error);
+    }
   };
 
   const signOut = async () => {
@@ -136,7 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       router.push('/auth/login' as Route);
     } catch (error) {
-      }
+      console.error('Error signing out:', error);
+    }
   };
 
   useEffect(() => {

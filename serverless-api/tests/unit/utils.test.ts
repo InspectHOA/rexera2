@@ -106,44 +106,6 @@ describe('UUID Formatter Utils', () => {
   });
 });
 
-describe('Database Error Handlers', () => {
-  // Mock database error scenarios
-  const mockDatabaseErrors = {
-    connectionError: { code: 'ECONNREFUSED', message: 'Connection refused' },
-    authError: { code: 'EAUTH', message: 'Authentication failed' },
-    notFoundError: { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' },
-    uniqueConstraintError: { code: '23505', message: 'duplicate key value violates unique constraint' },
-    foreignKeyError: { code: '23503', message: 'insert or update on table violates foreign key constraint' }
-  };
-
-  // These tests would require implementing error handlers first
-  it.skip('should handle database connection errors', () => {
-    // Test error handling utilities when implemented
-  });
-
-  it.skip('should handle unique constraint violations', () => {
-    // Test constraint error mapping when implemented
-  });
-
-  it.skip('should handle foreign key constraint violations', () => {
-    // Test foreign key error handling when implemented
-  });
-});
-
-describe('Request Validation Utils', () => {
-  // These tests would require implementing validation utilities
-  it.skip('should validate pagination parameters', () => {
-    // Test pagination validation when implemented
-  });
-
-  it.skip('should validate filter parameters', () => {
-    // Test filter validation when implemented
-  });
-
-  it.skip('should sanitize user input', () => {
-    // Test input sanitization when implemented
-  });
-});
 
 describe('Response Formatting Utils', () => {
   // Mock response formatting functions

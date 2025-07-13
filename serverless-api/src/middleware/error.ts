@@ -181,3 +181,6 @@ export const APIErrors = {
     503
   )
 };
+
+// Alias for backwards compatibility  
+export const errorHandlingMiddleware = errorHandlerMiddleware;

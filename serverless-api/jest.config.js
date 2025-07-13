@@ -21,17 +21,44 @@ module.exports = {
   // Coverage configuration
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary', 'cobertura'],
   collectCoverageFrom: [
     'src/**/*.ts',
     'api/**/*.ts',
     '!**/*.d.ts',
     '!**/node_modules/**',
-    '!**/dist/**'
+    '!**/dist/**',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts',
+    '!**/coverage/**',
+    '!src/dev-server.ts',
+    '!src/test-server.ts'
   ],
   
+  // Coverage thresholds (realistic for integration testing)
+  coverageThreshold: {
+    global: {
+      branches: 10,
+      functions: 25,
+      lines: 25,
+      statements: 25
+    },
+    './src/middleware/': {
+      branches: 20,
+      functions: 30,
+      lines: 40,
+      statements: 40
+    },
+    './src/routes/': {
+      branches: 25,
+      functions: 50,
+      lines: 50,
+      statements: 50
+    }
+  },
+  
   // Setup files
-  setupFilesAfterEnv: ['<rootDir>/tests/setup/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   
   // Test timeout
   testTimeout: 30000,

@@ -1319,55 +1319,215 @@ app.get('/api/options', (c) => {
 // OpenAPI specification  
 // ============================================================================
 
-app.get('/api/openapi.json', async (c) => {
-  try {
-    // Import the comprehensive OpenAPI specification
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const specPath = path.join(__dirname, 'docs', 'openapi-spec.json');
-    const specContent = await fs.readFile(specPath, 'utf-8');
-    const spec = JSON.parse(specContent);
-    
-    // Update server URLs based on environment
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://api.rexera.com' 
-      : 'http://localhost:3001';
-    
-    spec.servers = [
-      {
-        url: baseUrl,
-        description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development'
+app.get('/api/openapi.json', (c) => {
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://api.rexera.com' 
+    : 'http://localhost:3001';
+
+  return c.json({
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Rexera API",
+      "version": "2.0.0",
+      "description": "# Rexera Real Estate Workflow Automation API\n\n## Overview\nRexera is a dual-layer platform that combines:\n- **PostgreSQL + Next.js**: Business visibility and workflow management\n- **n8n Cloud**: Workflow orchestration and automation\n\n## Authentication\nAll API endpoints (except health check) require JWT authentication via Supabase Auth.\n\nInclude the JWT token in the Authorization header:\n```\nAuthorization: Bearer <your-jwt-token>\n```\n\n## Workflow Types\n- **PAYOFF_REQUEST**: Mortgage payoff request processing\n- **HOA_ACQUISITION**: HOA acquisition workflows  \n- **MUNI_LIEN_SEARCH**: Municipal lien search processes",
+      "contact": {
+        "name": "Rexera API Support",
+        "email": "support@rexera.com"
       }
-    ];
-    
-    return c.json(spec);
-  } catch (error) {
-    // Fallback to basic spec if file reading fails
-    return c.json({
-      openapi: '3.0.0',
-      info: {
-        version: '2.0.0',
-        title: 'Rexera API',
-        description: 'Real Estate Workflow Automation Platform API',
-      },
-      servers: [
-        {
-          url: process.env.NODE_ENV === 'production' ? 'https://api.rexera.com' : 'http://localhost:3001',
-          description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development'
+    },
+    "servers": [
+      {
+        "url": baseUrl,
+        "description": process.env.NODE_ENV === 'production' ? 'Production' : 'Development'
+      }
+    ],
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT",
+          "description": "Supabase JWT token obtained from authentication"
         }
-      ],
-      paths: {
-        '/api/health': {
-          get: {
-            summary: 'Health Check',
-            responses: {
-              200: { description: 'API is healthy' }
+      },
+      "schemas": {
+        "ErrorResponse": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean", "example": false },
+            "error": {
+              "type": "object",
+              "properties": {
+                "code": { "type": "string", "example": "NOT_FOUND" },
+                "message": { "type": "string", "example": "Resource not found" },
+                "timestamp": { "type": "string", "format": "date-time" }
+              }
             }
+          }
+        },
+        "Workflow": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "workflow_type": { "type": "string", "enum": ["MUNI_LIEN_SEARCH", "HOA_ACQUISITION", "PAYOFF_REQUEST"] },
+            "client_id": { "type": "string", "format": "uuid" },
+            "title": { "type": "string" },
+            "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "AWAITING_REVIEW", "BLOCKED", "COMPLETED"] },
+            "priority": { "type": "string", "enum": ["LOW", "NORMAL", "HIGH", "URGENT"] },
+            "created_at": { "type": "string", "format": "date-time" },
+            "updated_at": { "type": "string", "format": "date-time" },
+            "human_readable_id": { "type": "integer" }
           }
         }
       }
-    });
-  }
+    },
+    "tags": [
+      { "name": "System", "description": "System health and information endpoints" },
+      { "name": "Workflows", "description": "Workflow management and tracking" },
+      { "name": "Task Executions", "description": "Individual task execution within workflows" },
+      { "name": "Agents", "description": "AI agent management and status" }
+    ],
+    "paths": {
+      "/api/health": {
+        "get": {
+          "tags": ["System"],
+          "summary": "Health Check",
+          "description": "Check API health status",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "API is healthy",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": { "type": "boolean", "example": true },
+                      "message": { "type": "string", "example": "Rexera API is running" },
+                      "timestamp": { "type": "string", "format": "date-time" },
+                      "environment": { "type": "string", "example": "development" },
+                      "version": { "type": "string", "example": "2.0.0" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/workflows": {
+        "get": {
+          "tags": ["Workflows"],
+          "summary": "List Workflows",
+          "description": "Retrieve a paginated list of workflows with optional filtering",
+          "parameters": [
+            { "name": "workflow_type", "in": "query", "schema": { "type": "string", "enum": ["MUNI_LIEN_SEARCH", "HOA_ACQUISITION", "PAYOFF_REQUEST"] } },
+            { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "AWAITING_REVIEW", "BLOCKED", "COMPLETED"] } },
+            { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } },
+            { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successfully retrieved workflows",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": { "type": "boolean", "example": true },
+                      "data": { "type": "array", "items": { "$ref": "#/components/schemas/Workflow" } },
+                      "pagination": {
+                        "type": "object",
+                        "properties": {
+                          "page": { "type": "integer" },
+                          "limit": { "type": "integer" },
+                          "total": { "type": "integer" },
+                          "totalPages": { "type": "integer" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "401": { "description": "Authentication required", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          }
+        },
+        "post": {
+          "tags": ["Workflows"],
+          "summary": "Create Workflow",
+          "description": "Create a new workflow instance",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["workflow_type", "client_id", "title", "created_by"],
+                  "properties": {
+                    "workflow_type": { "type": "string", "enum": ["MUNI_LIEN_SEARCH", "HOA_ACQUISITION", "PAYOFF_REQUEST"] },
+                    "client_id": { "type": "string", "format": "uuid" },
+                    "title": { "type": "string" },
+                    "created_by": { "type": "string", "format": "uuid" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": { "description": "Workflow created successfully" },
+            "400": { "description": "Invalid request data" },
+            "401": { "description": "Authentication required" }
+          }
+        }
+      },
+      "/api/workflows/{id}": {
+        "get": {
+          "tags": ["Workflows"],
+          "summary": "Get Workflow",
+          "description": "Retrieve a specific workflow by ID",
+          "parameters": [
+            { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Workflow ID (UUID or human-readable ID)" }
+          ],
+          "responses": {
+            "200": { "description": "Successfully retrieved workflow" },
+            "404": { "description": "Workflow not found" },
+            "401": { "description": "Authentication required" }
+          }
+        }
+      },
+      "/api/task-executions": {
+        "get": {
+          "tags": ["Task Executions"],
+          "summary": "List Task Executions",
+          "description": "Retrieve task executions for a workflow",
+          "parameters": [
+            { "name": "workflowId", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          ],
+          "responses": {
+            "200": { "description": "Successfully retrieved task executions" },
+            "401": { "description": "Authentication required" }
+          }
+        }
+      },
+      "/api/agents": {
+        "get": {
+          "tags": ["Agents"],
+          "summary": "List Agents",
+          "description": "Retrieve a list of AI agents",
+          "responses": {
+            "200": { "description": "Successfully retrieved agents" },
+            "401": { "description": "Authentication required" }
+          }
+        }
+      }
+    }
+  });
 });
 
 // Swagger UI

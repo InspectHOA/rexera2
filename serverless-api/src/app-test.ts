@@ -121,8 +121,6 @@ app.notFound((c) => {
 // EXPORT
 // ============================================================================
 
-export default app;
-
 // Vercel serverless function handler
 export const GET = handle(app);
 export const POST = handle(app);
@@ -130,3 +128,7 @@ export const PUT = handle(app);
 export const PATCH = handle(app);
 export const DELETE = handle(app);
 export const OPTIONS = handle(app);
+
+// Export the app for testing
+export const testApp = app;
+export default app;

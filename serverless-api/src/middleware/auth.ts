@@ -172,3 +172,6 @@ export const getCompanyFilter = (user: AuthUser): string | null => {
   }
   return user.company_id || null;
 };
+
+// Alias for backwards compatibility
+export const supabaseAuthMiddleware = authMiddleware;
