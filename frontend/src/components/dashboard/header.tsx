@@ -45,14 +45,6 @@ export function DashboardHeader() {
 
   // Get user display name from Google OAuth data or profile
   const getDisplayName = () => {
-    // Debug logging to understand what data we have
-    console.log('Debug display name:', {
-      profile_full_name: profile?.full_name,
-      profile_role: profile?.role,
-      user_metadata_full_name: user?.user_metadata?.full_name,
-      user_metadata_name: user?.user_metadata?.name,
-      user_email: user?.email
-    });
 
     if (profile?.full_name) {
       return profile.full_name;

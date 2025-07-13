@@ -18,6 +18,8 @@ export * from './enums';
 // TypeScript types
 export * from './types/workflows';
 export * from './types/database';
+export * from './types/api';
+export * from './types/errors';
 
 // Zod validation schemas
 export * from './schemas/taskExecutions';
@@ -35,6 +37,38 @@ export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './type
 
 // Core workflow types
 export type { Workflow, WorkflowTask, WorkflowFilters, WorkflowPagination } from './types/workflows';
+
+// API types (most commonly used)
+export type { 
+  ApiResponse, 
+  ApiSuccessResponse, 
+  ApiErrorResponse, 
+  PaginationMeta,
+  PaginatedResponse,
+  PaginationQuery,
+  ListQuery 
+} from './types/api';
+
+// Error classes
+export { 
+  ApiError,
+  ValidationError,
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+  RateLimitError,
+  DatabaseError,
+  ExternalServiceError,
+  WorkflowError,
+  N8nIntegrationError,
+  createApiError,
+  createValidationError,
+  createNotFoundError,
+  isApiError,
+  getErrorCode,
+  getErrorStatus,
+  API_ERROR_CODES
+} from './types/errors';
 
 // Task execution schemas (most commonly used)
 export {

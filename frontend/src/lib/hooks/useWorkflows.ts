@@ -49,7 +49,7 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
     staleTime: 30000, // 30 seconds
   });
 
-  const workflows = workflowsResult?.data || [];
+  const workflows = (workflowsResult?.data && Array.isArray(workflowsResult.data)) ? workflowsResult.data : [];
   const pagination = workflowsResult?.pagination || {
     page: 1,
     limit: 20,

@@ -13,7 +13,7 @@ export function WorkflowRow({ workflow }: WorkflowRowProps) {
   const router = useRouter();
 
   const handleRowClick = () => {
-    router.push(`/workflow/${workflow.workflowId}`);
+    router.push(`/workflow/${workflow.workflowId}` as any);
   };
 
   return (

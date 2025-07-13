@@ -63,7 +63,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
           type: 'email'
         });
         
-        const transformedEmails: Email[] = result.data.map((comm: any) => ({
+        const transformedEmails: Email[] = (Array.isArray(result.data) ? result.data : []).map((comm: any) => ({
           id: comm.id,
           subject: comm.subject || '(No Subject)',
           sender: comm.direction === 'INBOUND' 

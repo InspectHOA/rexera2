@@ -201,7 +201,7 @@ export default function WorkflowDetailPage() {
     );
   }
 
-  const handleBackClick = () => router.push('/dashboard');
+  const handleBackClick = () => router.push('/dashboard' as any);
 
   return (
     <div className="min-h-screen bg-rexera-gradient relative overflow-hidden">

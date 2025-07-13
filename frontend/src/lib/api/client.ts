@@ -3,31 +3,30 @@
  * Provides type-safe HTTP REST calls to the backend API.
  */
 
-import type { WorkflowType, PriorityLevel } from '@rexera/shared';
+import type { 
+  WorkflowType, 
+  PriorityLevel,
+  ApiResponse,
+  ApiSuccessResponse,
+  ApiErrorResponse,
+  PaginationMeta
+} from '@rexera/shared';
+import { 
+  ApiError as SharedApiError,
+  API_ERROR_CODES
+} from '@rexera/shared';
 import { supabase } from '@/lib/supabase/client';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
 
-interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  details?: any;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-class ApiError extends Error {
+// Use shared ApiError class
+class ApiError extends SharedApiError {
   constructor(
     message: string,
-    public status: number,
-    public details?: any
+    status: number,
+    details?: any
   ) {
-    super(message);
+    super(message, status, API_ERROR_CODES.INTERNAL_ERROR, details);
     this.name = 'ApiError';
   }
 }
@@ -64,14 +63,16 @@ async function apiRequest<T = any>(
   const data: ApiResponse<T> = await response.json();
 
   if (!response.ok || !data.success) {
+    const errorData = data as ApiErrorResponse;
     throw new ApiError(
-      data.error || `HTTP ${response.status}`,
+      errorData.error?.message || `HTTP ${response.status}`,
       response.status,
-      data.details
+      errorData.error?.details
     );
   }
 
-  return data.data as T;
+  const successData = data as ApiSuccessResponse<T>;
+  return successData.data;
 }
 
 // Workflow API functions
@@ -114,10 +115,11 @@ export const workflowsApi = {
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
       throw new ApiError(
-        data.error || `HTTP ${response.status}`,
+        errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        data.details
+        errorData.error?.details
       );
     }
 
@@ -319,10 +321,11 @@ export const activitiesApi = {
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
       throw new ApiError(
-        data.error || `HTTP ${response.status}`,
+        errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        data.details
+        errorData.error?.details
       );
     }
 
@@ -389,10 +392,11 @@ export const agentsApi = {
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
       throw new ApiError(
-        data.error || `HTTP ${response.status}`,
+        errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        data.details
+        errorData.error?.details
       );
     }
 
@@ -458,10 +462,11 @@ export const interruptsApi = {
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
       throw new ApiError(
-        data.error || `HTTP ${response.status}`,
+        errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        data.details
+        errorData.error?.details
       );
     }
 
@@ -564,10 +569,11 @@ export const communicationsApi = {
     const data: ApiResponse = await response.json();
 
     if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
       throw new ApiError(
-        data.error || `HTTP ${response.status}`,
+        errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        data.details
+        errorData.error?.details
       );
     }
 

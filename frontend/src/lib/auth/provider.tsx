@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
-  // Disable auth bypass to use real Google OAuth
-  const shouldBypassAuth = false; // isLocalhost && isDevelopment;
+  // Temporarily enable auth bypass for development
+  const shouldBypassAuth = isLocalhost && isDevelopment;
 
   const refreshProfile = async () => {
     if (!user) {
@@ -145,16 +145,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (shouldBypassAuth) {
-      // Create mock user for localhost development
-      const mockUserId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'; // Fixed UUID for development
+      // Create mock user for localhost development - use seeded test user ID
+      const mockUserId = '82a7d984-485b-4a47-ac28-615a1b448473'; // Matches seeded test user
       const mockUser = {
         id: mockUserId,
-        email: 'dev@localhost.com',
+        email: 'test@rexera.com',
         app_metadata: {},
         aud: 'authenticated',
         user_metadata: {
-          full_name: 'Development User',
-          name: 'Development User',
+          full_name: 'Test HIL User',
+          name: 'Test HIL User',
           avatar_url: null,
           picture: null
         },
@@ -165,9 +165,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const mockProfile: UserProfile = {
         id: mockUserId,
         user_type: 'hil_user',
-        email: 'dev@localhost.com',
-        full_name: 'Development User',
-        role: 'USER',
+        email: 'test@rexera.com',
+        full_name: 'Test HIL User',
+        role: 'HIL',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

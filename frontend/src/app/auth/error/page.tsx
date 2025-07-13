@@ -25,7 +25,7 @@ export default function AuthErrorPage() {
               {errorDescription || error || 'An error occurred during authentication.'}
             </p>
             <button
-              onClick={() => router.push('/auth/login')}
+              onClick={() => router.push('/auth/login' as any)}
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Try Again

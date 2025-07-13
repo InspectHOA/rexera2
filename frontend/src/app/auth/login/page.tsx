@@ -13,13 +13,13 @@ export default function LoginPage() {
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
-  // Temporarily disable auth bypass to test Google SSO
-  const shouldBypassAuth = false; // isLocalhost && isDevelopment;
+  // Temporarily enable auth bypass for development  
+  const shouldBypassAuth = isLocalhost && isDevelopment;
 
   useEffect(() => {
     if (shouldBypassAuth) {
       // Automatically redirect to dashboard for localhost development
-      router.push('/dashboard');
+      router.push('/dashboard' as any);
     }
   }, [shouldBypassAuth, router]);
 
