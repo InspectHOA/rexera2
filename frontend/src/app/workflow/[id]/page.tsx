@@ -47,6 +47,16 @@ export default function WorkflowDetailPage() {
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
 
   const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
+
+  // Debug logging
+  console.log('🔍 Workflow Page Debug:', {
+    id: params.id,
+    loading,
+    error,
+    hasWorkflow: !!workflowData,
+    hasTasks: !!tasksData,
+    tasksCount: tasksData?.length || 0
+  });
   
   // Transform API data to component format
   const workflow: Workflow | null = workflowData ? {

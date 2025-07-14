@@ -91,22 +91,25 @@ Authorization: Bearer <your-jwt-token>
         '/api/workflows': {
           get: {
             summary: 'List Workflows',
-            description: 'Get a list of workflows with optional filtering',
-            security: [{ bearerAuth: [] }],
+            description: 'Get a list of workflows with optional filtering, sorting, and pagination',
+            tags: ['Workflows'],
             parameters: [
               {
                 name: 'page',
                 in: 'query',
+                description: 'Page number for pagination',
                 schema: { type: 'integer', minimum: 1, default: 1 }
               },
               {
                 name: 'limit',
                 in: 'query',
+                description: 'Number of items per page',
                 schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
               },
               {
                 name: 'workflow_type',
                 in: 'query',
+                description: 'Filter by workflow type',
                 schema: { 
                   type: 'string',
                   enum: ['PAYOFF_REQUEST', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH']
@@ -115,15 +118,65 @@ Authorization: Bearer <your-jwt-token>
               {
                 name: 'status',
                 in: 'query',
+                description: 'Filter by workflow status',
                 schema: { 
                   type: 'string',
                   enum: ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED']
+                }
+              },
+              {
+                name: 'client_id',
+                in: 'query',
+                description: 'Filter by client ID',
+                schema: { type: 'string', format: 'uuid' }
+              },
+              {
+                name: 'assigned_to',
+                in: 'query',
+                description: 'Filter by assigned user ID',
+                schema: { type: 'string', format: 'uuid' }
+              },
+              {
+                name: 'priority',
+                in: 'query',
+                description: 'Filter by priority level',
+                schema: { 
+                  type: 'string',
+                  enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT']
+                }
+              },
+              {
+                name: 'sortBy',
+                in: 'query',
+                description: 'Field to sort by',
+                schema: { 
+                  type: 'string',
+                  enum: ['created_at', 'updated_at', 'due_date', 'status', 'workflow_type', 'human_readable_id', 'title', 'client_id', 'interrupt_count']
+                }
+              },
+              {
+                name: 'sortDirection',
+                in: 'query',
+                description: 'Sort direction',
+                schema: { 
+                  type: 'string',
+                  enum: ['asc', 'desc'],
+                  default: 'desc'
+                }
+              },
+              {
+                name: 'include',
+                in: 'query',
+                description: 'Include related data (comma-separated)',
+                schema: { 
+                  type: 'string',
+                  example: 'client,tasks'
                 }
               }
             ],
             responses: {
               '200': {
-                description: 'List of workflows',
+                description: 'List of workflows with pagination',
                 content: {
                   'application/json': {
                     schema: {
@@ -133,7 +186,8 @@ Authorization: Bearer <your-jwt-token>
                         data: {
                           type: 'array',
                           items: { $ref: '#/components/schemas/Workflow' }
-                        }
+                        },
+                        pagination: { $ref: '#/components/schemas/Pagination' }
                       }
                     }
                   }
@@ -144,7 +198,7 @@ Authorization: Bearer <your-jwt-token>
           post: {
             summary: 'Create Workflow',
             description: 'Create a new workflow',
-            security: [{ bearerAuth: [] }],
+            tags: ['Workflows'],
             requestBody: {
               content: {
                 'application/json': {
@@ -162,6 +216,247 @@ Authorization: Bearer <your-jwt-token>
                       properties: {
                         success: { type: 'boolean' },
                         data: { $ref: '#/components/schemas/Workflow' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/api/workflows/{id}': {
+          get: {
+            summary: 'Get Single Workflow',
+            description: 'Get a workflow by ID (UUID or human-readable ID)',
+            tags: ['Workflows'],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Workflow ID (UUID) or human-readable ID',
+                schema: { type: 'string' }
+              },
+              {
+                name: 'include',
+                in: 'query',
+                description: 'Include related data (comma-separated)',
+                schema: { 
+                  type: 'string',
+                  example: 'client,tasks'
+                }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Workflow details',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        success: { type: 'boolean' },
+                        data: { $ref: '#/components/schemas/Workflow' }
+                      }
+                    }
+                  }
+                }
+              },
+              '404': {
+                description: 'Workflow not found'
+              }
+            }
+          }
+        },
+        '/api/workflows/{id}/n8n-status': {
+          get: {
+            summary: 'Get N8N Execution Status',
+            description: 'Get the n8n execution status for a workflow',
+            tags: ['N8N'],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Workflow ID',
+                schema: { type: 'string' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'N8N execution status',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        success: { type: 'boolean' },
+                        data: {
+                          type: 'object',
+                          properties: {
+                            workflow_id: { type: 'string' },
+                            n8n_execution_id: { type: 'string' },
+                            status: { type: 'string' },
+                            last_execution: { type: 'string' }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/api/workflows/{id}/cancel-n8n': {
+          post: {
+            summary: 'Cancel N8N Execution',
+            description: 'Cancel the n8n execution for a workflow',
+            tags: ['N8N'],
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Workflow ID',
+                schema: { type: 'string' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'N8N execution cancellation requested',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        success: { type: 'boolean' },
+                        message: { type: 'string' },
+                        workflow_id: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/api/taskExecutions': {
+          get: {
+            summary: 'List Task Executions',
+            description: 'Get a list of task executions with optional filtering',
+            tags: ['Task Executions'],
+            parameters: [
+              {
+                name: 'workflow_id',
+                in: 'query',
+                description: 'Filter by workflow ID',
+                schema: { type: 'string', format: 'uuid' }
+              },
+              {
+                name: 'agent_id',
+                in: 'query',
+                description: 'Filter by agent ID',
+                schema: { type: 'string', format: 'uuid' }
+              },
+              {
+                name: 'status',
+                in: 'query',
+                description: 'Filter by task status',
+                schema: { 
+                  type: 'string',
+                  enum: ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED']
+                }
+              },
+              {
+                name: 'executor_type',
+                in: 'query',
+                description: 'Filter by executor type',
+                schema: { 
+                  type: 'string',
+                  enum: ['AI', 'HIL']
+                }
+              },
+              {
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                schema: { type: 'integer', minimum: 1, default: 1 }
+              },
+              {
+                name: 'limit',
+                in: 'query',
+                description: 'Number of items per page',
+                schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'List of task executions',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        success: { type: 'boolean' },
+                        data: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/TaskExecution' }
+                        },
+                        pagination: { $ref: '#/components/schemas/Pagination' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/api/agents': {
+          get: {
+            summary: 'List Agents',
+            description: 'Get a list of AI agents with optional filtering',
+            tags: ['Agents'],
+            parameters: [
+              {
+                name: 'type',
+                in: 'query',
+                description: 'Filter by agent type',
+                schema: { type: 'string' }
+              },
+              {
+                name: 'is_active',
+                in: 'query',
+                description: 'Filter by active status',
+                schema: { type: 'boolean' }
+              },
+              {
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                schema: { type: 'integer', minimum: 1, default: 1 }
+              },
+              {
+                name: 'limit',
+                in: 'query',
+                description: 'Number of items per page',
+                schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'List of agents',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        success: { type: 'boolean' },
+                        data: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/Agent' }
+                        },
+                        pagination: { $ref: '#/components/schemas/Pagination' }
                       }
                     }
                   }
@@ -188,8 +483,9 @@ Authorization: Bearer <your-jwt-token>
                 type: 'string',
                 enum: ['PAYOFF_REQUEST', 'HOA_ACQUISITION', 'MUNI_LIEN_SEARCH']
               },
+              client_id: { type: 'string', format: 'uuid' },
               title: { type: 'string' },
-              description: { type: 'string' },
+              description: { type: 'string', nullable: true },
               status: {
                 type: 'string',
                 enum: ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED']
@@ -198,8 +494,13 @@ Authorization: Bearer <your-jwt-token>
                 type: 'string',
                 enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT']
               },
+              metadata: { type: 'object' },
+              created_by: { type: 'string', format: 'uuid', nullable: true },
+              assigned_to: { type: 'string', format: 'uuid', nullable: true },
               created_at: { type: 'string', format: 'date-time' },
               updated_at: { type: 'string', format: 'date-time' },
+              completed_at: { type: 'string', format: 'date-time', nullable: true },
+              due_date: { type: 'string', format: 'date-time', nullable: true },
               human_readable_id: { type: 'string' }
             }
           },
@@ -218,8 +519,76 @@ Authorization: Bearer <your-jwt-token>
                 type: 'string',
                 enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'],
                 default: 'NORMAL'
-              }
+              },
+              metadata: { type: 'object' },
+              due_date: { type: 'string', format: 'date-time' },
+              created_by: { type: 'string', format: 'uuid' }
             }
+          },
+          TaskExecution: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              workflow_id: { type: 'string', format: 'uuid' },
+              agent_id: { type: 'string', format: 'uuid', nullable: true },
+              title: { type: 'string' },
+              description: { type: 'string', nullable: true },
+              sequence_order: { type: 'integer' },
+              task_type: { type: 'string' },
+              status: {
+                type: 'string',
+                enum: ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED']
+              },
+              interrupt_type: {
+                type: 'string',
+                enum: ['MISSING_DOCUMENT', 'PAYMENT_REQUIRED', 'CLIENT_CLARIFICATION', 'MANUAL_VERIFICATION'],
+                nullable: true
+              },
+              executor_type: {
+                type: 'string',
+                enum: ['AI', 'HIL']
+              },
+              priority: {
+                type: 'string',
+                enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT']
+              },
+              input_data: { type: 'object' },
+              output_data: { type: 'object', nullable: true },
+              error_message: { type: 'string', nullable: true },
+              started_at: { type: 'string', format: 'date-time', nullable: true },
+              completed_at: { type: 'string', format: 'date-time', nullable: true },
+              execution_time_ms: { type: 'integer', nullable: true },
+              retry_count: { type: 'integer' },
+              created_at: { type: 'string', format: 'date-time' }
+            }
+          },
+          Agent: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              name: { type: 'string' },
+              type: { type: 'string' },
+              description: { type: 'string', nullable: true },
+              capabilities: {
+                type: 'array',
+                items: { type: 'string' }
+              },
+              api_endpoint: { type: 'string', nullable: true },
+              configuration: { type: 'object' },
+              is_active: { type: 'boolean' },
+              created_at: { type: 'string', format: 'date-time' },
+              updated_at: { type: 'string', format: 'date-time' }
+            }
+          },
+          Pagination: {
+            type: 'object',
+            properties: {
+              page: { type: 'integer', minimum: 1 },
+              limit: { type: 'integer', minimum: 1 },
+              total: { type: 'integer', minimum: 0 },
+              totalPages: { type: 'integer', minimum: 0 }
+            },
+            required: ['page', 'limit', 'total', 'totalPages']
           }
         }
       }

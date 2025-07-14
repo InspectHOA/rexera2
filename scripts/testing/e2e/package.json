@@ -1,0 +1,23 @@
+{
+  "name": "@rexera/e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests using Stagehand for Rexera frontend",
+  "private": true,
+  "scripts": {
+    "test": "tsx workflow-interaction.test.ts all",
+    "test:workflow": "tsx workflow-interaction.test.ts workflow",
+    "test:login": "tsx workflow-interaction.test.ts login",
+    "test:headful": "HEADLESS=false tsx workflow-interaction.test.ts all",
+    "install": "pnpm install"
+  },
+  "dependencies": {
+    "@browserbasehq/stagehand": "^2.4.1",
+    "playwright": "^1.40.0",
+    "zod": "^3.25.74"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.2.2"
+  }
+}

@@ -16,8 +16,11 @@ import {
   API_ERROR_CODES
 } from '@rexera/shared';
 import { supabase } from '@/lib/supabase/client';
+import { shouldBypassAuth } from '@/lib/auth/config';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
+
+console.log('🔍 API_BASE_URL configured as:', API_BASE_URL);
 
 // Use shared ApiError class
 class ApiError extends SharedApiError {
@@ -31,23 +34,38 @@ class ApiError extends SharedApiError {
   }
 }
 
+// Centralized auth token getter - single source of truth
+async function getAuthToken(): Promise<string | null> {
+  if (shouldBypassAuth) {
+    return null; // Skip auth for localhost development
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (error) {
+    console.warn('Failed to get auth token:', error);
+    return null;
+  }
+}
+
 async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  // Get current session and JWT token
-  const { data: { session } } = await supabase.auth.getSession();
+  // Get auth token from centralized function
+  const authToken = await getAuthToken();
   
   // Build headers with authentication
   const headers: Record<string, string> = { 
     ...(options.headers as Record<string, string> || {}) 
   };
   
-  // Add Authorization header if we have a session
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
+  // Add Authorization header if token available
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
   
   // Only set Content-Type for requests with body (POST, PUT, PATCH)
@@ -101,19 +119,20 @@ export const workflowsApi = {
       }
     });
 
-    // Get current session and JWT token
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    // We need the full response including pagination, so we'll handle the request manually
+    const authToken = await getAuthToken();
     const headers: Record<string, string> = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
-
+    
     const response = await fetch(`${API_BASE_URL}/workflows?${params}`, {
       headers
     });
+    
     const data: ApiResponse = await response.json();
-
+    
     if (!response.ok || !data.success) {
       const errorData = data as ApiErrorResponse;
       throw new ApiError(
@@ -140,7 +159,8 @@ export const workflowsApi = {
       params.append('include', include.join(','));
     }
     
-    return apiRequest(`/workflows/${id}?${params}`);
+    const url = `/workflows/${id}?${params}`;
+    return apiRequest(url);
   },
 
   async byHumanId(humanId: string, include: string[] = []) {
@@ -193,26 +213,27 @@ export const tasksApi = {
     
     if (workflowId) {
       const params = new URLSearchParams();
-      params.append('workflowId', workflowId);
+      params.append('workflow_id', workflowId); // Backend expects workflow_id, not workflowId
       
       // Add include parameter if provided
       if (filters.include && filters.include.length > 0) {
         params.append('include', filters.include.join(','));
       }
       
-      // Get current session and JWT token
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      // We need the full response including pagination for consistency
+      const authToken = await getAuthToken();
       const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
       }
       
-      const response = await fetch(`${API_BASE_URL}/task-executions?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/taskExecutions?${params}`, {
         headers
       });
+      
       const data = await response.json();
-
+      
       if (!response.ok) {
         throw new ApiError(
           data.error || `HTTP ${response.status}`,
@@ -255,7 +276,7 @@ export const tasksApi = {
     priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
     input_data?: Record<string, any>;
   }) {
-    return apiRequest('/task-executions', {
+    return apiRequest('/taskExecutions', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -270,7 +291,7 @@ export const tasksApi = {
     execution_time_ms?: number;
     retry_count?: number;
   }) {
-    return apiRequest(`/task-executions/${id}`, {
+    return apiRequest(`/taskExecutions/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -307,37 +328,7 @@ export const activitiesApi = {
       }
     });
 
-    // Get current session and JWT token
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const headers: Record<string, string> = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/activities?${params}`, {
-      headers
-    });
-    const data: ApiResponse = await response.json();
-
-    if (!response.ok || !data.success) {
-      const errorData = data as ApiErrorResponse;
-      throw new ApiError(
-        errorData.error?.message || `HTTP ${response.status}`,
-        response.status,
-        errorData.error?.details
-      );
-    }
-
-    return {
-      data: data.data || [],
-      pagination: data.pagination || {
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0
-      }
-    };
+    return apiRequest(`/activities?${params}`);
   },
 
   async create(data: {
@@ -378,37 +369,7 @@ export const agentsApi = {
       }
     });
 
-    // Get current session and JWT token
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const headers: Record<string, string> = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/agents?${params}`, {
-      headers
-    });
-    const data: ApiResponse = await response.json();
-
-    if (!response.ok || !data.success) {
-      const errorData = data as ApiErrorResponse;
-      throw new ApiError(
-        errorData.error?.message || `HTTP ${response.status}`,
-        response.status,
-        errorData.error?.details
-      );
-    }
-
-    return {
-      data: data.data || [],
-      pagination: data.pagination || {
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0
-      }
-    };
+    return apiRequest(`/agents?${params}`);
   },
 
   async updateStatus(id: string, data: {
@@ -448,37 +409,7 @@ export const interruptsApi = {
       }
     });
 
-    // Get current session and JWT token
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const headers: Record<string, string> = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/interrupts?${params}`, {
-      headers
-    });
-    const data: ApiResponse = await response.json();
-
-    if (!response.ok || !data.success) {
-      const errorData = data as ApiErrorResponse;
-      throw new ApiError(
-        errorData.error?.message || `HTTP ${response.status}`,
-        response.status,
-        errorData.error?.details
-      );
-    }
-
-    return {
-      data: data.data || [],
-      pagination: data.pagination || {
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0
-      }
-    };
+    return apiRequest(`/interrupts?${params}`);
   },
 
   async byId(id: string) {
@@ -555,37 +486,7 @@ export const communicationsApi = {
       }
     });
 
-    // Get current session and JWT token
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const headers: Record<string, string> = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/communications?${params}`, {
-      headers
-    });
-    const data: ApiResponse = await response.json();
-
-    if (!response.ok || !data.success) {
-      const errorData = data as ApiErrorResponse;
-      throw new ApiError(
-        errorData.error?.message || `HTTP ${response.status}`,
-        response.status,
-        errorData.error?.details
-      );
-    }
-
-    return {
-      data: data.data || [],
-      pagination: {
-        page: 1,
-        limit: parseInt(String(filters.limit || 50)),
-        total: Array.isArray(data.data) ? data.data.length : 0,
-        totalPages: 1
-      }
-    };
+    return apiRequest(`/communications?${params}`);
   },
 
   async create(data: {

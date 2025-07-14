@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import type { Route } from 'next';
 import { useSupabase } from '@/lib/supabase/provider';
+import { shouldBypassAuth, DEV_USER_CONFIG } from '@/lib/auth/config';
 interface UserProfile {
   id: string;
   user_type: string;
@@ -33,12 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if we're in localhost development mode
-  const isLocalhost = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  // Temporarily enable auth bypass for development
-  const shouldBypassAuth = isLocalhost && isDevelopment;
+  // Auth bypass configuration comes from centralized config
 
   const refreshProfile = async () => {
     if (!user) {
@@ -145,16 +141,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (shouldBypassAuth) {
-      // Create mock user for localhost development - use seeded test user ID
-      const mockUserId = '82a7d984-485b-4a47-ac28-615a1b448473'; // Matches seeded test user
+      // Create mock user for localhost development using centralized config
       const mockUser = {
-        id: mockUserId,
-        email: 'test@rexera.com',
+        id: DEV_USER_CONFIG.id,
+        email: DEV_USER_CONFIG.email,
         app_metadata: {},
         aud: 'authenticated',
         user_metadata: {
-          full_name: 'Test HIL User',
-          name: 'Test HIL User',
+          full_name: DEV_USER_CONFIG.name,
+          name: DEV_USER_CONFIG.name,
           avatar_url: null,
           picture: null
         },
@@ -163,11 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } as User;
 
       const mockProfile: UserProfile = {
-        id: mockUserId,
-        user_type: 'hil_user',
-        email: 'test@rexera.com',
-        full_name: 'Test HIL User',
-        role: 'HIL',
+        id: DEV_USER_CONFIG.id,
+        user_type: DEV_USER_CONFIG.user_type,
+        email: DEV_USER_CONFIG.email,
+        full_name: DEV_USER_CONFIG.name,
+        role: DEV_USER_CONFIG.role,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

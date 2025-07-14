@@ -3,18 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { shouldBypassAuth } from '@/lib/auth/config';
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if we're in localhost development mode
-  const isLocalhost = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  // Temporarily enable auth bypass for development  
-  const shouldBypassAuth = isLocalhost && isDevelopment;
+  // Auth bypass configuration comes from centralized config
 
   useEffect(() => {
     if (shouldBypassAuth) {

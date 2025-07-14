@@ -32,6 +32,21 @@ declare module 'hono' {
  */
 export const authMiddleware = async (c: Context, next: Next) => {
   try {
+    // Development bypass - skip auth for localhost
+    if (process.env.NODE_ENV === 'development') {
+      // Set a default test user for development
+      c.set('user', {
+        id: '82a7d984-485b-4a47-ac28-615a1b448473', // Seeded test user ID
+        email: 'test@example.com',
+        user_type: 'hil_user' as const,
+        role: 'HIL',
+        company_id: undefined
+      });
+      
+      await next();
+      return;
+    }
+    
     const authHeader = c.req.header('Authorization');
     
     if (!authHeader) {

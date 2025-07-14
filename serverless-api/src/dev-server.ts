@@ -17,7 +17,8 @@ console.log(`📍 Server will be available at: http://localhost:${port}`);
 console.log(`📋 API Documentation: http://localhost:${port}/api/docs`);
 console.log(`🔍 Health Check: http://localhost:${port}/api/health`);
 
-const selectedApp = process.env.NODE_ENV === 'test' ? testApp : app;
+// Use complete app for development to have all endpoints available
+const selectedApp = app;
 
 serve({
   fetch: selectedApp.fetch,

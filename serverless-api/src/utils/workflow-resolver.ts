@@ -24,10 +24,13 @@ export async function resolveWorkflowId(
     return id;
   }
 
+  // Extract numeric part from prefixed format (e.g., "HOA-1002" -> "1002")
+  const numericId = id.includes('-') ? id.split('-')[1] : id;
+  
   const { data: workflow, error } = await supabase
     .from('workflows')
     .select('id')
-    .eq('human_readable_id', id)
+    .eq('human_readable_id', numericId)
     .single();
 
   if (error || !workflow) {
@@ -39,12 +42,16 @@ export async function resolveWorkflowId(
 
 /**
  * Direct lookup by human-readable ID (more efficient than resolveWorkflowId for API endpoints)
+ * Handles both prefixed format (HOA-1002) and numeric format (1002)
  */
 export async function getWorkflowByHumanId(supabase: SupabaseClient, humanId: string, selectString: string = '*') {
+  // Extract numeric part from prefixed format (e.g., "HOA-1002" -> "1002")
+  const numericId = humanId.includes('-') ? humanId.split('-')[1] : humanId;
+  
   const { data: workflow, error } = await supabase
     .from('workflows')
     .select(selectString)
-    .eq('human_readable_id', humanId)
+    .eq('human_readable_id', numericId)
     .single();
 
   if (error) {

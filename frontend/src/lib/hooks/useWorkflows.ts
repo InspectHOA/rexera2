@@ -47,6 +47,9 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
     queryKey: ['workflows', filters],
     queryFn: () => api.workflows.list(filters),
     staleTime: 30000, // 30 seconds
+    retry: 2,
+    retryDelay: 1000
+    // Temporarily removed placeholderData to see real errors
   });
 
   const workflows = (workflowsResult?.data && Array.isArray(workflowsResult.data)) ? workflowsResult.data : [];
@@ -56,6 +59,7 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
     total: 0,
     totalPages: 0
   };
+
 
   // Calculate stats from the workflows
   useEffect(() => {
@@ -121,8 +125,8 @@ export function useWorkflow(id: string) {
   const { supabase } = useSupabase();
   const queryClient = useQueryClient();
 
-  // Determine if ID is a human-readable number or UUID
-  const isHumanId = /^\d+$/.test(id);
+  // Determine if ID is a human-readable format (e.g., "HOA-1002") or UUID
+  const isHumanId = /^[A-Z]+-\d+$/.test(id) || /^\d+$/.test(id);
   
   // Fetch workflow
   const {

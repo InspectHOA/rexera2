@@ -35,7 +35,7 @@ export function useWorkflowTransformation(
       
       return {
         id: displayId,
-        workflowId: workflow.id, // Use UUID for navigation
+        workflowId: displayId, // Use full prefixed human-readable ID for navigation
         created: formatCreatedDate(workflow.created_at),
         createdRaw: workflow.created_at, // For sorting
         type: getDisplayWorkflowType(workflow.workflow_type),

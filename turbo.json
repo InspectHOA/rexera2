@@ -27,6 +27,19 @@
       "dependsOn": ["type-check"],
       "env": ["API_BASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
     },
+    "test:e2e": {
+      "cache": false,
+      "dependsOn": ["dev"],
+      "env": [
+        "TEST_EMAIL", 
+        "TEST_PASSWORD", 
+        "FRONTEND_URL", 
+        "API_URL", 
+        "HEADLESS",
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE_KEY"
+      ]
+    },
     "seed": {
       "cache": false,
       "env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]

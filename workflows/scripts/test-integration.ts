@@ -68,7 +68,7 @@
  * 
  * ENVIRONMENT REQUIREMENTS:
  * ------------------------
- * API_BASE_URL     - Rexera API endpoint (default: http://localhost:3002)
+ * API_BASE_URL     - Rexera API endpoint (default: http://localhost:3001)
  * N8N_BASE_URL     - n8n Cloud instance URL
  * N8N_API_KEY      - n8n Cloud API authentication key
  * 
@@ -98,7 +98,7 @@ import fetch from 'node-fetch';
 config({ path: '../../.env.local' });
 
 // Extract required configuration values
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3002';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
 const N8N_BASE_URL = process.env.N8N_BASE_URL;
 const N8N_API_KEY = process.env.N8N_API_KEY;
 

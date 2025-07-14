@@ -18,6 +18,9 @@
     "test": "npm run type-check && turbo run test",
     "test:smoke": "turbo run test:smoke",
     "test:integration": "turbo run test:integration",
+    "test:e2e": "cd scripts/testing/e2e && pnpm install && pnpm test",
+    "test:all": "tsx scripts/testing/run-all-tests.ts",
+    "test:fast": "tsx scripts/testing/run-all-tests.ts --fast",
     "seed": "turbo run seed",
     "notifications": "turbo run notifications",
     "lint": "turbo run lint",
@@ -32,7 +35,7 @@
     "db:seed": "pnpm supabase db seed",
     "workflows:validate": "cd workflows && npm run validate",
     "workflows:backup": "cd workflows && npm run backup",
-    "e2e": "playwright test"
+    "precommit": "npm run test:all"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
