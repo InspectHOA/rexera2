@@ -32,7 +32,13 @@ declare module 'hono' {
  */
 export const authMiddleware = async (c: Context, next: Next) => {
   try {
-    // Development bypass - skip auth for localhost
+    // Skip auth for OPTIONS requests (CORS preflight)
+    if (c.req.method === 'OPTIONS') {
+      await next();
+      return;
+    }
+    
+    // Development bypass - skip auth for localhost only
     if (process.env.NODE_ENV === 'development') {
       // Set a default test user for development
       c.set('user', {
