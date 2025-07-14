@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "test": "tsx workflow-interaction.test.ts all",
+    "test:config": "tsx test-config.test.ts",
     "test:workflow": "tsx workflow-interaction.test.ts workflow",
     "test:login": "tsx workflow-interaction.test.ts login",
     "test:headful": "HEADLESS=false tsx workflow-interaction.test.ts all",
@@ -12,6 +13,7 @@
   },
   "dependencies": {
     "@browserbasehq/stagehand": "^2.4.1",
+    "dotenv": "^17.0.1",
     "playwright": "^1.40.0",
     "zod": "^3.25.74"
   },
