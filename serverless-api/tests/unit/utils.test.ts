@@ -41,7 +41,7 @@ describe('UUID Formatter Utils', () => {
     const testUuid = 'b5bdf081-8e92-4fca-9ffc-eb812a7450ad';
 
     it('should format UUID with PAYOFF prefix', () => {
-      const result = formatWorkflowIdWithType(testUuid, 'PAYOFF');
+      const result = formatWorkflowIdWithType(testUuid, 'PAYOFF_REQUEST');
       expect(result).toBe('PAY-2A74-50AD');
     });
 

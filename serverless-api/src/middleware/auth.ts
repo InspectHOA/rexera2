@@ -1,11 +1,10 @@
 /**
- * Authentication Middleware for Rexera API
+ * Simplified Authentication Middleware for Rexera API
  * 
- * Validates Supabase JWT tokens and extracts user context
+ * Two modes: SSO or SKIP_AUTH
  */
 
 import { Context, Next } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
@@ -28,7 +27,7 @@ declare module 'hono' {
 }
 
 /**
- * Middleware to validate JWT tokens and extract user context
+ * Simplified auth middleware - SSO or SKIP_AUTH only
  */
 export const authMiddleware = async (c: Context, next: Next) => {
   try {
@@ -38,14 +37,14 @@ export const authMiddleware = async (c: Context, next: Next) => {
       return;
     }
     
-    // Development bypass - skip auth for localhost only
-    if (process.env.NODE_ENV === 'development') {
-      // Set a default test user for development
+    // SKIP_AUTH mode - use hardcoded user
+    if (process.env.SKIP_AUTH === 'true') {
+      console.log('🔧 Using SKIP_AUTH mode');
       c.set('user', {
-        id: '82a7d984-485b-4a47-ac28-615a1b448473', // Seeded test user ID
-        email: 'test@example.com',
+        id: '284219ff-3a1f-4e86-9ea4-3536f940451f',
+        email: 'admin@rexera.com',
         user_type: 'hil_user' as const,
-        role: 'HIL',
+        role: 'HIL_ADMIN',
         company_id: undefined
       });
       
@@ -53,28 +52,13 @@ export const authMiddleware = async (c: Context, next: Next) => {
       return;
     }
     
+    console.log('🔐 Using SSO mode');
+    
+    // SSO mode - validate JWT token
     const authHeader = c.req.header('Authorization');
     
-    if (!authHeader) {
-      return c.json({
-        success: false,
-        error: {
-          code: 'HTTP_401',
-          message: 'Missing Authorization header',
-          timestamp: new Date().toISOString()
-        }
-      }, 401);
-    }
-
-    if (!authHeader.startsWith('Bearer ')) {
-      return c.json({
-        success: false,
-        error: {
-          code: 'HTTP_401',
-          message: 'Invalid Authorization header format. Expected: Bearer <token>',
-          timestamp: new Date().toISOString()
-        }
-      }, 401);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ success: false, error: { message: 'Missing or invalid Authorization header' } }, 401);
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -83,14 +67,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return c.json({
-        success: false,
-        error: {
-          code: 'HTTP_401',
-          message: 'Invalid or expired token',
-          timestamp: new Date().toISOString()
-        }
-      }, 401);
+      return c.json({ success: false, error: { message: 'Invalid or expired token' } }, 401);
     }
 
     // Get user profile data from database
@@ -101,98 +78,39 @@ export const authMiddleware = async (c: Context, next: Next) => {
       .single();
 
     if (profileError || !profile) {
-      return c.json({
-        success: false,
-        error: {
-          code: 'HTTP_403',
-          message: 'User profile not found or incomplete',
-          timestamp: new Date().toISOString()
-        }
-      }, 403);
+      return c.json({ success: false, error: { message: 'User profile not found' } }, 403);
     }
 
-    // Set user context in Hono context
-    const authUser: AuthUser = {
+    // Set user context
+    c.set('user', {
       id: user.id,
       email: user.email!,
       user_type: profile.user_type,
       role: profile.role,
       company_id: profile.company_id
-    };
+    });
 
-    c.set('user', authUser);
     await next();
 
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return c.json({
-      success: false,
-      error: {
-        code: 'HTTP_500',
-        message: 'Internal authentication error',
-        timestamp: new Date().toISOString()
-      }
-    }, 500);
+    return c.json({ success: false, error: { message: 'Internal authentication error' } }, 500);
   }
 };
 
 /**
- * Middleware for HIL-only endpoints
- */
-export const hilOnlyMiddleware = async (c: Context, next: Next) => {
-  const user = c.get('user');
-  
-  if (!user || user.user_type !== 'hil_user') {
-    return c.json({
-      success: false,
-      error: {
-        code: 'HTTP_403',
-        message: 'Access denied. HIL users only.',
-        timestamp: new Date().toISOString()
-      }
-    }, 403);
-  }
-  
-  await next();
-};
-
-/**
- * Middleware for client-specific data access
- * Ensures clients can only access their own company data
- */
-export const clientDataMiddleware = async (c: Context, next: Next) => {
-  const user = c.get('user');
-  
-  if (user.user_type === 'client_user' && !user.company_id) {
-    return c.json({
-      success: false,
-      error: {
-        code: 'HTTP_403',
-        message: 'Client user missing company association',
-        timestamp: new Date().toISOString()
-      }
-    }, 403);
-  }
-  
-  await next();
-};
-
-/**
- * Utility to check if user has admin privileges
- */
-export const isAdmin = (user: AuthUser): boolean => {
-  return user.role === 'HIL_ADMIN' || user.role === 'CLIENT_ADMIN';
-};
-
-/**
- * Utility to get company filter for client users
+ * Simplified company filter for new auth system
+ * In simplified auth, we don't restrict by company - return null (no filter)
  */
 export const getCompanyFilter = (user: AuthUser): string | null => {
-  if (user.user_type === 'hil_user') {
-    return null; // HIL users can see all companies
-  }
-  return user.company_id || null;
+  // In simplified auth system, no company restrictions
+  return null;
 };
 
-// Alias for backwards compatibility
-export const supabaseAuthMiddleware = authMiddleware;
+/**
+ * Simplified client data middleware - no restrictions in simplified auth
+ */
+export const clientDataMiddleware = async (c: Context, next: Next) => {
+  // In simplified auth, no client data restrictions
+  await next();
+};

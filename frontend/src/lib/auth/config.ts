@@ -1,28 +1,17 @@
 /**
- * Centralized auth configuration - single source of truth for auth behavior
+ * Simplified auth configuration - SSO or skip_auth only
  */
 
-// Environment detection
-export const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+// Simple auth bypass check - use SKIP_AUTH environment variable
+export const SKIP_AUTH = process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
 
-export const isDevelopment = process.env.NODE_ENV === 'development';
-
-// Auth bypass logic - centralized decision
-export const shouldBypassAuth = isLocalhost && isDevelopment;
-
-// Development user configuration
-export const DEV_USER_CONFIG = {
-  id: '82a7d984-485b-4a47-ac28-615a1b448473', // Seeded test user ID
-  email: 'test@example.com',
-  name: 'Test HIL User',
-  role: 'HIL' as const,
-  user_type: 'hil_user' as const,
-  company_id: undefined
+// Hardcoded user for skip_auth mode (real auth user)
+export const SKIP_AUTH_USER = {
+  id: '284219ff-3a1f-4e86-9ea4-3536f940451f',
+  email: 'admin@rexera.com', 
+  name: 'Admin User',
+  role: 'HIL_ADMIN',
+  user_type: 'hil_user'
 };
 
-console.log('🔧 Auth config:', { 
-  isLocalhost, 
-  isDevelopment, 
-  shouldBypassAuth 
-});
+console.log('🔧 Auth mode:', SKIP_AUTH ? 'SKIP_AUTH' : 'SSO');

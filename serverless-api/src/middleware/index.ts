@@ -4,10 +4,8 @@
 
 export {
   authMiddleware,
-  hilOnlyMiddleware,
-  clientDataMiddleware,
-  isAdmin,
   getCompanyFilter,
+  clientDataMiddleware,
   type AuthUser
 } from './auth';
 

@@ -15,9 +15,6 @@ import {
 import { z } from 'zod';
 import {
   authMiddleware,
-  hilOnlyMiddleware,
-  clientDataMiddleware,
-  getCompanyFilter,
   rateLimitMiddleware,
   securityHeadersMiddleware,
   requestValidationMiddleware,
@@ -65,9 +62,7 @@ app.use('/api/interrupts/*', authMiddleware);
 app.use('/api/costs/*', authMiddleware);
 app.use('/api/activities/*', authMiddleware);
 
-// Apply HIL-only middleware to admin endpoints
-app.use('/api/agents', hilOnlyMiddleware);
-app.use('/api/cron/*', hilOnlyMiddleware);
+// Simplified auth - no HIL-only restrictions
 
 // ============================================================================
 // AGENTS ENDPOINTS
@@ -322,13 +317,8 @@ app.get('/api/workflows', async (c) => {
     if (assigned_to) dbQuery = dbQuery.eq('assigned_to', assigned_to);
     if (priority) dbQuery = dbQuery.eq('priority', priority);
 
-    // Apply client access control
-    const companyFilter = getCompanyFilter(user);
-    if (companyFilter) {
-      // Client users can only see their own company's workflows
-      dbQuery = dbQuery.eq('client_id', companyFilter);
-    } else if (client_id) {
-      // HIL users can filter by specific client_id if provided
+    // Simplified auth - no company filtering, just apply client_id filter if provided
+    if (client_id) {
       dbQuery = dbQuery.eq('client_id', client_id);
     }
 
@@ -560,11 +550,7 @@ app.get('/api/workflows/:id', async (c) => {
         .select(selectString)
         .eq('id', id);
 
-      // Apply client access control
-      const companyFilter = getCompanyFilter(user);
-      if (companyFilter) {
-        query = query.eq('client_id', companyFilter);
-      }
+      // Simplified auth - no company filtering
 
       const { data, error } = await query.single();
       
@@ -582,14 +568,7 @@ app.get('/api/workflows/:id', async (c) => {
       // Otherwise, look up by human-readable ID
       workflow = await getWorkflowByHumanId(supabase, id, selectString);
       
-      // Apply client access control for human-readable ID lookup
-      const companyFilter = getCompanyFilter(user);
-      if (companyFilter && workflow && workflow.client_id !== companyFilter) {
-        return c.json({
-          success: false,
-          error: 'Workflow not found',
-        }, 404);
-      }
+      // Simplified auth - no company filtering for human-readable ID lookup
       
       if (!workflow) {
         return c.json({

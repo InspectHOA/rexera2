@@ -6,7 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
-import { hilOnlyMiddleware, type AuthUser } from '../middleware';
+import { type AuthUser } from '../middleware';
 import { z } from 'zod';
 
 const agents = new Hono();
@@ -30,7 +30,7 @@ const updateAgentSchema = z.object({
 
 // Apply HIL-only middleware to all agent routes (except in test mode)
 if (process.env.NODE_ENV !== 'test') {
-  agents.use('*', hilOnlyMiddleware);
+  // Removed HIL-only middleware - simplified auth allows all authenticated users
 }
 
 // GET /api/agents - List agents

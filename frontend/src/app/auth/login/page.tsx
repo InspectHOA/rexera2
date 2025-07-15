@@ -3,24 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { shouldBypassAuth } from '@/lib/auth/config';
+import { SKIP_AUTH } from '@/lib/auth/config';
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auth bypass configuration comes from centralized config
-
   useEffect(() => {
-    if (shouldBypassAuth) {
-      // Automatically redirect to dashboard for localhost development
+    if (SKIP_AUTH) {
+      // Automatically redirect to dashboard in skip_auth mode
       router.push('/dashboard' as any);
     }
-  }, [shouldBypassAuth, router]);
+  }, [router]);
 
-  // Don't render the login form if we're bypassing auth
-  if (shouldBypassAuth) {
+  // Don't render the login form if we're in skip_auth mode
+  if (SKIP_AUTH) {
     return (
       <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -33,7 +31,7 @@ export default function LoginPage() {
               />
             </div>
             <h2 className="text-3xl font-extrabold text-gray-900">
-              Development Mode
+              Skip Auth Mode
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               Redirecting to dashboard...

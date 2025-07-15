@@ -6,7 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
-import { clientDataMiddleware, getCompanyFilter, type AuthUser } from '../middleware';
+import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { 
   CreateTaskExecutionSchema,
   UpdateTaskExecutionSchema 

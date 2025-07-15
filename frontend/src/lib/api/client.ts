@@ -16,7 +16,7 @@ import {
   API_ERROR_CODES
 } from '@rexera/shared';
 import { supabase } from '@/lib/supabase/client';
-import { shouldBypassAuth } from '@/lib/auth/config';
+import { SKIP_AUTH } from '@/lib/auth/config';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
 
@@ -34,10 +34,10 @@ class ApiError extends SharedApiError {
   }
 }
 
-// Centralized auth token getter - single source of truth
+// Simplified auth token getter
 async function getAuthToken(): Promise<string | null> {
-  if (shouldBypassAuth) {
-    return null; // Skip auth for localhost development
+  if (SKIP_AUTH) {
+    return null; // No token needed in skip_auth mode
   }
 
   try {

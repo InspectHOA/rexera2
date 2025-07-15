@@ -8,7 +8,7 @@ import { Bell } from 'lucide-react';
 
 export function DashboardHeader() {
   const router = useRouter();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -45,6 +45,10 @@ export function DashboardHeader() {
 
   // Get user display name from Google OAuth data or profile
   const getDisplayName = () => {
+    // Show loading state instead of fallback "User" while auth is loading
+    if (loading) {
+      return '...';
+    }
 
     if (profile?.full_name) {
       return profile.full_name;
@@ -64,6 +68,12 @@ export function DashboardHeader() {
   // Get user initials for avatar
   const getInitials = () => {
     const name = getDisplayName();
+    
+    // Handle loading state
+    if (loading || name === '...') {
+      return '•';
+    }
+    
     if (name === 'User' || name.includes('@')) {
       return user?.email?.charAt(0).toUpperCase() || 'U';
     }

@@ -47,37 +47,10 @@ async function resetDatabase() {
 async function seedDatabase() {
   console.log('🌱 Creating comprehensive test data...');
   
-  // Create test users and get their actual IDs
-  let testUserId = '82a7d984-485b-4a47-ac28-615a1b448473'; // fallback
-  let adminUserId = 'b6edf56a-ba7d-4bda-8ab4-27e9ff047e71'; // fallback
-  
-  try {
-    const { data: testUser, error: testError } = await supabase.auth.admin.createUser({
-      email: 'test@rexera.com',
-      password: 'test123456',
-      user_metadata: { full_name: 'Test HIL User' },
-      email_confirm: true
-    });
-    
-    if (testUser?.user?.id) {
-      testUserId = testUser.user.id;
-      console.log(`✅ Created test user: ${testUserId}`);
-    }
-
-    const { data: adminUser, error: adminError } = await supabase.auth.admin.createUser({
-      email: 'admin@rexera.com',
-      password: 'admin123456', 
-      user_metadata: { full_name: 'HIL Admin' },
-      email_confirm: true
-    });
-    
-    if (adminUser?.user?.id) {
-      adminUserId = adminUser.user.id;
-      console.log(`✅ Created admin user: ${adminUserId}`);
-    }
-  } catch (error) {
-    console.log('⚠️ Using fallback user IDs (users may already exist)');
-  }
+  // Use SKIP_AUTH user ID for development (real auth user)
+  const SKIP_AUTH_USER_ID = '284219ff-3a1f-4e86-9ea4-3536f940451f';
+  let testUserId = SKIP_AUTH_USER_ID; 
+  let adminUserId = SKIP_AUTH_USER_ID;
 
   // Create 8 diverse clients
   const { data: clients, error: clientError } = await supabase.from('clients').upsert([
@@ -97,17 +70,25 @@ async function seedDatabase() {
   }
   console.log(`✅ Created ${clients?.length || 0} clients`);
 
-  // Create user profiles using actual auth user IDs (only HIL users for now)
-  const { data: profiles, error: profileError } = await supabase.from('user_profiles').upsert([
-    { id: testUserId, user_type: 'hil_user', email: 'test@rexera.com', full_name: 'Test HIL User', role: 'HIL' },
-    { id: adminUserId, user_type: 'hil_user', email: 'admin@rexera.com', full_name: 'HIL Admin', role: 'HIL_ADMIN' }
+  // Recreate SKIP_AUTH user profile (since it was cleared during reset)
+  const { data: skipAuthProfile, error: skipAuthError } = await supabase.from('user_profiles').upsert([
+    { 
+      id: SKIP_AUTH_USER_ID, 
+      user_type: 'hil_user', 
+      email: 'admin@rexera.com', 
+      full_name: 'Admin User', 
+      role: 'HIL_ADMIN',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
   ]).select();
   
-  if (profileError) {
-    console.error('❌ Failed to create user profiles:', profileError);
-    throw profileError;
+  if (skipAuthError) {
+    console.error('❌ Failed to recreate SKIP_AUTH user profile:', skipAuthError);
+    throw skipAuthError;
   }
-  console.log(`✅ Created ${profiles?.length || 0} user profiles`);
+  
+  console.log(`✅ Recreated SKIP_AUTH user profile: ${SKIP_AUTH_USER_ID}`);
 
   // Create all 10 agents
   const { data: agents, error: agentError } = await supabase.from('agents').upsert([

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import type { Route } from 'next';
 import { useSupabase } from '@/lib/supabase/provider';
-import { shouldBypassAuth, DEV_USER_CONFIG } from '@/lib/auth/config';
+import { SKIP_AUTH, SKIP_AUTH_USER } from '@/lib/auth/config';
+
 interface UserProfile {
   id: string;
   user_type: string;
@@ -22,7 +23,6 @@ type AuthContext = {
   profile: UserProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
 };
 
 const Context = createContext<AuthContext | undefined>(undefined);
@@ -34,101 +34,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Auth bypass configuration comes from centralized config
-
-  const refreshProfile = async () => {
-    if (!user) {
-      setProfile(null);
+  const signOut = async () => {
+    if (SKIP_AUTH) {
+      // In skip_auth mode, just redirect to login
+      router.push('/auth/login' as Route);
       return;
     }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error loading user profile:', error);
-        setProfile(null);
-      } else {
-        console.log('Loaded user profile from database:', data);
-        // Convert null values to undefined to match UserProfile type
-        const profile: UserProfile = {
-          ...data,
-          full_name: data.full_name ?? undefined,
-          company_id: data.company_id ?? undefined,
-          created_at: data.created_at ?? new Date().toISOString(),
-          updated_at: data.updated_at ?? new Date().toISOString()
-        };
-        setProfile(profile);
-      }
-    } catch (error) {
-      setProfile(null);
-    }
-  };
-
-  const ensureUserProfile = async (user: User) => {
-    try {
-      // Check if profile exists
-      const { data: existingProfile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (!existingProfile) {
-        // Create profile with Google OAuth data
-        console.log('Creating user profile with OAuth data:', {
-          user_id: user.id,
-          email: user.email,
-          user_metadata: user.user_metadata
-        });
-        
-        const { error } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: user.id,
-            user_type: 'hil_user',  // Default to HIL user type
-            email: user.email!,
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-            role: 'HIL_ADMIN',  // Use HIL_ADMIN as default role for HIL users
-            company_id: null,  // HIL users don't have company_id
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (error) {
-          console.error('Error creating user profile:', error);
-        }
-      } else {
-        // Update existing profile with latest OAuth data
-        console.log('Updating existing user profile:', {
-          existing_full_name: existingProfile.full_name,
-          oauth_full_name: user.user_metadata?.full_name,
-          oauth_name: user.user_metadata?.name
-        });
-        
-        const { error } = await supabase
-          .from('user_profiles')
-          .update({
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || existingProfile.full_name,
-            email: user.email!, // Update email in case it changed
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (error) {
-          console.error('Error updating user profile:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error in ensureUserProfile:', error);
-    }
-  };
-
-  const signOut = async () => {
+    
     try {
       await supabase.auth.signOut();
       setUser(null);
@@ -140,29 +52,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    if (shouldBypassAuth) {
-      // Create mock user for localhost development using centralized config
+    if (SKIP_AUTH) {
+      console.log('🔧 Using SKIP_AUTH mode');
+      
+      // Create hardcoded user and profile
       const mockUser = {
-        id: DEV_USER_CONFIG.id,
-        email: DEV_USER_CONFIG.email,
+        id: SKIP_AUTH_USER.id,
+        email: SKIP_AUTH_USER.email,
         app_metadata: {},
         aud: 'authenticated',
         user_metadata: {
-          full_name: DEV_USER_CONFIG.name,
-          name: DEV_USER_CONFIG.name,
-          avatar_url: null,
-          picture: null
+          full_name: SKIP_AUTH_USER.name,
+          name: SKIP_AUTH_USER.name,
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       } as User;
 
       const mockProfile: UserProfile = {
-        id: DEV_USER_CONFIG.id,
-        user_type: DEV_USER_CONFIG.user_type,
-        email: DEV_USER_CONFIG.email,
-        full_name: DEV_USER_CONFIG.name,
-        role: DEV_USER_CONFIG.role,
+        id: SKIP_AUTH_USER.id,
+        user_type: SKIP_AUTH_USER.user_type,
+        email: SKIP_AUTH_USER.email,
+        full_name: SKIP_AUTH_USER.name,
+        role: SKIP_AUTH_USER.role,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -173,11 +85,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Get initial session
+    console.log('🔐 Using SSO mode');
+    
+    // SSO mode - use real Supabase auth
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+      
+      // Load profile if user exists
+      if (session?.user) {
+        await loadUserProfile(session.user);
+      }
+      
       setLoading(false);
+    };
+
+    const loadUserProfile = async (user: User) => {
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error || !data) {
+          // Create profile if it doesn't exist
+          const { error: insertError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: user.id,
+              user_type: 'hil_user',
+              email: user.email!,
+              full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+              role: 'HIL_ADMIN',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (!insertError) {
+            // Reload profile after creation
+            const { data: newProfile } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', user.id)
+              .single();
+            
+            if (newProfile) {
+              setProfile({
+                ...newProfile,
+                full_name: newProfile.full_name ?? undefined,
+                company_id: newProfile.company_id ?? undefined,
+                created_at: newProfile.created_at ?? new Date().toISOString(),
+                updated_at: newProfile.updated_at ?? new Date().toISOString()
+              });
+            }
+          }
+        } else {
+          setProfile({
+            ...data,
+            full_name: data.full_name ?? undefined,
+            company_id: data.company_id ?? undefined,
+            created_at: data.created_at ?? new Date().toISOString(),
+            updated_at: data.updated_at ?? new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
     };
 
     getSession();
@@ -191,8 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(null);
           router.push('/auth/login' as Route);
         } else if (event === 'SIGNED_IN' && session?.user) {
-          // When user signs in, ensure profile exists or create it
-          await ensureUserProfile(session.user);
+          await loadUserProfile(session.user);
         }
         
         setLoading(false);
@@ -200,13 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase, router, shouldBypassAuth]);
-
-  useEffect(() => {
-    if (user && !profile) {
-      refreshProfile();
-    }
-  }, [user]);
+  }, []); // Empty dependency array since SKIP_AUTH is a constant and we want this to run only once
 
   return (
     <Context.Provider 
@@ -214,8 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user, 
         profile, 
         loading, 
-        signOut, 
-        refreshProfile 
+        signOut
       }}
     >
       {children}

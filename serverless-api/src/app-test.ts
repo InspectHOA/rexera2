@@ -493,6 +493,15 @@ app.notFound((c) => {
 });
 
 // ============================================================================
+// ROUTE MODULES
+// ============================================================================
+
+// Mount route modules for testing (no auth required in test app)
+app.route('/api/agents', agents);
+app.route('/api/workflows', workflows);
+app.route('/api/taskExecutions', taskExecutions);
+
+// ============================================================================
 // EXPORT
 // ============================================================================
 

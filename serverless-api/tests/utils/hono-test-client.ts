@@ -101,6 +101,34 @@ export class HonoTestClient {
     };
   }
 
+  async request(path: string, options: { method: string; headers?: Record<string, string>; body?: any } = { method: 'GET' }): Promise<TestResponse> {
+    const request = new Request(`http://localhost${path}`, {
+      method: options.method,
+      headers: {
+        ...(options.body && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
+        ...options.headers,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    const response = await this.app.fetch(request);
+    const body = await this.parseResponse(response);
+
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body,
+      get: (headerName: string) => response.headers.get(headerName),
+      expect: (expectedStatus: number) => {
+        if (response.status !== expectedStatus) {
+          throw new Error(`Expected status ${expectedStatus}, got ${response.status}`);
+        }
+        return this.createAssertions(response, body);
+      }
+    };
+  }
+
   private async parseResponse(response: Response) {
     const contentType = response.headers.get('content-type');
     
