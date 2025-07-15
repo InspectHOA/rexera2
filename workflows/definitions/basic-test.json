@@ -1,0 +1,528 @@
+{
+  "name": "Basic Test Workflow ver1",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL + '/api/workflows/' + $json.workflow_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"status\": \"IN_PROGRESS\", \"n8n_execution_id\": $executionId, \"n8n_started_at\": $now } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-workflow-status",
+      "name": "Update Workflow to In Progress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/bulk",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ [ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"agent_id\": \"66666666-6666-6666-6666-666666666666\", \"task_type\": \"basic_task_1\", \"title\": \"Basic Task 1 - Research\", \"description\": \"First basic test task using Nina for research\", \"status\": \"PENDING\", \"sequence_order\": 1, \"executor_type\": \"AI\", \"input_data\": { \"task_name\": \"Basic Task 1\", \"description\": \"Research task handled by Nina\", \"agent\": \"nina\" } }, { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"agent_id\": \"77777777-7777-7777-7777-777777777777\", \"task_type\": \"basic_task_2\", \"title\": \"Basic Task 2 - Communication\", \"description\": \"Second basic test task using Mia for communication\", \"status\": \"PENDING\", \"sequence_order\": 2, \"executor_type\": \"AI\", \"input_data\": { \"task_name\": \"Basic Task 2\", \"description\": \"Communication task handled by Mia\", \"agent\": \"mia\" } }, { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"agent_id\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\", \"task_type\": \"basic_task_3\", \"title\": \"Basic Task 3 - Document Processing\", \"description\": \"Third basic test task using Iris for document processing\", \"status\": \"PENDING\", \"sequence_order\": 3, \"executor_type\": \"AI\", \"input_data\": { \"task_name\": \"Basic Task 3\", \"description\": \"Document processing task handled by Iris\", \"agent\": \"iris\" } } ] }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "create-tasks",
+      "name": "Create Three Basic Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/by-workflow-and-type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"task_type\": \"basic_task_1\", \"status\": \"RUNNING\", \"started_at\": $now } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-task-1-running",
+      "name": "Update Task 1 to Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        200
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/by-workflow-and-type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"task_type\": \"basic_task_1\", \"status\": \"COMPLETED\", \"completed_at\": $now, \"output_data\": { \"task_result\": \"Task 1 completed successfully\", \"completion_time\": $now, \"agent_notes\": \"Basic task 1 executed without issues\" } } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-task-1-completed",
+      "name": "Update Task 1 to Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        200
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/by-workflow-and-type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"task_type\": \"basic_task_2\", \"status\": \"RUNNING\", \"started_at\": $now } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-task-2-running",
+      "name": "Update Task 2 to Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/by-workflow-and-type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"task_type\": \"basic_task_2\", \"status\": \"COMPLETED\", \"completed_at\": $now, \"output_data\": { \"task_result\": \"Task 2 completed successfully\", \"completion_time\": $now, \"agent_notes\": \"Basic task 2 executed without issues\" } } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-task-2-completed",
+      "name": "Update Task 2 to Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/by-workflow-and-type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"task_type\": \"basic_task_3\", \"status\": \"RUNNING\", \"started_at\": $now } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-task-3-running",
+      "name": "Update Task 3 to Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL }}/api/taskExecutions/by-workflow-and-type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"task_type\": \"basic_task_3\", \"status\": \"COMPLETED\", \"completed_at\": $now, \"output_data\": { \"task_result\": \"Task 3 completed successfully\", \"completion_time\": $now, \"agent_notes\": \"Basic task 3 executed without issues\" } } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "update-task-3-completed",
+      "name": "Update Task 3 to Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.REXERA_API_URL + '/api/workflows/' + $('Basic Test Trigger').item.json.workflow_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.REXERA_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "json",
+              "value": "={{ { \"status\": \"COMPLETED\", \"completed_at\": $now } }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "complete-workflow",
+      "name": "Complete Basic Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"workflow_id\": $('Basic Test Trigger').item.json.workflow_id, \"status\": \"COMPLETED\", \"message\": \"Basic test workflow completed successfully\", \"tasks_completed\": 3, \"completed_at\": $now } }}",
+        "options": {}
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1560,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "path": "263be67b-4781-45ba-be4c-f108afa855c0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "05a0c6ef-6ff3-4db4-817f-275a93494d4f",
+      "name": "Webhook1",
+      "webhookId": "263be67b-4781-45ba-be4c-f108afa855c0"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Update Workflow to In Progress": {
+      "main": [
+        [
+          {
+            "node": "Create Three Basic Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Three Basic Tasks": {
+      "main": [
+        [
+          {
+            "node": "Update Task 1 to Running",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Task 2 to Running",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Task 3 to Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task 1 to Running": {
+      "main": [
+        [
+          {
+            "node": "Update Task 1 to Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task 2 to Running": {
+      "main": [
+        [
+          {
+            "node": "Update Task 2 to Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task 3 to Running": {
+      "main": [
+        [
+          {
+            "node": "Update Task 3 to Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task 1 to Completed": {
+      "main": [
+        [
+          {
+            "node": "Complete Basic Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task 2 to Completed": {
+      "main": [
+        [
+          {
+            "node": "Complete Basic Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task 3 to Completed": {
+      "main": [
+        [
+          {
+            "node": "Complete Basic Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Basic Workflow": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Update Workflow to In Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0a4246c1-6139-48d8-a5fc-01562c4a1a0c",
+  "meta": {
+    "instanceId": "09c0b9173eae6c10e59f1eae0a63d2c0d0448994008ec57246f6385a669ae395"
+  },
+  "id": "IGbRcih0lTCetdtI",
+  "tags": []
+}

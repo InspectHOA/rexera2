@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Play, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { WorkflowHeader } from '@/components/workflow/workflow-header';
 import { TaskList } from '@/components/workflow/task-list';
 import { TabNavigation } from '@/components/workflow/tab-navigation';
@@ -12,6 +12,7 @@ import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflow } from '@/lib/hooks/useWorkflows';
 import { formatWorkflowIdWithType } from '@rexera/shared';
 import type { WorkflowData } from '@/types/workflow';
+import { api } from '@/lib/api/client';
 import { EmailInterface } from '@/components/agents/mia/email-interface';
 import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
 import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
@@ -45,6 +46,8 @@ export default function WorkflowDetailPage() {
   const [activeTab, setActiveTab] = useState('details');
   const [rightPanelTab, setRightPanelTab] = useState('task-details');
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
+  const [isStartingN8n, setIsStartingN8n] = useState(false);
+  const [n8nError, setN8nError] = useState<string | null>(null);
 
   const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
 
@@ -202,6 +205,47 @@ export default function WorkflowDetailPage() {
     );
   }
 
+  const handleStartN8nWorkflow = async () => {
+    if (!workflowData?.id) return;
+    
+    setIsStartingN8n(true);
+    setN8nError(null);
+    
+    try {
+      // First update the workflow to mark n8n as starting
+      await api.workflows.updateWorkflow(workflowData.id, {
+        n8n_status: 'running',
+        n8n_started_at: new Date().toISOString()
+      });
+      
+      // Then trigger the n8n workflow
+      const result = await api.workflows.triggerN8nWorkflow(
+        workflowData.id,
+        workflowData.workflow_type || 'BASIC_TEST'
+      );
+      
+      console.log('n8n workflow triggered:', result);
+      
+      // Refresh the workflow data to show updated status
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Failed to start n8n workflow:', error);
+      setN8nError(error instanceof Error ? error.message : 'Failed to start n8n workflow');
+      
+      // Reset the workflow status on error
+      try {
+        await api.workflows.updateWorkflow(workflowData.id, {
+          n8n_status: 'not_started'
+        });
+      } catch (resetError) {
+        console.error('Failed to reset workflow status:', resetError);
+      }
+    } finally {
+      setIsStartingN8n(false);
+    }
+  };
+
   const handleBackClick = () => router.push('/dashboard' as any);
 
   return (
@@ -234,7 +278,13 @@ export default function WorkflowDetailPage() {
               </div>
               <div className="flex-1 border-t border-gray-200/50 p-4 space-y-4 overflow-y-auto">
                 <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-                <TabContent activeTab={activeTab} workflowData={workflowData} />
+                <TabContent
+                  activeTab={activeTab}
+                  workflowData={workflowData}
+                  onStartN8nWorkflow={handleStartN8nWorkflow}
+                  isStartingN8n={isStartingN8n}
+                  n8nError={n8nError}
+                />
               </div>
             </div>
 
@@ -281,7 +331,19 @@ export default function WorkflowDetailPage() {
   );
 }
 
-function TabContent({ activeTab, workflowData }: { activeTab: string; workflowData?: WorkflowData }): JSX.Element | null {
+function TabContent({
+  activeTab,
+  workflowData,
+  onStartN8nWorkflow,
+  isStartingN8n,
+  n8nError
+}: {
+  activeTab: string;
+  workflowData?: WorkflowData;
+  onStartN8nWorkflow: () => void;
+  isStartingN8n: boolean;
+  n8nError: string | null;
+}): JSX.Element | null {
   switch (activeTab) {
     case 'details':
       const detailFields = workflowData ? [
@@ -292,19 +354,118 @@ function TabContent({ activeTab, workflowData }: { activeTab: string; workflowDa
         { label: 'Primary HIL', value: workflowData.assigned_user?.full_name || 'Unassigned' },
         { label: 'Client', value: workflowData.clients?.name || 'Unknown' }
       ] : [];
+
+      const n8nStatus = (workflowData as any)?.n8n_status || 'not_started';
+      const n8nStartedAt = (workflowData as any)?.n8n_started_at;
       
       return (
-        <div className="grid grid-cols-2 gap-4">
-          {detailFields.map((field) => (
-            <div key={field.label} className="flex flex-col gap-1">
-              <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
-                {field.label}
+        <div className="space-y-6">
+          {/* Workflow Details */}
+          <div className="grid grid-cols-2 gap-4">
+            {detailFields.map((field) => (
+              <div key={field.label} className="flex flex-col gap-1">
+                <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                  {field.label}
+                </div>
+                <div className={`text-sm text-gray-900 ${field.mono ? 'font-mono' : ''}`}>
+                  {field.value}
+                </div>
               </div>
-              <div className={`text-sm text-gray-900 ${field.mono ? 'font-mono' : ''}`}>
-                {field.value}
+            ))}
+          </div>
+
+          {/* n8n Workflow Controls */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-gray-900">n8n Workflow Automation</h3>
+              <div className="flex items-center gap-2">
+                {n8nStatus === 'not_started' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Not Started
+                  </span>
+                )}
+                {n8nStatus === 'running' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Running
+                  </span>
+                )}
+                {n8nStatus === 'success' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Completed
+                  </span>
+                )}
+                {n8nStatus === 'error' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Error
+                  </span>
+                )}
               </div>
             </div>
-          ))}
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col gap-1">
+                <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                  n8n Status
+                </div>
+                <div className="text-sm text-gray-900 capitalize">
+                  {n8nStatus.replace('_', ' ')}
+                </div>
+              </div>
+              {n8nStartedAt && (
+                <div className="flex flex-col gap-1">
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                    n8n Started At
+                  </div>
+                  <div className="text-sm text-gray-900">
+                    {new Date(n8nStartedAt).toLocaleString()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {n8nError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <div className="text-sm text-red-800">
+                  <strong>Error:</strong> {n8nError}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={onStartN8nWorkflow}
+              disabled={isStartingN8n || n8nStatus === 'running' || n8nStatus === 'success'}
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white transition-colors ${
+                isStartingN8n || n8nStatus === 'running' || n8nStatus === 'success'
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              }`}
+            >
+              {isStartingN8n ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Starting n8n Workflow...
+                </>
+              ) : n8nStatus === 'running' ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2" />
+                  n8n Workflow Running
+                </>
+              ) : n8nStatus === 'success' ? (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  n8n Workflow Completed
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Start n8n Workflow
+                </>
+              )}
+            </button>
+          </div>
         </div>
       );
     

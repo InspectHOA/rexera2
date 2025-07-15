@@ -37,7 +37,7 @@ class ApiError extends SharedApiError {
 // Simplified auth token getter
 async function getAuthToken(): Promise<string | null> {
   if (SKIP_AUTH) {
-    return null; // No token needed in skip_auth mode
+    return 'skip-auth-token'; // Special token for skip_auth mode
   }
 
   try {
@@ -191,6 +191,49 @@ export const workflowsApi = {
   async cancelN8nExecution(id: string) {
     return apiRequest(`/workflows/${id}/cancel-n8n`, {
       method: 'POST',
+    });
+  },
+
+  async triggerN8nWorkflow(id: string, workflowType: string = 'basic-test') {
+    // For development/testing, we'll use a mock n8n endpoint
+    // In production, this would be the actual n8n webhook URL
+    const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678';
+    const webhookPath = workflowType === 'PAYOFF' ? '/webhook/payoff-test' : '/webhook/basic-test';
+    
+    const response = await fetch(`${n8nBaseUrl}${webhookPath}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        workflow_id: id,
+        metadata: {
+          triggered_from: 'frontend',
+          triggered_at: new Date().toISOString()
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      throw new ApiError(
+        `Failed to trigger n8n workflow: ${response.statusText}`,
+        response.status
+      );
+    }
+
+    return response.json();
+  },
+
+  async updateWorkflow(id: string, data: {
+    status?: string;
+    n8n_execution_id?: string;
+    n8n_started_at?: string;
+    n8n_status?: string;
+    metadata?: Record<string, any>;
+  }) {
+    return apiRequest(`/workflows/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     });
   },
 };

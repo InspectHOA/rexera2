@@ -72,7 +72,10 @@ workflows.get('/', async (c) => {
       updated_at,
       completed_at,
       due_date,
-      human_readable_id
+      human_readable_id,
+      n8n_execution_id,
+      n8n_started_at,
+      n8n_status
     `;
     
     if (includeArray.includes('client')) {
@@ -229,6 +232,66 @@ workflows.post('/', async (c) => {
   }
 });
 
+// PATCH /api/workflows/:id - Update workflow
+workflows.patch('/:id', async (c) => {
+  try {
+    const supabase = createServerClient();
+    const user = c.get('user') as AuthUser || {
+      id: 'test-user',
+      email: 'test@example.com',
+      user_type: 'hil_user' as const,
+      role: 'HIL',
+      company_id: undefined
+    };
+    const id = c.req.param('id');
+    const body = await c.req.json();
+
+    // Validate that the workflow exists and user has access
+    const companyFilter = getCompanyFilter(user);
+    let query = supabase
+      .from('workflows')
+      .select('id, client_id')
+      .eq('id', id);
+
+    if (companyFilter) {
+      query = query.eq('client_id', companyFilter);
+    }
+
+    const { data: existingWorkflow, error: fetchError } = await query.single();
+
+    if (fetchError || !existingWorkflow) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found',
+      }, 404 as any);
+    }
+
+    // Update the workflow
+    const { data: workflow, error } = await supabase
+      .from('workflows')
+      .update(body)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update workflow: ${error.message}`);
+    }
+
+    return c.json({
+      success: true,
+      data: workflow,
+    });
+
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: 'Failed to update workflow',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    }, 500 as any);
+  }
+});
+
 // GET /api/workflows/:id - Get single workflow
 workflows.get('/:id', async (c) => {
   try {
@@ -258,6 +321,9 @@ workflows.get('/:id', async (c) => {
       completed_at,
       due_date,
       human_readable_id,
+      n8n_execution_id,
+      n8n_started_at,
+      n8n_status,
       client:clients(id, name, domain),
       task_executions(*, agents!agent_id(id, name, type))
     `;

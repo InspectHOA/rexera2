@@ -53,21 +53,27 @@ export default function LoginPage() {
         ? `${window.location.origin}/auth/callback`
         : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
 
-      // OAuth configuration prepared
+      console.log('🚀 Starting Google OAuth with redirect:', redirectTo);
+      console.log('🔧 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
         },
       });
 
+      console.log('📝 OAuth response:', { data, error });
+
       if (error) {
+        console.error('❌ OAuth error:', error);
         setError(error.message);
+      } else {
+        console.log('✅ OAuth initiated successfully, redirecting to Google...');
       }
     } catch (err) {
+      console.error('💥 Unexpected OAuth error:', err);
       setError('An unexpected error occurred');
-      // Error handled by setting error state
     } finally {
       setLoading(false);
     }

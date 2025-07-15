@@ -234,6 +234,92 @@ taskExecutions.get('/:id', async (c) => {
   }
 });
 
+// PATCH /api/taskExecutions/by-workflow-and-type - Update task execution by workflow_id and task_type
+taskExecutions.patch('/by-workflow-and-type', async (c) => {
+  try {
+    const supabase = createServerClient();
+    const user = c.get('user') as AuthUser || {
+      id: 'test-user',
+      email: 'test@example.com',
+      user_type: 'hil_user' as const,
+      role: 'HIL',
+      company_id: undefined
+    };
+    const body = await c.req.json();
+    const { workflow_id, task_type, ...updateData } = body;
+
+    if (!workflow_id || !task_type) {
+      return c.json({
+        success: false,
+        error: 'workflow_id and task_type are required',
+      }, 400 as any);
+    }
+
+    const result = UpdateTaskExecutionSchema.safeParse(updateData);
+
+    if (!result.success) {
+      return c.json({
+        success: false,
+        error: 'Invalid request body',
+        details: result.error.issues,
+      }, 400 as any);
+    }
+
+    // First verify access to the workflow
+    const companyFilter = getCompanyFilter(user);
+    if (companyFilter) {
+      const { data: workflow, error: workflowError } = await supabase
+        .from('workflows')
+        .select('id, client_id')
+        .eq('id', workflow_id)
+        .eq('client_id', companyFilter)
+        .single();
+
+      if (workflowError || !workflow) {
+        return c.json({
+          success: false,
+          error: 'Workflow not found or access denied',
+        }, 404 as any);
+      }
+    }
+
+    // Find and update the task by workflow_id and task_type
+    const { data: taskExecution, error } = await supabase
+      .from('task_executions')
+      .update(result.data)
+      .eq('workflow_id', workflow_id)
+      .eq('task_type', task_type)
+      .select(`
+        *,
+        workflows!workflow_id(id, title, client_id),
+        agents!agent_id(id, name, type)
+      `)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return c.json({
+          success: false,
+          error: 'Task execution not found',
+        }, 404 as any);
+      }
+      throw new Error(`Failed to update task execution: ${error.message}`);
+    }
+
+    return c.json({
+      success: true,
+      data: taskExecution,
+    });
+
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: 'Failed to update task execution',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    }, 500 as any);
+  }
+});
+
 // PATCH /api/taskExecutions/:id - Update task execution
 taskExecutions.patch('/:id', async (c) => {
   try {

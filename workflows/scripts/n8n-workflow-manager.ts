@@ -294,7 +294,7 @@ class N8nWorkflowManager {
    * });
    * ```
    */
-  async makeApiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  async makeApiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T | void> {
     // Construct full API URL with proper versioning
     const url = `${N8N_BASE_URL}/api/v1${endpoint}`;
     
@@ -314,8 +314,11 @@ class N8nWorkflowManager {
         throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      // Parse and return JSON response
-      return await response.json();
+      // Handle empty responses
+      const text = await response.text();
+      if (text) {
+        return JSON.parse(text) as T;
+      }
     } catch (error) {
       // Wrap all errors with context about which endpoint failed
       throw new Error(`Failed to make API request to ${endpoint}: ${error instanceof Error ? error.message : error}`);
@@ -363,10 +366,10 @@ class N8nWorkflowManager {
   async listWorkflows(projectId?: string): Promise<N8nWorkflow[]> {
     const endpoint = projectId ? `/workflows?projectId=${projectId}` : '/workflows';
     const response = await this.makeApiRequest<{ data: N8nWorkflow[] }>(endpoint);
-    return response.data || [];
+    return response ? response.data : [];
   }
 
-  async getWorkflow(workflowId: string): Promise<N8nWorkflow> {
+  async getWorkflow(workflowId: string): Promise<N8nWorkflow | void> {
     return await this.makeApiRequest<N8nWorkflow>(`/workflows/${workflowId}`);
   }
 
@@ -375,7 +378,7 @@ class N8nWorkflowManager {
     return workflows.find(w => w.name === name) || null;
   }
 
-  async createWorkflow(workflowData: any, projectId?: string): Promise<N8nWorkflow> {
+  async createWorkflow(workflowData: any, projectId?: string): Promise<N8nWorkflow | void> {
     // Clean workflow data for n8n API
     const { id, createdAt, updatedAt, active, webhookId, versionId, tags, meta, ...cleanData } = workflowData;
 
@@ -387,7 +390,7 @@ class N8nWorkflowManager {
       staticData: cleanData.staticData || {}
     };
 
-    const endpoint = projectId ? `/workflows?projectId=${projectId}` : '/workflows';
+    const endpoint = '/workflows';
     return await this.makeApiRequest<N8nWorkflow>(endpoint, {
       method: 'POST',
       body: JSON.stringify(createPayload)
@@ -412,6 +415,13 @@ class N8nWorkflowManager {
     });
   }
 
+  async transferWorkflow(workflowId: string, destinationProjectId: string): Promise<void> {
+    await this.makeApiRequest(`/workflows/${workflowId}/transfer`, {
+      method: 'PUT',
+      body: JSON.stringify({ destinationProjectId })
+    });
+  }
+
   // =============================================================================
   // PROJECT OPERATIONS
   // =============================================================================
@@ -419,7 +429,7 @@ class N8nWorkflowManager {
   async listProjects(): Promise<N8nProject[]> {
     try {
       const response = await this.makeApiRequest<{ data: N8nProject[] }>('/projects');
-      return response.data || [];
+      return response ? response.data : [];
     } catch (error) {
       // Projects might not be available in all n8n versions
       return [];
@@ -429,6 +439,17 @@ class N8nWorkflowManager {
   async findProjectByName(name: string): Promise<N8nProject | null> {
     const projects = await this.listProjects();
     return projects.find(p => p.name === name) || null;
+  }
+
+  async createProject(name: string): Promise<N8nProject> {
+    const newProject = await this.makeApiRequest<N8nProject>('/projects', {
+      method: 'POST',
+      body: JSON.stringify({ name })
+    });
+    if (!newProject) {
+      throw new Error('Failed to create project, received an empty response.');
+    }
+    return newProject;
   }
 
   // =============================================================================
@@ -501,8 +522,19 @@ class N8nWorkflowManager {
     if (!dryRun) {
       // Create new workflow
       console.log(`📤 Creating new workflow...`);
-      const newWorkflow = await this.createWorkflow(workflowData, projectId);
+      const newWorkflow = await this.createWorkflow(workflowData);
+
+      if (!newWorkflow) {
+        throw new Error('Failed to create workflow, received an empty response.');
+      }
+
       console.log(`✅ Workflow created with ID: ${newWorkflow.id}`);
+
+      if (projectId) {
+        console.log(`✈️  Transferring workflow to project...`);
+        await this.transferWorkflow(newWorkflow.id, projectId);
+        console.log(`✅ Workflow transferred to project ID: ${projectId}`);
+      }
 
       // Activate if requested
       if (activate) {
@@ -602,6 +634,11 @@ class N8nWorkflowManager {
     
     try {
       const workflow = await this.getWorkflow(workflowId);
+
+      if (!workflow) {
+        console.error('❌ Workflow not found or an empty response was received.');
+        return;
+      }
       
       console.log('📋 Basic Information:');
       console.log(`   Name: ${workflow.name}`);
@@ -613,7 +650,7 @@ class N8nWorkflowManager {
       
       if (workflow.nodes && workflow.nodes.length > 0) {
         console.log('🔧 Nodes:');
-        workflow.nodes.forEach((node, index) => {
+        workflow.nodes.forEach((node: any, index: number) => {
           console.log(`   ${index + 1}. ${node.name} (${node.type})`);
         });
       }
@@ -631,6 +668,8 @@ class N8nWorkflowManager {
 async function main() {
   const args = process.argv.slice(2);
   const command = args[0];
+  const projectFlagIndex = args.indexOf('--project');
+  const projectName = projectFlagIndex !== -1 ? args[projectFlagIndex + 1] : 'Rexera2';
   const manager = new N8nWorkflowManager();
 
   console.log('🚀 n8n Workflow Manager');
@@ -663,7 +702,12 @@ async function main() {
           console.error('❌ Please specify a workflow file');
           process.exit(1);
         }
-        await manager.deployWorkflow(workflowFile);
+        const project = await manager.findProjectByName(projectName);
+        if (!project) {
+          console.error(`❌ Project "${projectName}" not found.`);
+          process.exit(1);
+        }
+        await manager.deployWorkflow(workflowFile, { projectId: project.id });
         break;
 
       case 'deploy-all':
@@ -714,6 +758,17 @@ async function main() {
         } else {
           console.log('   No projects found (or not supported in this n8n version)');
         }
+        break;
+
+      case 'create-project':
+        const newProjectName = args[1];
+        if (!newProjectName) {
+          console.error('❌ Please specify a project name');
+          process.exit(1);
+        }
+        console.log(`➕ Creating project: ${newProjectName}...`);
+        const newProject = await manager.createProject(newProjectName);
+        console.log(`✅ Project "${newProject.name}" created with ID: ${newProject.id}`);
         break;
 
       default:

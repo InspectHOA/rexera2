@@ -1,7 +1,9 @@
 'use client';
 
 import { useAuth } from '@/lib/auth/provider';
-import { redirect } from 'next/navigation';
+import { SKIP_AUTH } from '@/lib/auth/config';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function DashboardLayout({
@@ -10,11 +12,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, profile, loading } = useAuth();
+  const router = useRouter();
 
-  // Skip auth check in development for easier testing
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Handle authentication redirect with useEffect to prevent loops
+  useEffect(() => {
+    if (!loading && !user && !SKIP_AUTH) {
+      console.log('🔒 No authenticated user, redirecting to login');
+      router.push('/auth/login');
+    }
+  }, [loading, user, router]);
 
-  if (loading && !isDevelopment) {
+  // Show loading spinner while auth is being determined (only in SSO mode)
+  if (loading && !SKIP_AUTH) {
+    console.log('🔄 Dashboard waiting for auth determination...');
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -22,9 +32,17 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user && !isDevelopment) {
-    redirect('/auth/login');
+  // Show loading while redirecting to login
+  if (!user && !SKIP_AUTH && !loading) {
+    console.log('🔄 Redirecting to login...');
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
+
+  console.log('✅ Dashboard rendering for user:', user?.email || 'no user');
 
   return (
     <div className="min-h-screen bg-rexera-gradient relative overflow-hidden font-sans text-sm">
