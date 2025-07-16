@@ -22,19 +22,16 @@ export function ActivityFeed() {
         setLoading(true);
         setError(null);
         
-        // Use REST API endpoint  
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/activities?limit=15`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setActivities(data.data || []);
+        // For now, show empty state until activities endpoint is implemented
+        // TODO: Implement activities/audit_events endpoint based on database schema
+        setActivities([]);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
         setError(errorMessage);
-        } finally {
+        console.warn('Activities fetch failed, showing empty state:', errorMessage);
+        setActivities([]);
+        setError(null);
+      } finally {
         setLoading(false);
       }
     };

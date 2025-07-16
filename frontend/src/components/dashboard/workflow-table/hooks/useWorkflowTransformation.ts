@@ -17,25 +17,12 @@ export function useWorkflowTransformation(
       const interruptCount = tasks.filter((t: TaskExecution) => t.status === 'AWAITING_REVIEW')?.length || 0;
       const hasInterrupts = interruptCount > 0;
       
-      // Use human_readable_id field with type prefix (e.g., "HOA-1001")
-      let displayId;
-      
-      if (workflow.human_readable_id) {
-        const typeConfig = {
-          'PAYOFF_REQUEST': 'PAY',
-          'HOA_ACQUISITION': 'HOA', 
-          'MUNI_LIEN_SEARCH': 'MUNI'
-        };
-        const prefix = typeConfig[workflow.workflow_type as keyof typeof typeConfig] || 'WF';
-        displayId = `${prefix}-${workflow.human_readable_id}`;
-      } else {
-        // Fallback to formatted UUID if no human-readable ID
-        displayId = formatWorkflowIdWithType(workflow.id, workflow.workflow_type);
-      }
+      // Use simple UUID-based display ID
+      const displayId = formatWorkflowIdWithType(workflow.id, workflow.workflow_type);
       
       return {
         id: displayId,
-        workflowId: displayId, // Use full prefixed human-readable ID for navigation
+        workflowId: workflow.id, // Use UUID for navigation, displayId for display
         created: formatCreatedDate(workflow.created_at),
         createdRaw: workflow.created_at, // For sorting
         type: getDisplayWorkflowType(workflow.workflow_type),

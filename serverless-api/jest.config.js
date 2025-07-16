@@ -1,6 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  // Test environment
+  // Test environment - Node.js for Hono serverless functions
   testEnvironment: 'node',
   
   // TypeScript support
@@ -35,13 +35,26 @@ module.exports = {
     '!src/test-server.ts'
   ],
   
-  // Coverage thresholds (relaxed for initial testing)
+  // Coverage thresholds (optimized for Hono-based architecture)
   coverageThreshold: {
     global: {
       branches: 0,
       functions: 0,
       lines: 0,
       statements: 0
+    },
+    // Focus on middleware quality (core Hono integration points)
+    './src/middleware/security.ts': {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50
+    },
+    './src/middleware/auth.ts': {
+      branches: 30,
+      functions: 30,
+      lines: 40,
+      statements: 40
     }
   },
   

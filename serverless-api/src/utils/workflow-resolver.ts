@@ -10,9 +10,9 @@ export function isUUID(value: string): boolean {
 }
 
 /**
- * Resolve workflow ID (UUID or human-readable) to actual UUID
+ * Resolve workflow ID (UUID or formatted ID) to actual UUID
  * @param supabase - Supabase client
- * @param id - UUID or human-readable ID
+ * @param id - UUID or formatted ID like "MUNI-9966-FC7C"
  * @returns Actual workflow UUID
  * @throws Error if workflow not found
  */
@@ -24,42 +24,84 @@ export async function resolveWorkflowId(
     return id;
   }
 
-  // Extract numeric part from prefixed format (e.g., "HOA-1002" -> "1002")
-  const numericId = id.includes('-') ? id.split('-')[1] : id;
-  
-  const { data: workflow, error } = await supabase
-    .from('workflows')
-    .select('id')
-    .eq('human_readable_id', numericId)
-    .single();
+  // Handle formatted IDs like "MUNI-9966-FC7C" by reconstructing the UUID
+  if (id.includes('-') && id.length > 10) {
+    // Extract the formatted part (everything after the prefix)
+    const parts = id.split('-');
+    if (parts.length >= 3) {
+      // For "MUNI-2C4F-A776", we get ["MUNI", "2C4F", "A776"]
+      const lastTwoChunks = parts.slice(-2).join('').toLowerCase(); // "2c4fa776"
+      
+      // Look for workflows where the last 8 chars of UUID (without hyphens) match
+      const { data: workflows, error } = await supabase
+        .from('workflows')
+        .select('id')
+        .like('id', `%${lastTwoChunks.toLowerCase()}%`);
 
-  if (error || !workflow) {
-    throw new Error(`Workflow not found with ID: ${id}`);
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      // Find exact match by checking the last 8 chars
+      const matchingWorkflow = workflows?.find((w: any) => {
+        const cleanUuid = w.id.replace(/-/g, '').toLowerCase();
+        return cleanUuid.slice(-8) === lastTwoChunks.toLowerCase();
+      });
+
+      if (matchingWorkflow) {
+        return matchingWorkflow.id;
+      }
+    }
   }
 
-  return workflow.id;
+  throw new Error(`Workflow not found with ID: ${id}`);
 }
 
 /**
- * Direct lookup by human-readable ID (more efficient than resolveWorkflowId for API endpoints)
- * Handles both prefixed format (HOA-1002) and numeric format (1002)
+ * Direct lookup by formatted ID (handles UUID-based formatted IDs)
  */
 export async function getWorkflowByHumanId(supabase: SupabaseClient, humanId: string, selectString: string = '*') {
-  // Extract numeric part from prefixed format (e.g., "HOA-1002" -> "1002")
-  const numericId = humanId.includes('-') ? humanId.split('-')[1] : humanId;
-  
-  const { data: workflow, error } = await supabase
-    .from('workflows')
-    .select(selectString)
-    .eq('human_readable_id', numericId)
-    .single();
+  // If it's a UUID, query directly
+  if (isUUID(humanId)) {
+    const { data: workflow, error } = await supabase
+      .from('workflows')
+      .select(selectString)
+      .eq('id', humanId)
+      .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // Not found
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      throw error;
     }
-    throw error;
+    return workflow;
   }
 
-  return workflow;
+  // Handle formatted IDs like "MUNI-9966-FC7C"
+  if (humanId.includes('-') && humanId.length > 10) {
+    const parts = humanId.split('-');
+    if (parts.length >= 3) {
+      const lastTwoChunks = parts.slice(-2).join('').toLowerCase(); // "2c4fa776"
+      
+      // Get all workflows and find the one with matching last 8 chars
+      const { data: workflows, error } = await supabase
+        .from('workflows')
+        .select(selectString);
+
+      if (error) {
+        throw error;
+      }
+
+      // Find exact match by checking the last 8 chars
+      const matchingWorkflow = workflows?.find((w: any) => {
+        const cleanUuid = w.id.replace(/-/g, '').toLowerCase();
+        return cleanUuid.slice(-8) === lastTwoChunks.toLowerCase();
+      });
+
+      return matchingWorkflow || null;
+    }
+  }
+
+  return null;
 }

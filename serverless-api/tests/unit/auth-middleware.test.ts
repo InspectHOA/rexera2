@@ -57,7 +57,7 @@ describe('Auth Middleware', () => {
       await authMiddleware(mockContext as Context, mockNext);
 
       expect(mockContext.set).toHaveBeenCalledWith('user', {
-        id: 'skip-auth-user-12345',
+        id: '284219ff-3a1f-4e86-9ea4-3536f940451f',
         email: 'admin@rexera.com',
         user_type: 'hil_user',
         role: 'HIL_ADMIN',

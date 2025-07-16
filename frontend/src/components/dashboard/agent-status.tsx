@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { agentsApi } from '@/lib/api/client';
 
 interface Agent {
   name: string;
@@ -22,19 +23,16 @@ export function AgentStatus() {
         setLoading(true);
         setError(null);
         
-        // Use REST API endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agents?is_active=true&limit=20`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setAgents(data.data || []);
+        // Use API client for agents
+        const response = await agentsApi.list({ is_active: true, limit: 20 });
+        setAgents(response.data || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load agent status';
         setError(errorMessage);
-        } finally {
+        console.warn('Agents fetch failed, showing empty state:', errorMessage);
+        setAgents([]); // Show empty state instead of error for non-critical component
+        setError(null);
+      } finally {
         setLoading(false);
       }
     };

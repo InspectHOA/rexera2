@@ -4,10 +4,10 @@
  */
 
 import { testClient } from '../utils/hono-test-client';
-import { testApp } from '../../src/app-test';
+import app from '../../src/app';
 
 describe('Agents API', () => {
-  const client = testClient(testApp);
+  const client = testClient(app);
 
   describe('GET /api/agents', () => {
     it('should handle agents requests', async () => {

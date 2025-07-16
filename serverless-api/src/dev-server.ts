@@ -7,8 +7,7 @@
 import 'dotenv/config';
 
 import { serve } from '@hono/node-server';
-import { app } from './app-complete';
-import testApp from './app-test';
+import app from './app';
 
 const port = parseInt(process.env.PORT || '3001', 10);
 
@@ -17,7 +16,7 @@ console.log(`📍 Server will be available at: http://localhost:${port}`);
 console.log(`📋 API Documentation: http://localhost:${port}/api/docs`);
 console.log(`🔍 Health Check: http://localhost:${port}/api/health`);
 
-// Use complete app for development to have all endpoints available
+// Single app now handles both development and production via SKIP_AUTH env var
 const selectedApp = app;
 
 serve({

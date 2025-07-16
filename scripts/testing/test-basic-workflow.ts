@@ -24,7 +24,7 @@ interface Config {
 }
 
 interface HealthResponse {
-  status: boolean;
+  success: boolean;
   [key: string]: any;
 }
 
@@ -59,7 +59,7 @@ const apiConfig: Config = {
   n8nBaseUrl: process.env.N8N_BASE_URL!,
   n8nApiKey: process.env.N8N_API_KEY!,
   rexeraApiUrl: 'http://localhost:3001',
-  workflowName: 'Basic Test Workflow'
+  workflowName: 'Basic Test Workflow ver1'
 };
 
 async function main(): Promise<void> {
@@ -112,7 +112,7 @@ async function checkLocalApi(): Promise<HealthResponse> {
     
     console.log('Health response:', data);
     
-    if (!response.ok || !data.status) {
+    if (!response.ok || !data.success) {
       throw new Error('Local API health check failed');
     }
     
@@ -129,7 +129,7 @@ async function findTestWorkflow(): Promise<WorkflowResponse> {
   try {
     const response = await fetch(`${apiConfig.n8nBaseUrl}/api/v1/workflows`, {
       headers: {
-        'Authorization': `Bearer ${apiConfig.n8nApiKey}`,
+        'X-N8N-API-KEY': apiConfig.n8nApiKey,
         'Content-Type': 'application/json'
       }
     });
@@ -165,8 +165,8 @@ async function createTestWorkflow(): Promise<{ id: string }> {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        workflow_type: 'BASIC_TEST',
-        client_id: 'test-client-123',
+        workflow_type: 'PAYOFF_REQUEST',
+        client_id: '33333333-3333-3333-3333-333333333333',
         title: 'Basic Test Workflow - Integration Test',
         metadata: {
           property: { address: '456 Test Ave', loanNumber: 'TEST-2024-002' },

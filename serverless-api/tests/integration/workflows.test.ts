@@ -4,10 +4,10 @@
  */
 
 import { testClient } from '../utils/hono-test-client';
-import { testApp } from '../../src/app-test';
+import app from '../../src/app';
 
 describe('Workflows API', () => {
-  const client = testClient(testApp);
+  const client = testClient(app);
 
   describe('GET /api/workflows', () => {
     it('should return proper response format (with or without auth)', async () => {

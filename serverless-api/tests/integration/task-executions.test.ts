@@ -4,10 +4,10 @@
  */
 
 import { testClient } from '../utils/hono-test-client';
-import { testApp } from '../../src/app-test';
+import app from '../../src/app';
 
 describe('Task Executions API', () => {
-  const client = testClient(testApp);
+  const client = testClient(app);
 
   describe('GET /api/taskExecutions', () => {
     it('should handle task executions requests', async () => {

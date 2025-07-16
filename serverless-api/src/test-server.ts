@@ -1,11 +1,14 @@
 /**
  * Test server setup for Jest integration tests
- * Uses the test app without authentication
+ * Uses the main app with SKIP_AUTH enabled
  */
 
 import 'dotenv/config';
 import { serve } from '@hono/node-server';
-import testApp from './app-test';
+import app from './app';
+
+// Ensure SKIP_AUTH is enabled for tests
+process.env.SKIP_AUTH = 'true';
 
 let server: any = null;
 
@@ -16,7 +19,7 @@ export async function startTestServer(port: number = 3001): Promise<string> {
 
   return new Promise((resolve, reject) => {
     server = serve({
-      fetch: testApp.fetch,
+      fetch: app.fetch,
       port,
     }, (info: any) => {
       if (info) {

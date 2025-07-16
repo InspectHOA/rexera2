@@ -4,7 +4,7 @@
  */
 
 import { testClient } from '../utils/hono-test-client';
-import { app } from '../../src/app-complete';
+import app from '../../src/app';
 
 describe('Simplified Auth System', () => {
   const client = testClient(app);

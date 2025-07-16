@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { swaggerUI } from '@hono/swagger-ui';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
+import { buildOpenApiSpec } from './schemas/openapi/index';
 import { handle } from 'hono/vercel';
 import {
   authMiddleware,
@@ -58,46 +59,26 @@ app.get('/api/docs', swaggerUI({
   version: '4.15.5',
 }));
 
-// OpenAPI specification (placeholder)
+// OpenAPI specification
 app.get('/api/openapi.json', (c) => {
-  return c.json({
-    openapi: '3.0.0',
-    info: {
-      title: 'Rexera API',
-      version: '2.0.0',
-      description: 'AI-powered real estate workflow automation platform API',
-    },
-    servers: [
-      {
-        url: process.env.NODE_ENV === 'production' 
-          ? 'https://api.rexera.com' 
-          : 'http://localhost:3001',
-      },
-    ],
-    paths: {
-      '/api/health': {
-        get: {
-          summary: 'Health check',
-          responses: {
-            '200': {
-              description: 'API is healthy',
-            },
-          },
-        },
-      },
-      // TODO: Generate full OpenAPI spec from route definitions
-    },
-  });
+  return c.json(buildOpenApiSpec());
 });
 
 // ============================================================================
-// PROTECTED ENDPOINTS (Authentication Required)
+// CONDITIONAL AUTHENTICATION (Production vs Development)
 // ============================================================================
 
-// Apply authentication middleware to all protected routes
-app.use('/api/agents/*', authMiddleware);
-app.use('/api/workflows/*', authMiddleware);
-app.use('/api/taskExecutions/*', authMiddleware);
+// Only apply authentication in production or when SKIP_AUTH is not set
+const shouldSkipAuth = process.env.SKIP_AUTH === 'true';
+
+if (!shouldSkipAuth) {
+  console.log('🔐 Applying authentication middleware to protected routes');
+  app.use('/api/agents/*', authMiddleware);
+  app.use('/api/workflows/*', authMiddleware);
+  app.use('/api/taskExecutions/*', authMiddleware);
+} else {
+  console.log('⚠️ SKIP_AUTH mode enabled - authentication disabled for development');
+}
 
 // Mount route modules
 app.route('/api/agents', agents);

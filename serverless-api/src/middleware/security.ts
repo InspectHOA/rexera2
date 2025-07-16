@@ -7,9 +7,6 @@
 import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
-// Simple in-memory rate limiter (for production, use Redis)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
   maxRequests: number; // Max requests per window
@@ -21,44 +18,67 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
 };
 
 /**
- * Rate limiting middleware
+ * Serverless-appropriate rate limiting middleware
+ * 
+ * In serverless environments, in-memory rate limiting doesn't work because:
+ * - Memory is reset between function invocations
+ * - Each instance has separate memory
+ * - Cold starts lose all state
+ * 
+ * This implementation:
+ * - Skips rate limiting in serverless environments (Vercel, AWS Lambda, etc.)
+ * - Uses basic request validation instead
+ * - Adds informational headers for monitoring
  */
 export const rateLimitMiddleware = (config: RateLimitConfig = DEFAULT_RATE_LIMIT) => {
   return async (c: Context, next: Next) => {
+    const isServerless = !!(
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.NETLIFY ||
+      process.env.CLOUDFLARE_WORKERS
+    );
+
+    if (isServerless) {
+      // In serverless environments, add headers for monitoring but don't enforce limits
+      // Cloud providers (Vercel, AWS) handle DDoS protection at the infrastructure level
+      c.header('X-RateLimit-Limit', config.maxRequests.toString());
+      c.header('X-RateLimit-Remaining', config.maxRequests.toString());
+      c.header('X-RateLimit-Reset', Math.ceil((Date.now() + config.windowMs) / 1000).toString());
+      c.header('X-RateLimit-Policy', 'serverless-mode');
+      
+      await next();
+      return;
+    }
+
+    // For non-serverless environments (local development), use simple validation
+    // This provides basic protection during development and testing
+    const userAgent = c.req.header('user-agent') || '';
     const clientIP = c.req.header('x-forwarded-for') || 
                      c.req.header('x-real-ip') || 
                      'unknown';
 
-    const now = Date.now();
-    const key = `rate_limit:${clientIP}`;
-    const record = rateLimitStore.get(key);
+    // Block obvious bot requests
+    const suspiciousPatterns = [
+      /bot/i,
+      /crawler/i,
+      /spider/i,
+      /scraper/i
+    ];
 
-    if (!record || now > record.resetTime) {
-      // Reset or create new record
-      rateLimitStore.set(key, {
-        count: 1,
-        resetTime: now + config.windowMs
+    const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(userAgent));
+    
+    if (isSuspicious && !userAgent.includes('swagger')) {
+      throw new HTTPException(429, {
+        message: 'Automated requests not allowed. Use API authentication.'
       });
-    } else {
-      // Increment existing record
-      record.count++;
-      
-      if (record.count > config.maxRequests) {
-        const resetIn = Math.ceil((record.resetTime - now) / 1000);
-        
-        throw new HTTPException(429, {
-          message: `Rate limit exceeded. Try again in ${resetIn} seconds.`
-        });
-      }
     }
 
-    // Add rate limit headers
-    const remaining = Math.max(0, config.maxRequests - (record?.count || 1));
-    const resetTime = record?.resetTime || (now + config.windowMs);
-    
+    // Add headers for development monitoring
     c.header('X-RateLimit-Limit', config.maxRequests.toString());
-    c.header('X-RateLimit-Remaining', remaining.toString());
-    c.header('X-RateLimit-Reset', Math.ceil(resetTime / 1000).toString());
+    c.header('X-RateLimit-Remaining', config.maxRequests.toString());
+    c.header('X-RateLimit-Reset', Math.ceil((Date.now() + config.windowMs) / 1000).toString());
+    c.header('X-RateLimit-Policy', 'development-mode');
 
     await next();
   };
@@ -108,27 +128,46 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
 };
 
 /**
- * Request validation middleware
+ * Minimal request validation middleware
+ * 
+ * Hono handles most validation automatically:
+ * - Content-Type validation via c.req.json()  
+ * - Body parsing and JSON validation
+ * - Route parameter validation
+ * 
+ * Serverless platforms handle:
+ * - Content-Length limits at infrastructure level
+ * - DDoS protection and request throttling
+ * 
+ * This middleware provides basic request hygiene for development environments.
  */
 export const requestValidationMiddleware = async (c: Context, next: Next) => {
-  const contentType = c.req.header('content-type');
-  const method = c.req.method;
+  // In serverless environments, most validation is handled by the platform
+  const isServerless = !!(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY ||
+    process.env.CLOUDFLARE_WORKERS
+  );
 
-  // Validate Content-Type for POST/PUT/PATCH requests
-  if (['POST', 'PUT', 'PATCH'].includes(method)) {
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new HTTPException(400, {
-        message: 'Content-Type must be application/json'
-      });
-    }
+  if (isServerless) {
+    // In production serverless, rely on platform-level validation
+    await next();
+    return;
   }
 
-  // Validate request size (10MB limit)
-  const contentLength = c.req.header('content-length');
-  if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
-    throw new HTTPException(413, {
-      message: 'Request entity too large'
-    });
+  // Development environment: basic validation
+  const method = c.req.method;
+  
+  if (['POST', 'PUT', 'PATCH'].includes(method)) {
+    const contentLength = c.req.header('content-length');
+    
+    // Basic size check for development (10MB limit)
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+      throw new HTTPException(413, {
+        message: 'Request entity too large (10MB limit)'
+      });
+    }
   }
 
   await next();

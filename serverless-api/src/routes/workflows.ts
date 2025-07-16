@@ -71,11 +71,7 @@ workflows.get('/', async (c) => {
       created_at,
       updated_at,
       completed_at,
-      due_date,
-      human_readable_id,
-      n8n_execution_id,
-      n8n_started_at,
-      n8n_status
+      due_date
     `;
     
     if (includeArray.includes('client')) {
@@ -83,7 +79,7 @@ workflows.get('/', async (c) => {
     }
     
     if (includeArray.includes('tasks')) {
-      selectString += `, task_executions(*, agents!agent_id(id, name, type))`;
+      selectString += `, task_executions!workflow_id(*, agents!agent_id(id, name, type))`;
     }
 
     let dbQuery = supabase
@@ -320,12 +316,8 @@ workflows.get('/:id', async (c) => {
       updated_at,
       completed_at,
       due_date,
-      human_readable_id,
-      n8n_execution_id,
-      n8n_started_at,
-      n8n_status,
       client:clients(id, name, domain),
-      task_executions(*, agents!agent_id(id, name, type))
+      task_executions!workflow_id(*, agents!agent_id(id, name, type))
     `;
 
     let workflow: any = null;
