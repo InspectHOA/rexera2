@@ -18,7 +18,7 @@ import {
   errorHandlerMiddleware,
   corsMiddleware,
 } from './middleware';
-import { agents, workflows, taskExecutions } from './routes';
+import { agents, workflows, taskExecutions, communications } from './routes';
 
 const app = new Hono();
 
@@ -76,6 +76,7 @@ if (!shouldSkipAuth) {
   app.use('/api/agents/*', authMiddleware);
   app.use('/api/workflows/*', authMiddleware);
   app.use('/api/taskExecutions/*', authMiddleware);
+  app.use('/api/communications/*', authMiddleware);
 } else {
   console.log('⚠️ SKIP_AUTH mode enabled - authentication disabled for development');
 }
@@ -84,6 +85,7 @@ if (!shouldSkipAuth) {
 app.route('/api/agents', agents);
 app.route('/api/workflows', workflows);
 app.route('/api/taskExecutions', taskExecutions);
+app.route('/api/communications', communications);
 
 // ============================================================================
 // ERROR HANDLING

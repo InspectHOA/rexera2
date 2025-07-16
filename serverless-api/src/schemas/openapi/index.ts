@@ -25,10 +25,10 @@ Rexera is a dual-layer platform that combines:
 - **Workflows**: Complete CRUD operations with filtering, pagination, and human-readable ID support
 - **Task Executions**: Full lifecycle management with bulk operations and status updates
 - **Agents**: Agent listing, details, and heartbeat/status updates
+- **Communications**: Complete email/phone/SMS tracking with thread management, reply, and forward capabilities
 - **System**: Health checks and API documentation
 
 ### 🚧 **Planned Endpoints** (Database Schema Ready)
-- **Communications**: Email/phone/SMS tracking (database table exists)
 - **Documents**: File management and deliverables (database table exists)
 - **Costs**: Financial tracking and invoicing (database table exists)
 - **Audit Events**: Activity logs and audit trails (database table exists)

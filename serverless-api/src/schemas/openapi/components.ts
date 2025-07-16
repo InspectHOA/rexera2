@@ -160,6 +160,157 @@ export const openApiComponents = {
         }
       },
       required: ['id', 'name', 'created_at', 'updated_at']
+    },
+    Communication: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        workflow_id: { type: 'string', format: 'uuid', nullable: true },
+        thread_id: { type: 'string', format: 'uuid', nullable: true },
+        sender_id: { type: 'string', format: 'uuid', nullable: true },
+        recipient_email: { type: 'string', format: 'email', nullable: true },
+        subject: { type: 'string', nullable: true },
+        body: { type: 'string', nullable: true },
+        communication_type: {
+          type: 'string',
+          enum: ['email', 'phone', 'sms', 'internal_note'],
+          description: 'Type of communication'
+        },
+        direction: {
+          type: 'string',
+          enum: ['INBOUND', 'OUTBOUND'],
+          nullable: true,
+          description: 'Communication direction'
+        },
+        status: {
+          type: 'string',
+          enum: ['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED'],
+          nullable: true,
+          description: 'Communication status'
+        },
+        metadata: { type: 'object', description: 'Additional communication data' },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' },
+        
+        // Related data (when included)
+        email_metadata: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            communication_id: { type: 'string', format: 'uuid' },
+            message_id: { type: 'string', nullable: true },
+            in_reply_to: { type: 'string', nullable: true },
+            email_references: { type: 'array', items: { type: 'string' } },
+            attachments: { type: 'array', items: { type: 'object' } },
+            headers: { type: 'object' },
+            created_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        phone_metadata: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            communication_id: { type: 'string', format: 'uuid' },
+            phone_number: { type: 'string', nullable: true },
+            duration_seconds: { type: 'integer', nullable: true },
+            call_recording_url: { type: 'string', format: 'uri', nullable: true },
+            transcript: { type: 'string', nullable: true },
+            created_at: { type: 'string', format: 'date-time' }
+          }
+        }
+      }
+    },
+    CreateCommunication: {
+      type: 'object',
+      required: ['recipient_email', 'subject', 'body', 'communication_type', 'direction'],
+      properties: {
+        workflow_id: { type: 'string', format: 'uuid' },
+        thread_id: { type: 'string', format: 'uuid' },
+        recipient_email: { type: 'string', format: 'email' },
+        subject: { type: 'string', minLength: 1 },
+        body: { type: 'string', minLength: 1 },
+        communication_type: {
+          type: 'string',
+          enum: ['email', 'phone', 'sms', 'internal_note']
+        },
+        direction: {
+          type: 'string',
+          enum: ['INBOUND', 'OUTBOUND']
+        },
+        metadata: { type: 'object' },
+        email_metadata: {
+          type: 'object',
+          properties: {
+            message_id: { type: 'string' },
+            in_reply_to: { type: 'string' },
+            email_references: { type: 'array', items: { type: 'string' } },
+            attachments: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  filename: { type: 'string' },
+                  content_type: { type: 'string' },
+                  size: { type: 'number' },
+                  url: { type: 'string', format: 'uri' }
+                }
+              }
+            },
+            headers: { type: 'object' }
+          }
+        },
+        phone_metadata: {
+          type: 'object',
+          properties: {
+            phone_number: { type: 'string' },
+            duration_seconds: { type: 'integer', minimum: 1 },
+            call_recording_url: { type: 'string', format: 'uri' },
+            transcript: { type: 'string' }
+          }
+        }
+      }
+    },
+    EmailThread: {
+      type: 'object',
+      properties: {
+        thread_id: { type: 'string', format: 'uuid', nullable: true },
+        subject: { type: 'string' },
+        communication_count: { type: 'integer' },
+        last_activity: { type: 'string', format: 'date-time' },
+        participants: { type: 'array', items: { type: 'string', format: 'email' } },
+        has_unread: { type: 'boolean' },
+        workflow_id: { type: 'string', format: 'uuid', nullable: true }
+      }
+    },
+    ReplyCommunication: {
+      type: 'object',
+      required: ['recipient_email', 'body'],
+      properties: {
+        recipient_email: { type: 'string', format: 'email' },
+        body: { type: 'string', minLength: 1 },
+        include_team: { type: 'boolean', default: false },
+        metadata: { type: 'object' }
+      }
+    },
+    ForwardCommunication: {
+      type: 'object',
+      required: ['recipient_email', 'subject', 'body'],
+      properties: {
+        recipient_email: { type: 'string', format: 'email' },
+        subject: { type: 'string', minLength: 1 },
+        body: { type: 'string', minLength: 1 },
+        include_team: { type: 'boolean', default: false },
+        metadata: { type: 'object' }
+      }
+    },
+    Pagination: {
+      type: 'object',
+      properties: {
+        page: { type: 'integer', description: 'Current page number' },
+        limit: { type: 'integer', description: 'Items per page' },
+        total: { type: 'integer', description: 'Total number of items' },
+        totalPages: { type: 'integer', description: 'Total number of pages' }
+      }
     }
   }
 } as const;

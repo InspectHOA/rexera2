@@ -24,6 +24,7 @@ export * from './types/errors';
 // Zod validation schemas
 export * from './schemas/taskExecutions';
 export * from './schemas/workflows';
+export * from './schemas/communications';
 
 // Utility functions
 export * from './utils/uuid-formatter';
@@ -82,6 +83,35 @@ export type {
   CreateTaskExecution,
   UpdateTaskExecution
 } from './schemas/taskExecutions';
+
+// Communications schemas
+export {
+  CommunicationSchema,
+  CreateCommunicationSchema,
+  UpdateCommunicationSchema,
+  CommunicationFiltersSchema,
+  ReplyCommunicationSchema,
+  ForwardCommunicationSchema,
+  EmailThreadSchema,
+  CommunicationTypeSchema,
+  EmailDirectionSchema,
+  EmailStatusSchema,
+  CallDirectionSchema
+} from './schemas/communications';
+
+export type {
+  Communication,
+  CreateCommunication,
+  UpdateCommunication,
+  CommunicationFilters,
+  ReplyCommunication,
+  ForwardCommunication,
+  EmailThread,
+  CommunicationType,
+  EmailDirection,
+  EmailStatus,
+  CallDirection
+} from './schemas/communications';
 
 // =====================================================
 // CONSTANTS

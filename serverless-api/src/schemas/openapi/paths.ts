@@ -554,5 +554,308 @@ export const openApiPaths = {
         }
       }
     }
+  },
+  '/api/communications': {
+    get: {
+      tags: ['Communications'],
+      summary: 'List communications',
+      description: 'Retrieve a paginated list of communications with optional filters',
+      parameters: [
+        {
+          name: 'workflow_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by workflow ID'
+        },
+        {
+          name: 'thread_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by thread ID'
+        },
+        {
+          name: 'communication_type',
+          in: 'query',
+          schema: { type: 'string', enum: ['email', 'phone', 'sms', 'internal_note'] },
+          description: 'Filter by communication type'
+        },
+        {
+          name: 'direction',
+          in: 'query',
+          schema: { type: 'string', enum: ['INBOUND', 'OUTBOUND'] },
+          description: 'Filter by direction'
+        },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'string', enum: ['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED'] },
+          description: 'Filter by status'
+        },
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, default: 1 },
+          description: 'Page number'
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          description: 'Items per page'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of related data to include (email_metadata, phone_metadata, sender, workflow)'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of communications',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/Communication' }
+                  },
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['Communications'],
+      summary: 'Create communication',
+      description: 'Create a new communication (email, phone call, SMS, or internal note)',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateCommunication' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Communication created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Communication' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/communications/threads': {
+    get: {
+      tags: ['Communications'],
+      summary: 'Get email threads',
+      description: 'Retrieve email threads summary for a workflow',
+      parameters: [
+        {
+          name: 'workflow_id',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Workflow ID to get threads for'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of email threads',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/EmailThread' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/communications/{id}': {
+    get: {
+      tags: ['Communications'],
+      summary: 'Get communication',
+      description: 'Retrieve a single communication by ID',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Communication ID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Communication details',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Communication' }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Communication not found'
+        }
+      }
+    },
+    patch: {
+      tags: ['Communications'],
+      summary: 'Update communication',
+      description: 'Update communication status and metadata',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Communication ID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'string',
+                  enum: ['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED']
+                },
+                metadata: { type: 'object' }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Communication updated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Communication' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/communications/{id}/reply': {
+    post: {
+      tags: ['Communications'],
+      summary: 'Reply to communication',
+      description: 'Create a reply to an existing communication',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Original communication ID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ReplyCommunication' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Reply created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Communication' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/communications/{id}/forward': {
+    post: {
+      tags: ['Communications'],
+      summary: 'Forward communication',
+      description: 'Create a forward of an existing communication',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Original communication ID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ForwardCommunication' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Forward created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Communication' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 } as const;
