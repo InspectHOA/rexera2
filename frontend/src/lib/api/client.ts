@@ -518,6 +518,7 @@ export const communicationsApi = {
   async list(filters: {
     workflow_id?: string;
     type?: 'email' | 'phone' | 'sms' | 'internal_note';
+    communication_type?: 'email' | 'phone' | 'sms' | 'internal_note';
     direction?: 'INBOUND' | 'OUTBOUND';
     limit?: number;
   } = {}) {
@@ -525,11 +526,47 @@ export const communicationsApi = {
     
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined) {
-        params.append(key, String(value));
+        // Map 'type' to 'communication_type' for backend compatibility
+        if (key === 'type') {
+          params.append('communication_type', String(value));
+        } else {
+          params.append(key, String(value));
+        }
       }
     });
 
-    return apiRequest(`/communications?${params}`);
+    // We need the full response including pagination, so we'll handle the request manually
+    const authToken = await getAuthToken();
+    const headers: Record<string, string> = {};
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/communications?${params}`, {
+      headers
+    });
+    
+    const data: ApiResponse = await response.json();
+    
+    if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
+      throw new ApiError(
+        errorData.error?.message || `HTTP ${response.status}`,
+        response.status,
+        errorData.error?.details
+      );
+    }
+
+    return {
+      data: data.data || [],
+      pagination: data.pagination || {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0
+      }
+    };
   },
 
   async create(data: {

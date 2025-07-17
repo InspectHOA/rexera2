@@ -60,7 +60,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
         // Fetch emails using the API client
         const result = await api.communications.list({
           workflow_id: workflowId,
-          type: 'email'
+          communication_type: 'email'  // Use backend parameter name directly
         });
         
         const transformedEmails: Email[] = (Array.isArray(result.data) ? result.data : []).map((comm: any) => ({
@@ -111,6 +111,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
         }
         
       } catch (error) {
+        console.error('Failed to fetch email communications:', error);
         // Error is handled by setting empty state
         setEmails([]);
         setThreads([]);
@@ -164,13 +165,15 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
         {/* Compact Header */}
         <div className="p-3 border-b border-gray-200 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900">Email Threads ({threads.length})</h3>
-          <button
-            onClick={() => setComposeOpen(true)}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-blue-700"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setComposeOpen(true)}
+              className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-blue-700"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New
+            </button>
+          </div>
         </div>
         
         {/* Thread List */}
