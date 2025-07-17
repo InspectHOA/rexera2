@@ -98,12 +98,12 @@ The platform coordinates 10 specialized AI agents, each with a well-defined role
 
 ### Prerequisites
 
-- Node.js ≥18.0.0
-- PNPM ≥8.0.0
-- Supabase account
-- n8n Cloud account
+- **Node.js** ≥18.0.0 ([Download](https://nodejs.org/))
+- **npm** ≥9.0.0 (comes with Node.js)
+- **Supabase account** ([Sign up](https://supabase.com/))
+- **n8n Cloud account** ([Sign up](https://n8n.io/cloud/))
 
-### Installation
+### Quick Setup
 
 1. **Clone the repository**
    ```bash
@@ -113,35 +113,56 @@ The platform coordinates 10 specialized AI agents, each with a well-defined role
 
 2. **Install dependencies**
    ```bash
-   pnpm install
+   npm install
    ```
 
 3. **Environment Setup**
    
-   Copy the example environment files and configure them:
+   The project uses a unified environment configuration. All required variables are already configured in `.env.local`:
    ```bash
-   cp .env.example .env.local
-   cp frontend/.env.example frontend/.env.local
-   cp serverless-api/.env.example serverless-api/.env.local
+   # Verify environment setup
+   npm run verify-env
+   
+   # Run comprehensive environment tests
+   npm run test-env
    ```
+
+   **For production deployment**, copy `.env.production.template` and set the production values in your Vercel dashboard.
 
 4. **Database Setup**
    ```bash
    # Run database migrations
-   pnpm db:migrate
+   npm run db:migrate
    
-   # Seed the database
-   pnpm db:seed
+   # Seed the database with test data (50 workflows + sample data)
+   npx tsx scripts/db/seed.ts
    ```
 
 5. **Start Development**
    ```bash
-   pnpm dev
+   npm run dev
    ```
 
-   This starts:
-   - Frontend: http://localhost:3000
-   - API: http://localhost:3001
+   This starts all services:
+   - **Frontend**: http://localhost:3000
+   - **API**: http://localhost:3001
+   - **API Documentation**: http://localhost:3001/api/docs
+   - **Health Check**: http://localhost:3001/api/health
+
+### Verification
+
+After starting the development servers, verify everything is working:
+
+```bash
+# Test API health
+curl http://localhost:3001/api/health
+
+# Check frontend is accessible
+curl -I http://localhost:3000
+
+# Run environment integration tests
+npm run test-env
+```
 
 ## 📁 Project Structure
 
@@ -168,37 +189,58 @@ rexera2/
 
 ### Development
 ```bash
-pnpm dev              # Start all services in development mode
-pnpm dev:clean        # Clean start with port cleanup
-pnpm build            # Build all packages
-pnpm test             # Run all tests
-pnpm lint             # Lint all packages
+npm run dev              # Start all services in development mode
+npm run dev:clean        # Clean start with port cleanup  
+npm run dev:fast         # Fast start without type checking
+npm run build            # Build all packages
+npm run type-check       # Type check all packages
+npm run type-check:watch # Type check in watch mode
+npm run lint             # Lint all packages
+```
+
+### Environment
+```bash
+npm run verify-env       # Basic environment variable verification
+npm run test-env         # Comprehensive environment integration test
 ```
 
 ### Database
 ```bash
-pnpm db:migrate       # Run database migrations
-pnpm db:seed          # Seed database with test data
-pnpm seed             # Alternative seed command
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed database with test data
+npm run seed             # Alternative seed command
 ```
 
 ### Testing
 ```bash
-pnpm test:smoke       # Run smoke tests
-pnpm test:integration # Run integration tests
-pnpm e2e              # Run end-to-end tests with Playwright
+npm run test             # Run all tests with type checking
+npm run test:smoke       # Run smoke tests
+npm run test:integration # Run integration tests
+npm run test:e2e         # Run end-to-end tests with Playwright
+npm run test:all         # Run comprehensive test suite
+npm run test:fast        # Run fast test suite
+npm run test:basic-workflow # Test basic workflow functionality
 ```
 
 ### Deployment
 ```bash
-pnpm deploy:staging   # Deploy to staging environment
-pnpm deploy:prod      # Deploy to production
+npm run deploy:staging   # Deploy to staging environment
+npm run deploy:prod      # Deploy to production
 ```
 
-### Workflows
+### Workflows & Database
 ```bash
-pnpm workflows:validate  # Validate n8n workflow definitions
-pnpm workflows:backup    # Backup workflow configurations
+npm run workflows:validate  # Validate n8n workflow definitions
+npm run workflows:backup    # Backup workflow configurations
+npm run notifications       # Test notification system
+```
+
+### Utilities
+```bash
+npm run kill-ports       # Kill processes on development ports (3000, 3001, 3002)
+npm run clean            # Clean build artifacts and caches
+npm run setup            # Initial project setup
+npm run precommit        # Run all tests before committing
 ```
 
 ## 🔐 Authentication & Security
@@ -256,20 +298,99 @@ The application deploys as two separate Vercel projects:
 
 ### Environment Variables
 
-#### Frontend
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_API_URL`
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
+The project uses a unified environment configuration. For production deployment, use the values from `.env.production.template` and set them in your Vercel dashboard:
 
-#### API
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_JWT_SECRET`
-- `INTERNAL_API_KEY`
-- `JWT_SECRET`
-- `ENCRYPTION_KEY`
+#### Shared Variables (Both Frontend & API)
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_URL` - Supabase project URL (API)
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+- `SUPABASE_JWT_SECRET` - Supabase JWT secret
+
+#### Application URLs
+- `NEXT_PUBLIC_API_URL` - API URL (e.g., `https://api-rexera.vercel.app`)
+- `NEXT_PUBLIC_APP_URL` - Frontend URL (e.g., `https://app-rexera.vercel.app`)
+- `NEXT_PUBLIC_N8N_WEBHOOK_URL` - N8N webhook endpoint
+
+#### Authentication & CORS
+- `NEXT_PUBLIC_SKIP_AUTH` - Set to `false` for production
+- `SKIP_AUTH` - Set to `false` for production
+- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
+
+#### N8N Integration
+- `N8N_ENABLED` - Enable N8N integration (`true`)
+- `N8N_API_KEY` - N8N Cloud API key
+- `N8N_BASE_URL` - N8N Cloud instance URL
+- `N8N_PAYOFF_WORKFLOW_ID` - Payoff workflow identifier
+
+#### Environment
+- `NODE_ENV` - Set to `production`
+
+### Deployment Process
+
+1. **Set Environment Variables**: Copy values from `.env.production.template` to Vercel dashboard
+2. **Deploy Frontend**: Vercel will automatically deploy from `/frontend` directory
+3. **Deploy API**: Vercel will automatically deploy from `/serverless-api` directory
+4. **Verify Deployment**: Test health endpoints and environment variable loading
+
+See `ENVIRONMENT_SETUP.md` for detailed deployment instructions and environment management.
+
+## 🔧 Troubleshooting
+
+### Common Setup Issues
+
+#### Environment Variables Not Loading
+```bash
+# Check if environment variables are properly configured
+npm run verify-env
+
+# Run comprehensive environment tests
+npm run test-env
+
+# Check if .env.local exists and has correct values
+ls -la .env.local
+```
+
+#### Port Already in Use
+```bash
+# Kill any processes on development ports
+npm run kill-ports
+
+# Or manually kill specific ports
+sudo fuser -k 3000/tcp  # Frontend
+sudo fuser -k 3001/tcp  # API
+```
+
+#### API Not Starting
+```bash
+# Check API environment loading specifically
+cd serverless-api && npm run dev
+
+# Verify Supabase connection
+curl http://localhost:3001/api/health
+```
+
+#### Frontend Supabase Client Error
+If you see "supabaseUrl is required" error:
+1. Verify `.env.local` exists in both root and frontend directories
+2. Check that `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
+3. Restart the development server: `npm run kill-ports && npm run dev`
+
+#### Database Connection Issues
+```bash
+# Test database connection
+npx tsx scripts/db/test-connection.ts
+
+# Re-run migrations if needed
+npm run db:migrate
+```
+
+### Getting Help
+
+- Check the [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for detailed environment configuration
+- Review logs in the terminal for specific error messages
+- Ensure all prerequisites are installed and up to date
+- Verify Supabase project is accessible and configured correctly
 
 ## 🧪 Testing Strategy
 
