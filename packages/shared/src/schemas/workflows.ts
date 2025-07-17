@@ -18,7 +18,6 @@ export const WorkflowSchema = z.object({
   completed_at: z.string().datetime().nullable().optional(),
   due_date: z.string().datetime().nullable().optional(),
   n8n_execution_id: z.string().nullable().optional(),
-  human_readable_id: z.string(),
 });
 
 // Create workflow request schema
@@ -55,7 +54,7 @@ export const WorkflowFiltersSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   include: z.string().optional(),
-  sortBy: z.enum(['created_at', 'updated_at', 'due_date', 'status', 'workflow_type', 'human_readable_id', 'title', 'client_id', 'interrupt_count']).optional(),
+  sortBy: z.enum(['created_at', 'updated_at', 'due_date', 'status', 'workflow_type', 'title', 'client_id', 'interrupt_count']).optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
 });
 

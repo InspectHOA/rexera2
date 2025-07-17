@@ -28,7 +28,7 @@ export function useWorkflowTableState() {
   // Map frontend sort fields to backend database columns
   const getBackendSortField = (frontendField: string): string => {
     const fieldMap: Record<string, string> = {
-      'id': 'human_readable_id',
+      'id': 'created_at', // Sort by creation date since ID is UUID-based
       'created_at': 'created_at',
       'type': 'workflow_type',
       'client': 'client_id',

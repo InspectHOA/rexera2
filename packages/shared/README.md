@@ -136,8 +136,8 @@ const response: PaginatedResponse<Workflow> = await api.workflows.list(query);
 import { formatWorkflowIdWithType } from '@rexera/shared';
 
 // Consistent ID formatting across frontend and backend
-const displayId = formatWorkflowIdWithType(workflow.human_readable_id, workflow.workflow_type);
-// Output: "ML-1001" (MUNI_LIEN_SEARCH-1001)
+const displayId = formatWorkflowIdWithType(workflow.id, workflow.workflow_type);
+// Output: "MUNI-85AD-F1" (formatted from UUID)
 ```
 
 ## Package Structure

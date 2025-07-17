@@ -63,23 +63,6 @@ describe('Workflow Resolver Utils', () => {
       expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
-    // TODO: Fix this test for the new formatted ID system (HOA-1234-5678 format)
-    it.skip('should resolve human-readable ID to UUID', async () => {
-      const humanId = '1001';
-      const expectedUuid = '123e4567-e89b-12d3-a456-426614174000';
-      
-      mockSupabase.single.mockResolvedValue({
-        data: { id: expectedUuid },
-        error: null
-      });
-
-      const result = await resolveWorkflowId(mockSupabase as any, humanId);
-      
-      expect(result).toBe(expectedUuid);
-      expect(mockSupabase.from).toHaveBeenCalledWith('workflows');
-      expect(mockSupabase.select).toHaveBeenCalledWith('id');
-      expect(mockSupabase.eq).toHaveBeenCalledWith('human_readable_id', humanId);
-    });
 
     it('should throw error when workflow not found', async () => {
       const humanId = '9999';

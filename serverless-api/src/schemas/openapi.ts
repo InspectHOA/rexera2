@@ -38,7 +38,6 @@ export const WorkflowSchema = z.object({
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
-  human_readable_id: z.number().int(),
   client: z.object({
     id: z.string().uuid(),
     company_name: z.string(),

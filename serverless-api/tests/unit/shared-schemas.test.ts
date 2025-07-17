@@ -29,7 +29,6 @@ describe('Shared Workflow Schemas', () => {
       completed_at: null,
       due_date: '2025-07-14T10:00:00.000Z',
       n8n_execution_id: 'exec_123',
-      human_readable_id: 'PAYOFF-1001',
     };
 
     it('should validate correct workflow data', () => {
@@ -238,7 +237,6 @@ describe('Shared Workflow Schemas', () => {
       completed_at: null,
       due_date: '2025-07-14T10:00:00.000Z',
       n8n_execution_id: 'exec_123',
-      human_readable_id: 'PAYOFF-1001',
       clients: {
         id: '550e8400-e29b-41d4-a716-446655440001',
         name: 'Test Client',
@@ -296,8 +294,7 @@ describe('Shared Workflow Schemas', () => {
           status: 'PENDING',
           created_at: '2025-07-11T10:00:00.000Z',
           updated_at: '2025-07-11T10:00:00.000Z',
-          human_readable_id: 'PAYOFF-1001',
-        };
+            };
         
         // 3. Validate full workflow
         const workflowResult = WorkflowSchema.safeParse(dbRecord);

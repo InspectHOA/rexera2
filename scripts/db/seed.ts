@@ -173,7 +173,6 @@ async function seedDatabase() {
         municipality: `City ${i}`
       },
       created_by: testUserId,
-      human_readable_id: `10${String(i).padStart(2, '0')}`,
       due_date: new Date(Date.now() + (i * 24 * 60 * 60 * 1000)).toISOString()
     });
 
@@ -480,7 +479,6 @@ async function seedDatabase() {
         management_company: `${hoaNames[i - 1]} Management Services`
       },
       created_by: testUserId,
-      human_readable_id: `20${String(i).padStart(2, '0')}`,
       due_date: new Date(Date.now() + ((i + 2) * 24 * 60 * 60 * 1000)).toISOString()
     });
 
@@ -682,7 +680,6 @@ async function seedDatabase() {
         estimated_balance: 150000 + (i * 25000)
       },
       created_by: testUserId,
-      human_readable_id: `30${String(i).padStart(2, '0')}`,
       due_date: new Date(Date.now() + ((i + 1) * 24 * 60 * 60 * 1000)).toISOString()
     });
 
@@ -908,8 +905,8 @@ async function verifyData() {
   
   const { data: workflows, error: workflowError } = await supabase
     .from('workflows')
-    .select('human_readable_id, title, workflow_type, status')
-    .order('human_readable_id');
+    .select('id, title, workflow_type, status')
+    .order('created_at');
 
   if (workflowError) {
     console.error('❌ Failed to fetch workflows:', workflowError);
@@ -970,7 +967,7 @@ async function verifyData() {
 
   // Show sample workflows
   console.log('\n📋 Sample Workflows:');
-  workflows?.slice(0, 10).forEach(w => console.log(`  #${w.human_readable_id}: ${w.title} (${w.status})`));
+  workflows?.slice(0, 10).forEach(w => console.log(`  ${w.title} (${w.status})`));
   if (workflows && workflows.length > 10) {
     console.log(`  ... and ${workflows.length - 10} more workflows`);
   }
