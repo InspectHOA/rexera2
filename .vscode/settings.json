@@ -1,0 +1,11 @@
+{
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "files.associations": {
+    ".env*": "dotenv"
+  },
+  "eslint.workingDirectories": [
+    "frontend",
+    "serverless-api", 
+    "packages/shared"
+  ]
+}

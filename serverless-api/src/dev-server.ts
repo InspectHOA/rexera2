@@ -3,8 +3,8 @@
  * This runs the same Hono app that will be deployed to Vercel
  */
 
-// Load environment variables from .env file
-import 'dotenv/config';
+// Load environment variables first - this MUST be imported before anything else
+import './env';
 
 import { serve } from '@hono/node-server';
 import app from './app';

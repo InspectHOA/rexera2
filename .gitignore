@@ -11,13 +11,18 @@ build/
 
 # Environment variables
 .env
-.env.local
+# Allow specific env files for the new setup
+!.env.local
+!.env.production.template
+!.env.example
 .env.development.local
 .env.test.local
 .env.production.local
 
 # IDEs and editors
+# Allow specific VSCode files for the new setup
 .vscode/
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -150,11 +155,9 @@ temp-files/
 *.backup
 *.bak
 
-# IDE specific files
-.vscode/settings.json
+# IDE specific files (duplicates - see above for allowed files)
 .vscode/launch.json
 .vscode/extensions.json
-.idea/
 
 # macOS
 .AppleDouble

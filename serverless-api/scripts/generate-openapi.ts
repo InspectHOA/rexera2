@@ -14,10 +14,10 @@ import { config } from 'dotenv';
 
 async function generateOpenAPISpec() {
   try {
-    // Load environment variables
-    config();
+    // Load environment variables from parent directory
+    config({ path: join(process.cwd(), '../.env.local') });
     
-    // Set mock environment variables for OpenAPI generation
+    // Set mock environment variables for OpenAPI generation if not present
     if (!process.env.SUPABASE_URL) {
       process.env.SUPABASE_URL = 'https://mock.supabase.co';
     }
