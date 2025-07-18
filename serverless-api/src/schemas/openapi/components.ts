@@ -311,6 +311,127 @@ export const openApiComponents = {
         total: { type: 'integer', description: 'Total number of items' },
         totalPages: { type: 'integer', description: 'Total number of pages' }
       }
+    },
+    Document: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        workflow_id: { type: 'string', format: 'uuid' },
+        filename: { type: 'string' },
+        url: { type: 'string', format: 'uri' },
+        file_size_bytes: { type: 'integer', nullable: true },
+        mime_type: { type: 'string', nullable: true },
+        document_type: { 
+          type: 'string', 
+          enum: ['WORKING', 'DELIVERABLE'],
+          default: 'WORKING',
+          description: 'Type of document'
+        },
+        tags: { 
+          type: 'array', 
+          items: { type: 'string' },
+          default: [],
+          description: 'Document tags for categorization'
+        },
+        upload_source: { type: 'string', nullable: true },
+        status: { 
+          type: 'string', 
+          enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'],
+          default: 'PENDING',
+          description: 'Document processing status'
+        },
+        metadata: { 
+          type: 'object', 
+          default: {},
+          description: 'Additional document metadata'
+        },
+        deliverable_data: { 
+          type: 'object', 
+          default: {},
+          description: 'Structured data when document is a deliverable'
+        },
+        version: { type: 'integer', default: 1, description: 'Document version number' },
+        change_summary: { type: 'string', nullable: true, description: 'Summary of changes in this version' },
+        created_by: { type: 'string', format: 'uuid', nullable: true },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' },
+        workflow: {
+          type: 'object',
+          nullable: true,
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            title: { type: 'string' },
+            client_id: { type: 'string', format: 'uuid' },
+            status: { type: 'string' }
+          }
+        },
+        created_by_user: {
+          type: 'object',
+          nullable: true,
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            email: { type: 'string', format: 'email' },
+            user_type: { type: 'string' }
+          }
+        }
+      }
+    },
+    CreateDocument: {
+      type: 'object',
+      required: ['workflow_id', 'filename', 'url'],
+      properties: {
+        workflow_id: { type: 'string', format: 'uuid' },
+        filename: { type: 'string', minLength: 1 },
+        url: { type: 'string', format: 'uri' },
+        file_size_bytes: { type: 'integer', minimum: 1 },
+        mime_type: { type: 'string' },
+        document_type: { 
+          type: 'string', 
+          enum: ['WORKING', 'DELIVERABLE'],
+          default: 'WORKING'
+        },
+        tags: { 
+          type: 'array', 
+          items: { type: 'string' },
+          default: []
+        },
+        upload_source: { type: 'string' },
+        metadata: { type: 'object', default: {} },
+        deliverable_data: { type: 'object', default: {} }
+      }
+    },
+    UpdateDocument: {
+      type: 'object',
+      properties: {
+        filename: { type: 'string', minLength: 1 },
+        document_type: { 
+          type: 'string', 
+          enum: ['WORKING', 'DELIVERABLE']
+        },
+        tags: { 
+          type: 'array', 
+          items: { type: 'string' }
+        },
+        status: { 
+          type: 'string', 
+          enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED']
+        },
+        metadata: { type: 'object' },
+        deliverable_data: { type: 'object' },
+        change_summary: { type: 'string' }
+      }
+    },
+    CreateDocumentVersion: {
+      type: 'object',
+      required: ['url', 'change_summary'],
+      properties: {
+        url: { type: 'string', format: 'uri' },
+        filename: { type: 'string', minLength: 1 },
+        file_size_bytes: { type: 'integer', minimum: 1 },
+        mime_type: { type: 'string' },
+        change_summary: { type: 'string', minLength: 1 },
+        metadata: { type: 'object', default: {} }
+      }
     }
   }
 } as const;

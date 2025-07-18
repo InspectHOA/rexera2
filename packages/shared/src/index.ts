@@ -25,6 +25,7 @@ export * from './types/errors';
 export * from './schemas/taskExecutions';
 export * from './schemas/workflows';
 export * from './schemas/communications';
+export * from './schemas/documents';
 
 // Utility functions
 export * from './utils/uuid-formatter';
@@ -112,6 +113,29 @@ export type {
   EmailStatus,
   CallDirection
 } from './schemas/communications';
+
+// Documents schemas
+export {
+  DocumentSchema,
+  CreateDocumentSchema,
+  UpdateDocumentSchema,
+  DocumentFiltersSchema,
+  CreateDocumentVersionSchema,
+  DocumentWithRelationsSchema,
+  DocumentType,
+  DocumentStatus,
+  DOCUMENT_TYPES,
+  DOCUMENT_STATUSES
+} from './schemas/documents';
+
+export type {
+  Document,
+  CreateDocument,
+  UpdateDocument,
+  DocumentFilters,
+  CreateDocumentVersion,
+  DocumentWithRelations
+} from './schemas/documents';
 
 // =====================================================
 // CONSTANTS

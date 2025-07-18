@@ -857,5 +857,338 @@ export const openApiPaths = {
         }
       }
     }
+  },
+  '/api/documents': {
+    get: {
+      tags: ['Documents'],
+      summary: 'List documents',
+      description: 'Retrieve a paginated list of documents with optional filters',
+      parameters: [
+        {
+          name: 'workflow_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by workflow ID'
+        },
+        {
+          name: 'document_type',
+          in: 'query',
+          schema: { type: 'string', enum: ['WORKING', 'DELIVERABLE'] },
+          description: 'Filter by document type'
+        },
+        {
+          name: 'tags',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of tags to filter by'
+        },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'string', enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'] },
+          description: 'Filter by status'
+        },
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, default: 1 },
+          description: 'Page number'
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          description: 'Items per page'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of related data to include (workflow, created_by_user)'
+        },
+        {
+          name: 'sortBy',
+          in: 'query',
+          schema: { type: 'string', enum: ['created_at', 'updated_at', 'filename', 'file_size_bytes'], default: 'created_at' },
+          description: 'Field to sort by'
+        },
+        {
+          name: 'sortDirection',
+          in: 'query',
+          schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
+          description: 'Sort direction'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of documents',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/Document' }
+                  },
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['Documents'],
+      summary: 'Create document',
+      description: 'Upload a new document or create a document reference',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateDocument' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Document created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Document' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/documents/{id}': {
+    get: {
+      tags: ['Documents'],
+      summary: 'Get document',
+      description: 'Retrieve a single document by ID',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Document UUID'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of related data to include (workflow, created_by_user)'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Document details',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Document' }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Document not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    patch: {
+      tags: ['Documents'],
+      summary: 'Update document',
+      description: 'Update document metadata and properties',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Document UUID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateDocument' }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Document updated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Document' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    delete: {
+      tags: ['Documents'],
+      summary: 'Delete document',
+      description: 'Delete a document and its metadata',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Document UUID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Document deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Document deleted successfully' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/documents/{id}/versions': {
+    post: {
+      tags: ['Documents'],
+      summary: 'Create document version',
+      description: 'Create a new version of an existing document',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Document UUID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateDocumentVersion' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Document version created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/Document' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/documents/by-workflow/{workflowId}': {
+    get: {
+      tags: ['Documents'],
+      summary: 'Get workflow documents',
+      description: 'Get all documents for a specific workflow',
+      parameters: [
+        {
+          name: 'workflowId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Workflow UUID'
+        },
+        {
+          name: 'document_type',
+          in: 'query',
+          schema: { type: 'string', enum: ['WORKING', 'DELIVERABLE'] },
+          description: 'Filter by document type'
+        },
+        {
+          name: 'tags',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of tags to filter by'
+        },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'string', enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'] },
+          description: 'Filter by status'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of related data to include (created_by_user)'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of workflow documents',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/Document' }
+                  },
+                  workflow: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', format: 'uuid' },
+                      title: { type: 'string' },
+                      client_id: { type: 'string', format: 'uuid' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 } as const;
