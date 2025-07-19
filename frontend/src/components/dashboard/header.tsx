@@ -4,7 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/provider';
 import { useUnifiedNotifications } from '@/lib/hooks/useUnifiedNotifications';
-import { Bell } from 'lucide-react';
+import { Bell, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { WorkflowCreationModal } from '@/components/workflow/workflow-creation-modal';
+import { ThemeSwitcher } from '../ui/theme-switcher';
 
 export function DashboardHeader() {
   const router = useRouter();
@@ -17,6 +20,7 @@ export function DashboardHeader() {
     markAllAsRead
   } = useUnifiedNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside (with small delay to prevent immediate closing)
@@ -112,26 +116,35 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-lg border border-gray-200/50">
-      <div className="flex items-center gap-2">
-        <img
-          src="/rexera-logo.svg"
-          alt="Rexera Logo"
-          className="h-8 w-auto"
-        />
-      </div>
-      
-      <div className="flex items-center gap-3 text-sm relative">
+    <>
+      <header className="bg-background/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-lg border border-border/50">
+        <div className="flex items-center gap-4">
+          <img
+            src="/rexera-logo.svg"
+            alt="Rexera Logo"
+            className="h-8 w-auto"
+          />
+          <Button
+            onClick={() => setShowWorkflowModal(true)}
+            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-md transition-colors"
+            size="sm"
+          >
+            <Plus className="h-4 w-4" />
+            Create Workflow
+          </Button>
+        </div>
+        
+        <div className="flex items-center gap-3 text-sm relative">
         {/* Notification Bell */}
         <div className="relative" ref={notificationRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
             title="View notifications"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold shadow-sm">
+              <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold shadow-sm">
                 {unreadCount}
               </div>
             )}
@@ -139,17 +152,17 @@ export function DashboardHeader() {
           
           {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-              <div className="p-3 border-b border-gray-200 flex justify-between items-center">
+            <div className="absolute right-0 top-full mt-2 w-80 bg-popover border border-border rounded-lg shadow-lg z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              <div className="p-3 border-b border-border flex justify-between items-center">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  <p className="text-xs text-gray-500">{notifications.length} from today • {unreadCount} unread</p>
+                  <h3 className="font-semibold text-popover-foreground">Notifications</h3>
+                  <p className="text-xs text-muted-foreground">{notifications.length} from today • {unreadCount} unread</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      className="text-xs text-primary hover:text-primary/80"
                       title="Mark all as read"
                     >
                       Mark all read
@@ -157,7 +170,7 @@ export function DashboardHeader() {
                   )}
                   <button
                     onClick={() => setShowNotifications(false)}
-                    className="text-gray-400 hover:text-gray-600 text-sm"
+                    className="text-muted-foreground hover:text-foreground text-sm"
                     title="Close notifications"
                   >
                     ✕
@@ -166,32 +179,32 @@ export function DashboardHeader() {
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {notificationsLoading && notifications.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">Loading...</div>
+                  <div className="p-4 text-center text-muted-foreground">Loading...</div>
                 ) : notifications.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">No notifications from today</div>
+                  <div className="p-4 text-center text-muted-foreground">No notifications from today</div>
                 ) : (
                   notifications.slice(0, 10).map((notification) => (
                     <div 
                       key={notification.id} 
                       onClick={() => handleNotificationClick(notification)}
-                      className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                        !notification.read ? 'bg-blue-50' : ''
+                      className={`p-3 border-b border-border hover:bg-muted/50 cursor-pointer ${
+                        !notification.read ? 'bg-primary/10' : ''
                       }`}
                     >
                       <div className="flex items-start gap-2">
                         <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                          !notification.read ? 'bg-blue-500' : 'bg-gray-300'
+                          !notification.read ? 'bg-primary' : 'bg-muted-foreground'
                         }`}></div>
                         <div className="flex-1">
                           <p className={`text-sm font-medium ${
-                            !notification.read ? 'text-gray-900' : 'text-gray-600'
+                            !notification.read ? 'text-foreground' : 'text-muted-foreground'
                           }`}>
                             {notification.title}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-muted-foreground/70 mt-1">
                             {new Date(notification.created_at).toLocaleString()}
                           </p>
                         </div>
@@ -201,8 +214,8 @@ export function DashboardHeader() {
                 )}
               </div>
               {notifications.length > 10 && (
-                <div className="p-3 border-t border-gray-200 text-center">
-                  <button className="text-sm text-blue-600 hover:text-blue-800">
+                <div className="p-3 border-t border-border text-center">
+                  <button className="text-sm text-primary hover:text-primary/80">
                     View all {notifications.length} notifications
                   </button>
                 </div>
@@ -211,7 +224,8 @@ export function DashboardHeader() {
           )}
         </div>
         
-        <span className="text-gray-700">{getDisplayName()}</span>
+        <ThemeSwitcher />
+        <span className="text-foreground">{getDisplayName()}</span>
         <button
           onClick={handleSignOut}
           title="Click to sign out"
@@ -226,5 +240,15 @@ export function DashboardHeader() {
         </button>
       </div>
     </header>
+    
+    <WorkflowCreationModal
+      isOpen={showWorkflowModal}
+      onClose={() => setShowWorkflowModal(false)}
+      onSuccess={() => {
+        setShowWorkflowModal(false);
+        // Optionally refresh the page or show a success message
+      }}
+    />
+    </>
   );
 }

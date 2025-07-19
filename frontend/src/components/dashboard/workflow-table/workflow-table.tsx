@@ -46,8 +46,8 @@ export function WorkflowTable() {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <div className="text-red-500 text-lg font-medium mb-2">Error loading workflows</div>
-        <div className="text-gray-600">{error}</div>
+        <div className="text-destructive text-lg font-medium mb-2">Error loading workflows</div>
+        <div className="text-muted-foreground">{error}</div>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function WorkflowTable() {
     const hasFilters = filterType || filterStatus || filterInterrupts || searchQuery;
     
     return (
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-background rounded-lg border border-border">
         <WorkflowFilters
           filterType={filterType}
           filterStatus={filterStatus}
@@ -70,10 +70,10 @@ export function WorkflowTable() {
         />
         
         <div className="p-8 text-center">
-          <div className="text-gray-500 text-lg font-medium mb-2">
+          <div className="text-muted-foreground text-lg font-medium mb-2">
             {hasFilters ? 'No workflows match your filters' : 'No workflows found'}
           </div>
-          <div className="text-gray-400">
+          <div className="text-muted-foreground/70">
             {hasFilters 
               ? 'Try adjusting your search criteria or clearing filters.'
               : 'Workflows will appear here once they are created.'
@@ -82,7 +82,7 @@ export function WorkflowTable() {
           {hasFilters && (
             <button
               onClick={handleClearFilters}
-              className="mt-4 px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+              className="mt-4 px-4 py-2 text-sm text-primary bg-primary/10 rounded-md hover:bg-primary/20 transition-colors"
             >
               Clear all filters
             </button>
@@ -93,7 +93,7 @@ export function WorkflowTable() {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-background rounded-lg border border-border">
       <WorkflowFilters
         filterType={filterType}
         filterStatus={filterStatus}
@@ -107,13 +107,13 @@ export function WorkflowTable() {
       />
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-border">
           <WorkflowTableHeader
             onSort={handleSort}
             getSortIndicator={getSortIndicator}
           />
           
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="bg-background divide-y divide-border/50">
             {workflows.map((workflow) => (
               <WorkflowRow key={workflow.workflowId} workflow={workflow} />
             ))}
@@ -136,38 +136,38 @@ export function WorkflowTable() {
 
 function WorkflowTableSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-background rounded-lg border border-border">
       {/* Filters skeleton */}
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-10 bg-gray-200 rounded-md animate-pulse"></div>
-          <div className="w-20 h-10 bg-gray-200 rounded-md animate-pulse"></div>
+          <div className="flex-1 h-10 bg-muted rounded-md animate-pulse"></div>
+          <div className="w-20 h-10 bg-muted rounded-md animate-pulse"></div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-24 h-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-28 h-8 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-24 h-8 bg-muted rounded animate-pulse"></div>
+          <div className="w-32 h-8 bg-muted rounded animate-pulse"></div>
+          <div className="w-28 h-8 bg-muted rounded animate-pulse"></div>
         </div>
       </div>
 
       {/* Table skeleton */}
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-slate-50">
+          <thead className="bg-muted/50">
             <tr>
               {Array.from({ length: 9 }).map((_, i) => (
                 <th key={i} className="px-3 py-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 10 }).map((_, i) => (
-              <tr key={i} className="border-b border-gray-100">
+              <tr key={i} className="border-b border-border">
                 {Array.from({ length: 9 }).map((_, j) => (
                   <td key={j} className="px-3 py-3">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse"></div>
                   </td>
                 ))}
               </tr>
@@ -177,13 +177,13 @@ function WorkflowTableSkeleton() {
       </div>
 
       {/* Pagination skeleton */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-        <div className="w-48 h-5 bg-gray-200 rounded animate-pulse"></div>
+      <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+        <div className="w-48 h-5 bg-muted rounded animate-pulse"></div>
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
+          <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
+          <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
+          <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
         </div>
       </div>
     </div>

@@ -39,13 +39,13 @@ export function WorkflowFilters({
             placeholder="Search workflows..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-input"
           />
         </div>
         {hasActiveFilters && (
           <button
             onClick={onClearFilters}
-            className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+            className="px-3 py-2 text-sm text-muted-foreground bg-muted rounded-md hover:bg-muted/80 transition-colors"
           >
             Clear All
           </button>
@@ -56,11 +56,11 @@ export function WorkflowFilters({
       <div className="flex items-center gap-3 text-sm">
         {/* Type Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-gray-600 font-medium">Type:</label>
+          <label className="text-muted-foreground font-medium">Type:</label>
           <select
             value={filterType}
             onChange={(e) => onFilterTypeChange(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-1 border border-input rounded bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input"
           >
             <option value="">All</option>
             <option value="PAYOFF_REQUEST">Payoff Request</option>
@@ -71,11 +71,11 @@ export function WorkflowFilters({
 
         {/* Status Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-gray-600 font-medium">Status:</label>
+          <label className="text-muted-foreground font-medium">Status:</label>
           <select
             value={filterStatus}
             onChange={(e) => onFilterStatusChange(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-1 border border-input rounded bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input"
           >
             <option value="">All</option>
             <option value="urgent">🚨 Urgent</option>
@@ -86,11 +86,11 @@ export function WorkflowFilters({
 
         {/* Interrupts Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-gray-600 font-medium">Interrupts:</label>
+          <label className="text-muted-foreground font-medium">Interrupts:</label>
           <select
             value={filterInterrupts}
             onChange={(e) => onFilterInterruptsChange(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-1 border border-input rounded bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input"
           >
             <option value="">All</option>
             <option value="has-interrupts">Has Interrupts</option>
@@ -102,14 +102,14 @@ export function WorkflowFilters({
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-500">Active filters:</span>
+          <span className="text-xs text-muted-foreground">Active filters:</span>
           
           {filterType && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
               Type: {getDisplayValue('type', filterType)}
               <button
                 onClick={() => onFilterTypeChange('')}
-                className="hover:text-blue-900"
+                className="hover:text-primary/80"
                 aria-label="Remove type filter"
               >
                 ×
@@ -118,11 +118,11 @@ export function WorkflowFilters({
           )}
           
           {filterStatus && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-secondary/10 text-secondary-foreground rounded-full">
               Status: {getDisplayValue('status', filterStatus)}
               <button
                 onClick={() => onFilterStatusChange('')}
-                className="hover:text-green-900"
+                className="hover:text-secondary-foreground/80"
                 aria-label="Remove status filter"
               >
                 ×
@@ -131,11 +131,11 @@ export function WorkflowFilters({
           )}
           
           {filterInterrupts && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent/10 text-accent-foreground rounded-full">
               Interrupts: {getDisplayValue('interrupts', filterInterrupts)}
               <button
                 onClick={() => onFilterInterruptsChange('')}
-                className="hover:text-yellow-900"
+                className="hover:text-accent-foreground/80"
                 aria-label="Remove interrupts filter"
               >
                 ×
@@ -144,11 +144,11 @@ export function WorkflowFilters({
           )}
           
           {searchQuery && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-muted text-muted-foreground rounded-full">
               Search: "{searchQuery}"
               <button
                 onClick={() => onSearchChange('')}
-                className="hover:text-purple-900"
+                className="hover:text-muted-foreground/80"
                 aria-label="Remove search filter"
               >
                 ×

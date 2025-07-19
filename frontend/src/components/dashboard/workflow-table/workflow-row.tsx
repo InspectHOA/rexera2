@@ -19,34 +19,34 @@ export function WorkflowRow({ workflow }: WorkflowRowProps) {
   return (
     <tr 
       onClick={handleRowClick}
-      className="hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100"
+      className="hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50"
     >
       {/* ID */}
-      <td className="px-3 py-2 text-xs text-gray-900 font-mono">
+      <td className="px-3 py-2 text-xs text-foreground font-mono">
         {workflow.id}
       </td>
 
       {/* Created */}
-      <td className="px-3 py-2 text-xs text-gray-700">
+      <td className="px-3 py-2 text-xs text-muted-foreground">
         {workflow.created}
       </td>
 
       {/* Type */}
       <td className="px-3 py-2 text-xs">
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
           {workflow.type}
         </span>
       </td>
 
       {/* Property */}
-      <td className="px-3 py-2 text-xs text-gray-900 max-w-0">
+      <td className="px-3 py-2 text-xs text-foreground max-w-0">
         <div className="truncate" title={workflow.property}>
           {workflow.property}
         </div>
       </td>
 
       {/* Client */}
-      <td className="px-3 py-2 text-xs text-gray-700 max-w-0">
+      <td className="px-3 py-2 text-xs text-muted-foreground max-w-0">
         <div className="truncate" title={workflow.client}>
           {workflow.client}
         </div>
@@ -77,7 +77,7 @@ export function WorkflowRow({ workflow }: WorkflowRowProps) {
             </div>
           </div>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground/70">-</span>
         )}
       </td>
 
