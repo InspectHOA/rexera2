@@ -41,7 +41,44 @@
 - [x] Task execution monitoring
 - [x] Notification tray
 - [x] User authentication UI
- 
+
+## Workflow Types
+
+### ✅ Payoff Workflows
+- [x] Payoff request processing
+- [x] Document generation
+- [x] Status tracking
+
+### ✅ Document Management
+- [x] File upload and storage
+- [x] Document versioning
+- [x] Document search and filtering
+- [x] Bulk document operations
+- [x] Document API integration
+
+### 🚧 HOA Document Acquisition
+- [x] Basic workflow structure
+- [ ] Document validation
+- [ ] Automated follow-up
+- [ ] Quality assurance checks
+
+### 🚧 Municipal Lien Search
+- [x] Basic workflow structure
+- [ ] Multi-jurisdiction support
+- [ ] Result validation
+- [ ] Report generation
+
+### ❌ Title Search Workflows
+- [ ] Property research
+- [ ] Chain of title analysis
+- [ ] Exception identification
+- [ ] Title commitment generation
+
+### ❌ Survey Coordination
+- [ ] Surveyor assignment
+- [ ] Survey scheduling
+- [ ] Quality review
+- [ ] Delivery coordination
 
 ## Advanced Features
 

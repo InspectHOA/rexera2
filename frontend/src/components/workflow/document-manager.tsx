@@ -14,7 +14,9 @@ import {
   MoreHorizontal,
   Tag,
   Calendar,
-  User
+  User,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/useDocuments';
 import { DocumentVersionHistory } from './document-version-history';
@@ -39,12 +41,16 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
   const [sortBy, setSortBy] = useState<'created_at' | 'filename' | 'file_size_bytes'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedDocument, setExpandedDocument] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   const documents = (documentsData?.data || []) as DocumentWithRelations[];
   const error = queryError ? (queryError as Error).message : null;
 
-  // Filtered and sorted documents
-  const filteredDocuments = useMemo(() => {
+  // Filtered, sorted, and paginated documents
+  const { filteredDocuments, paginatedDocuments, totalPages, totalCount } = useMemo(() => {
     let filtered = documents.filter(doc => {
       const matchesSearch = doc.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -79,8 +85,22 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
       }
     });
 
-    return filtered;
-  }, [documents, searchTerm, filterType, filterStatus, sortBy, sortDirection]);
+    // Calculate pagination
+    const totalCount = filtered.length;
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedDocuments = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+    return {
+      filteredDocuments: filtered,
+      paginatedDocuments,
+      totalPages,
+      totalCount
+    };
+  }, [documents, searchTerm, filterType, filterStatus, sortBy, sortDirection, currentPage, itemsPerPage]);
+
+  // Reset to first page when filters change
+  const resetToFirstPage = () => setCurrentPage(1);
 
   // Selection handlers
   const toggleDocumentSelection = (docId: string) => {
@@ -94,6 +114,16 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
   };
 
   const selectAllDocuments = () => {
+    // Select all on current page
+    if (selectedDocuments.size === paginatedDocuments.length) {
+      setSelectedDocuments(new Set());
+    } else {
+      setSelectedDocuments(new Set(paginatedDocuments.map(doc => doc.id)));
+    }
+  };
+
+  const selectAllPages = () => {
+    // Select all documents across all pages
     if (selectedDocuments.size === filteredDocuments.length) {
       setSelectedDocuments(new Set());
     } else {
@@ -199,7 +229,10 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                resetToFirstPage();
+              }}
               placeholder="Search documents by name or tags..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -208,7 +241,10 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
           <div className="flex gap-2">
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
+              onChange={(e) => {
+                setFilterType(e.target.value as any);
+                resetToFirstPage();
+              }}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="ALL">All Types</option>
@@ -218,7 +254,10 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
             
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => {
+                setFilterStatus(e.target.value as any);
+                resetToFirstPage();
+              }}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="ALL">All Status</option>
@@ -258,39 +297,71 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
           </div>
         )}
 
-        {/* Sort Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        {/* Sort Controls and Pagination Info */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
             <button
               onClick={selectAllDocuments}
               className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900"
             >
-              {selectedDocuments.size === filteredDocuments.length ? (
+              {selectedDocuments.size === paginatedDocuments.length && paginatedDocuments.length > 0 ? (
                 <CheckSquare className="h-4 w-4" />
               ) : (
                 <Square className="h-4 w-4" />
               )}
-              <span>Select All</span>
+              <span>Select Page ({paginatedDocuments.length})</span>
             </button>
+            
+            {totalPages > 1 && selectedDocuments.size < filteredDocuments.length && (
+              <button
+                onClick={selectAllPages}
+                className="text-sm text-primary-600 hover:text-primary-900"
+              >
+                Select All {totalCount} Documents
+              </button>
+            )}
+            
+            <div className="text-sm text-gray-500">
+              Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
+            </div>
           </div>
           
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <span>Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-sm border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="created_at">Date Created</option>
-              <option value="filename">Name</option>
-              <option value="file_size_bytes">Size</option>
-            </select>
-            <button
-              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              {sortDirection === 'asc' ? '↑' : '↓'}
-            </button>
+          <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <div className="flex items-center space-x-2">
+              <span>Per page:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="text-sm border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <span>Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="text-sm border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="created_at">Date Created</option>
+                <option value="filename">Name</option>
+                <option value="file_size_bytes">Size</option>
+              </select>
+              <button
+                onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                {sortDirection === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -306,8 +377,9 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredDocuments.map((document) => (
+        <div className="space-y-6">
+          <div className="space-y-3">
+            {paginatedDocuments.map((document) => (
             <div key={document.id} className="space-y-3">
               <div className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
                 <button
@@ -418,6 +490,92 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
               )}
             </div>
           ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+              <div className="flex flex-1 justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of{' '}
+                    <span className="font-medium">{totalCount}</span> documents
+                  </p>
+                </div>
+                <div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        // Show first page, last page, current page, and 2 pages on each side of current
+                        return page === 1 || 
+                               page === totalPages || 
+                               Math.abs(page - currentPage) <= 2;
+                      })
+                      .map((page, index, array) => {
+                        // Add ellipsis if there's a gap
+                        const showEllipsisBefore = index > 0 && array[index - 1] < page - 1;
+                        
+                        return (
+                          <div key={page} className="flex items-center">
+                            {showEllipsisBefore && (
+                              <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
+                                ...
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                                page === currentPage
+                                  ? 'z-10 bg-primary-600 text-white focus:ring-primary-600'
+                                  : 'text-gray-900'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
