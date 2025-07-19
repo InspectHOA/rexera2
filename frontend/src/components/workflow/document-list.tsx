@@ -2,6 +2,7 @@
 
 import { FileText, Download, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/useDocuments';
+import { DocumentTagEditor } from './document-tag-editor';
 import type { Document } from '@rexera/shared';
 
 interface DocumentListProps {
@@ -107,6 +108,15 @@ export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProp
             <p className="text-xs text-gray-500">
               {formatFileSize(document.file_size_bytes || 0)} • {new Date(document.created_at).toLocaleDateString()}
             </p>
+            <div className="mt-2">
+              <DocumentTagEditor
+                document={document}
+                inline={true}
+                onTagsUpdated={(updatedDocument) => {
+                  // Document list will be automatically updated by React Query
+                }}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">

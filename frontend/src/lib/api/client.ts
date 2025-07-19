@@ -759,6 +759,20 @@ export const documentsApi = {
   },
 };
 
+// Tags API functions
+export const tagsApi = {
+  async list(): Promise<string[]> {
+    const result = await apiRequest<{ data: string[] }>('/tags');
+    return result.data;
+  },
+
+  async search(query: string): Promise<string[]> {
+    const params = new URLSearchParams({ q: query });
+    const result = await apiRequest<{ data: string[] }>(`/tags/search?${params}`);
+    return result.data;
+  },
+};
+
 // Export main API object
 export const api = {
   workflows: workflowsApi,
@@ -769,6 +783,7 @@ export const api = {
   incomingEmail: incomingEmailApi,
   communications: communicationsApi,
   documents: documentsApi,
+  tags: tagsApi,
   health: healthApi,
 };
 

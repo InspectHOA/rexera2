@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/useDocuments';
 import { DocumentVersionHistory } from './document-version-history';
+import { DocumentTagEditor } from './document-tag-editor';
 import type { Document, DocumentWithRelations } from '@rexera/shared';
 
 interface DocumentManagerProps {
@@ -429,21 +430,15 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                     )}
                   </div>
                   
-                  {document.tags.length > 0 && (
-                    <div className="flex items-center gap-1 mt-2">
-                      <Tag className="h-3 w-3 text-gray-400" />
-                      <div className="flex gap-1">
-                        {document.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <div className="mt-2">
+                    <DocumentTagEditor
+                      document={document}
+                      inline={true}
+                      onTagsUpdated={(updatedDocument) => {
+                        // Document list will be automatically updated by React Query
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
