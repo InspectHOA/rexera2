@@ -31,13 +31,14 @@ if (process.env.NODE_ENV !== 'test') {
 documents.get('/', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const queryParams = c.req.query();
     
     // Validate query parameters
@@ -160,13 +161,14 @@ documents.get('/', async (c) => {
 documents.post('/', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const body = await c.req.json();
 
     // Validate request body
@@ -241,13 +243,14 @@ documents.post('/', async (c) => {
 documents.get('/:id', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const id = c.req.param('id');
     const include = c.req.query('include');
 
@@ -308,13 +311,14 @@ documents.get('/:id', async (c) => {
 documents.patch('/:id', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const id = c.req.param('id');
     const body = await c.req.json();
 
@@ -401,19 +405,20 @@ documents.patch('/:id', async (c) => {
 documents.delete('/:id', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const id = c.req.param('id');
 
     // First, verify document exists and user has access
     let documentQuery = supabase
       .from('documents')
-      .select('id, workflow_id, url, workflows!workflow_id(client_id)')
+      .select('id, workflow_id, url, metadata, workflows!workflow_id(client_id)')
       .eq('id', id)
       .single();
 
@@ -421,7 +426,7 @@ documents.delete('/:id', async (c) => {
     if (companyFilter) {
       documentQuery = supabase
         .from('documents')
-        .select('id, workflow_id, url, workflows!workflow_id(client_id)')
+        .select('id, workflow_id, url, metadata, workflows!workflow_id(client_id)')
         .eq('id', id)
         .eq('workflows.client_id', companyFilter)
         .single();
@@ -436,24 +441,38 @@ documents.delete('/:id', async (c) => {
       }, 404 as any);
     }
 
-    // Delete the document record
+    // Delete the actual file from storage if it exists
+    const storagePath = document.metadata?.storage_path;
+    if (storagePath) {
+      try {
+        const { error: storageError } = await supabase.storage
+          .from('workflow-documents')
+          .remove([storagePath]);
+          
+        if (storageError) {
+          console.warn('Failed to delete file from storage:', storageError);
+          // Continue with database deletion even if storage deletion fails
+        }
+      } catch (storageErr) {
+        console.warn('Error during storage deletion:', storageErr);
+        // Continue with database deletion even if storage deletion fails
+      }
+    }
+
+    // Delete the document record from database
     const { error } = await supabase
       .from('documents')
       .delete()
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting document:', error);
+      console.error('Error deleting document from database:', error);
       return c.json({
         success: false,
         error: 'Failed to delete document',
         details: error.message,
       }, 500 as any);
     }
-
-    // Note: In a production system, you would also delete the actual file
-    // from your storage service (e.g., Supabase Storage, AWS S3, etc.)
-    // For now, we just delete the database record
 
     return c.json({
       success: true,
@@ -476,13 +495,14 @@ documents.delete('/:id', async (c) => {
 documents.post('/:id/versions', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const id = c.req.param('id');
     const body = await c.req.json();
 
@@ -565,19 +585,146 @@ documents.post('/:id/versions', async (c) => {
 });
 
 /**
+ * POST /api/documents/upload
+ * Upload a file and create document record
+ */
+documents.post('/upload', async (c) => {
+  try {
+    const supabase = createServerClient();
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
+
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const workflowId = formData.get('workflow_id') as string;
+    const documentType = (formData.get('document_type') as string) || 'WORKING';
+
+    if (!file || !workflowId) {
+      return c.json({
+        success: false,
+        error: 'File and workflow_id are required',
+      }, 400 as any);
+    }
+
+    // Verify workflow exists and user has access
+    const companyFilter = getCompanyFilter(user);
+    let workflowQuery = supabase
+      .from('workflows')
+      .select('id, client_id, title')
+      .eq('id', workflowId);
+
+    if (companyFilter) {
+      workflowQuery = workflowQuery.eq('client_id', companyFilter);
+    }
+    
+    const { data: workflow, error: workflowError } = await workflowQuery.single();
+
+    if (workflowError || !workflow) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found or access denied',
+      }, 404 as any);
+    }
+
+    // Generate unique file path
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const storagePath = `${workflowId}/${fileName}`;
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('workflow-documents')
+      .upload(storagePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return c.json({
+        success: false,
+        error: 'File upload failed',
+        details: uploadError.message,
+      }, 500 as any);
+    }
+
+    // Get public URL for the uploaded file
+    const { data: urlData } = supabase.storage
+      .from('workflow-documents')
+      .getPublicUrl(storagePath);
+
+    // Create document record
+    const { data: document, error: dbError } = await supabase
+      .from('documents')
+      .insert({
+        workflow_id: workflowId,
+        filename: file.name,
+        url: urlData.publicUrl,
+        file_size_bytes: file.size,
+        mime_type: file.type,
+        document_type: documentType,
+        upload_source: 'USER_UPLOAD',
+        status: 'COMPLETED',
+        metadata: {
+          original_name: file.name,
+          uploaded_at: new Date().toISOString(),
+          storage_path: storagePath,
+        },
+        created_by: user.id,
+      })
+      .select('*')
+      .single();
+
+    if (dbError) {
+      // Clean up uploaded file if database insert fails
+      await supabase.storage
+        .from('workflow-documents')
+        .remove([storagePath]);
+        
+      return c.json({
+        success: false,
+        error: 'Failed to create document record',
+        details: dbError.message,
+      }, 500 as any);
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        document: document as Document,
+        uploadUrl: urlData.publicUrl,
+      },
+    }, 201 as any);
+
+  } catch (error) {
+    console.error('Unexpected error in POST /api/documents/upload:', error);
+    return c.json({
+      success: false,
+      error: 'Internal server error',
+    }, 500 as any);
+  }
+});
+
+/**
  * GET /api/documents/by-workflow/:workflowId
  * Get all documents for a specific workflow
  */
 documents.get('/by-workflow/:workflowId', async (c) => {
   try {
     const supabase = createServerClient();
-    const user = c.get('user') as AuthUser || { 
-      id: 'test-user', 
-      email: 'test@example.com', 
-      user_type: 'hil_user' as const, 
-      role: 'HIL', 
-      company_id: undefined 
-    };
+    const user = c.get('user') as AuthUser;
+    
+    if (!user) {
+      return c.json({
+        success: false,
+        error: 'Authentication required',
+      }, 401 as any);
+    }
     const workflowId = c.req.param('workflowId');
     const queryParams = c.req.query();
     

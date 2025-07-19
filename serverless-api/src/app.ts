@@ -18,7 +18,7 @@ import {
   errorHandlerMiddleware,
   corsMiddleware,
 } from './middleware';
-import { agents, workflows, taskExecutions, communications, documents } from './routes';
+import { agents, workflows, taskExecutions, communications, documents, tags } from './routes';
 
 const app = new Hono();
 
@@ -65,22 +65,17 @@ app.get('/api/openapi.json', (c) => {
 });
 
 // ============================================================================
-// CONDITIONAL AUTHENTICATION (Production vs Development)
+// AUTHENTICATION MIDDLEWARE (Always Applied)
 // ============================================================================
 
-// Only apply authentication in production or when SKIP_AUTH is not set
-const shouldSkipAuth = process.env.SKIP_AUTH === 'true';
-
-if (!shouldSkipAuth) {
-  console.log('🔐 Applying authentication middleware to protected routes');
-  app.use('/api/agents/*', authMiddleware);
-  app.use('/api/workflows/*', authMiddleware);
-  app.use('/api/taskExecutions/*', authMiddleware);
-  app.use('/api/communications/*', authMiddleware);
-  app.use('/api/documents/*', authMiddleware);
-} else {
-  console.log('⚠️ SKIP_AUTH mode enabled - authentication disabled for development');
-}
+// Always apply auth middleware - it will handle SKIP_AUTH mode internally
+console.log(`🔐 Applying authentication middleware (SKIP_AUTH: ${process.env.SKIP_AUTH})`);
+app.use('/api/agents/*', authMiddleware);
+app.use('/api/workflows/*', authMiddleware);
+app.use('/api/taskExecutions/*', authMiddleware);
+app.use('/api/communications/*', authMiddleware);
+app.use('/api/documents/*', authMiddleware);
+app.use('/api/tags/*', authMiddleware);
 
 // Mount route modules
 app.route('/api/agents', agents);
@@ -88,6 +83,7 @@ app.route('/api/workflows', workflows);
 app.route('/api/taskExecutions', taskExecutions);
 app.route('/api/communications', communications);
 app.route('/api/documents', documents);
+app.route('/api/tags', tags);
 
 // ============================================================================
 // ERROR HANDLING

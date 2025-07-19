@@ -1,98 +1,43 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSupabase } from '@/lib/supabase/provider';
 import { Upload, Loader2 } from 'lucide-react';
+import { useDocumentUpload } from '@/lib/hooks/useDocuments';
+import type { Document } from '@rexera/shared';
 
 interface FileUploadProps {
   workflowId: string;
-  taskId?: string;
-  onUploadComplete?: (document: any) => void;
+  onUploadComplete?: (document: Document) => void;
   className?: string;
 }
 
-export function FileUpload({ workflowId, taskId, onUploadComplete, className = '' }: FileUploadProps) {
-  const { supabase } = useSupabase();
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+export function FileUpload({ workflowId, onUploadComplete, className = '' }: FileUploadProps) {
+  const { uploadFile, uploadProgress, isUploading, error: uploadError, resetUpload } = useDocumentUpload();
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const error = uploadError;
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     for (const file of files) {
-      await uploadFile(file);
+      await handleUpload(file);
     }
   };
 
-  const uploadFile = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
-      setUploading(true);
-      setError(null);
-      setUploadProgress(0);
-
-      // Generate unique file path
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const storagePath = `${workflowId}/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('workflow-documents')
-        .upload(storagePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-
-      setUploadProgress(50);
-
-      // Create document record in database
-      const { data: document, error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          workflow_id: workflowId,
-          task_id: taskId || null,
-          filename: file.name,
-          storage_path: storagePath,
-          file_size_bytes: file.size,
-          mime_type: file.type,
-          document_type: 'WORKING',
-          upload_source: 'USER_UPLOAD',
-          status: 'PENDING',
-          metadata: {
-            original_name: file.name,
-            uploaded_at: new Date().toISOString(),
-          },
-        } as any)
-        .select()
-        .single();
-
-      if (dbError) {
-        // Clean up uploaded file if database insert fails
-        await supabase.storage
-          .from('workflow-documents')
-          .remove([storagePath]);
-        throw new Error(`Database error: ${dbError.message}`);
-      }
-
-      setUploadProgress(100);
-      onUploadComplete?.(document);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
+      const result = await uploadFile(file, workflowId, 'WORKING');
+      onUploadComplete?.(result.document);
+      
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    } catch (err) {
+      // Error is handled by the hook
+      console.error('Upload failed:', err);
     }
   };
 
@@ -102,7 +47,7 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
     const files = Array.from(event.dataTransfer.files);
     
     for (const file of files) {
-      await uploadFile(file);
+      await handleUpload(file);
     }
   };
 
@@ -120,7 +65,7 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
       <div
         className={`
           relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
-          ${uploading 
+          ${isUploading 
             ? 'border-primary-300 bg-primary-50' 
             : isDragOver 
               ? 'border-primary-400 bg-primary-50' 
@@ -130,7 +75,7 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => !uploading && fileInputRef.current?.click()}
+        onClick={() => !isUploading && fileInputRef.current?.click()}
       >
         <input
           ref={fileInputRef}
@@ -138,11 +83,11 @@ export function FileUpload({ workflowId, taskId, onUploadComplete, className = '
           multiple
           accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
           onChange={handleFileSelect}
-          disabled={uploading}
+          disabled={isUploading}
           className="hidden"
         />
 
-        {uploading ? (
+        {isUploading ? (
           <div className="space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary-600 mx-auto" />
             <p className="text-sm font-medium text-primary-700">

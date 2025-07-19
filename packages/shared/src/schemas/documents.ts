@@ -75,7 +75,7 @@ export const DocumentFiltersSchema = z.object({
   include: z.string().optional(), // Comma-separated list of related data to include
   sortBy: z.enum(['created_at', 'updated_at', 'filename', 'file_size_bytes']).default('created_at'),
   sortDirection: z.enum(['asc', 'desc']).default('desc'),
-});
+}).default({});
 
 // Create document version schema
 export const CreateDocumentVersionSchema = z.object({
@@ -100,7 +100,11 @@ export const DocumentWithRelationsSchema = DocumentSchema.extend({
     email: z.string().email(),
     user_type: z.string(),
   }).optional(),
-});
+}).transform(data => ({
+  ...data,
+  // Ensure created_by_user is available
+  created_by_user: data.created_by_user || undefined,
+}));
 
 // Type exports
 export type Document = z.infer<typeof DocumentSchema>;

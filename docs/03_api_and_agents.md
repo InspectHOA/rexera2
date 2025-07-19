@@ -12,12 +12,34 @@ The API is designed around standard RESTful principles:
 *   **Endpoints**: Standard HTTP methods (`GET`, `POST`, `PUT`, `DELETE`) are used to interact with these resources.
 *   **Validation**: [Zod](https://zod.dev/) is used for rigorous schema validation on all incoming requests and outgoing responses, ensuring data integrity.
 
-### Example API Call
+### Core API Resources
+
+The API provides access to the following core resources:
+
+- **`/api/workflows`** - Create and manage business process instances
+- **`/api/tasks`** - Track task executions and status updates
+- **`/api/documents`** - Handle file uploads, versioning, and deliverables
+- **`/api/tags`** - Manage predefined document tags for organization
+- **`/api/communications`** - Email, phone, and internal message tracking
+- **`/api/agents`** - Monitor AI agent status and performance
+
+### Example API Calls
 
 ```bash
-# Example: Fetching in-progress workflows
+# Fetching in-progress workflows
 curl -X GET "https://api.rexera.com/workflows?status=IN_PROGRESS&limit=20" \
   -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
+
+# Getting predefined document tags
+curl -X GET "https://api.rexera.com/tags" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
+
+# Uploading a document with tags
+curl -X POST "https://api.rexera.com/documents/upload" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -F "file=@contract.pdf" \
+  -F "workflow_id=abc123" \
+  -F "document_type=DELIVERABLE"
 ```
 
 **Example Request Body Schema (Zod):**
@@ -29,6 +51,12 @@ z.object({
   payload: z.object({
     // ... workflow specific data
   })
+})
+
+// For document tagging
+z.object({
+  tags: z.array(z.string()).max(10).optional(),
+  document_type: z.enum(['WORKING', 'DELIVERABLE'])
 })
 ```
 
