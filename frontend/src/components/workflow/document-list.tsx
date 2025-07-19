@@ -1,64 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSupabase } from '@/lib/supabase/provider';
 import { FileText, Download, Trash2, Loader2, AlertCircle } from 'lucide-react';
-
-interface Document {
-  id: string;
-  filename: string;
-  url: string;
-  file_size_bytes: number;
-  mime_type: string;
-  document_type: string;
-  created_at: string;
-  created_by: string;
-}
+import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/useDocuments';
+import type { Document } from '@rexera/shared';
 
 interface DocumentListProps {
   workflowId: string;
-  taskId?: string;
   onDocumentDeleted?: () => void;
 }
 
-export function DocumentList({ workflowId, taskId, onDocumentDeleted }: DocumentListProps) {
-  const { supabase } = useSupabase();
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProps) {
+  const { data: documentsData, isLoading: loading, error: queryError } = useDocumentsByWorkflow(workflowId, {
+    include: ['created_by_user']
+  });
+  const { deleteDocument } = useDocumentMutations();
 
-  const loadDocuments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      let query = supabase
-        .from('documents')
-        .select('*')
-        .eq('workflow_id', workflowId)
-        .order('created_at', { ascending: false });
-
-      if (taskId) {
-        query = query.eq('task_id', taskId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      setDocuments((data || []) as any);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load documents');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDocuments();
-  }, [workflowId, taskId]);
+  const documents = (documentsData?.data || []) as Document[];
+  const error = queryError ? (queryError as Error).message : null;
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -95,29 +53,7 @@ export function DocumentList({ workflowId, taskId, onDocumentDeleted }: Document
     }
 
     try {
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', document.id);
-
-      if (dbError) {
-        throw new Error(dbError.message);
-      }
-
-      // Delete from storage if storage_path exists
-      if (document.url && document.url.includes('workflow-documents/')) {
-        const pathParts = document.url.split('workflow-documents/');
-        if (pathParts.length > 1) {
-          const storagePath = pathParts[1];
-          await supabase.storage
-            .from('workflow-documents')
-            .remove([storagePath]);
-        }
-      }
-
-      // Refresh the list
-      await loadDocuments();
+      await deleteDocument.mutateAsync(document.id);
       onDocumentDeleted?.();
     } catch (err) {
       alert('Failed to delete document: ' + (err instanceof Error ? err.message : 'Unknown error'));

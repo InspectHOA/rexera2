@@ -65,22 +65,16 @@ app.get('/api/openapi.json', (c) => {
 });
 
 // ============================================================================
-// CONDITIONAL AUTHENTICATION (Production vs Development)
+// AUTHENTICATION MIDDLEWARE (Always Applied)
 // ============================================================================
 
-// Only apply authentication in production or when SKIP_AUTH is not set
-const shouldSkipAuth = process.env.SKIP_AUTH === 'true';
-
-if (!shouldSkipAuth) {
-  console.log('🔐 Applying authentication middleware to protected routes');
-  app.use('/api/agents/*', authMiddleware);
-  app.use('/api/workflows/*', authMiddleware);
-  app.use('/api/taskExecutions/*', authMiddleware);
-  app.use('/api/communications/*', authMiddleware);
-  app.use('/api/documents/*', authMiddleware);
-} else {
-  console.log('⚠️ SKIP_AUTH mode enabled - authentication disabled for development');
-}
+// Always apply auth middleware - it will handle SKIP_AUTH mode internally
+console.log(`🔐 Applying authentication middleware (SKIP_AUTH: ${process.env.SKIP_AUTH})`);
+app.use('/api/agents/*', authMiddleware);
+app.use('/api/workflows/*', authMiddleware);
+app.use('/api/taskExecutions/*', authMiddleware);
+app.use('/api/communications/*', authMiddleware);
+app.use('/api/documents/*', authMiddleware);
 
 // Mount route modules
 app.route('/api/agents', agents);
