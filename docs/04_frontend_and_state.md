@@ -36,6 +36,13 @@ The UI is built from a set of reusable components, primarily using [shadcn/ui](h
 *   `AgentTaskInterfaceFactory`: A dynamic component that renders the appropriate, specialized UI for a given agent when a HIL operator needs to handle a task. For example, it will show a document viewer and data entry form for an `Iris` task, or an email editor for a `Mia` task.
 *   `TaskResolutionPanel`: A generic component embedded within the agent interfaces that provides a standardized way for HIL operators to resolve a task (e.g., complete, retry, escalate).
 
+**Document Management Components:**
+*   `DocumentManager`: Advanced document management with pagination, bulk operations, filtering, and inline tag editing.
+*   `DocumentList`: Simple document listing for basic workflows with essential operations.
+*   `FileUploadWithTags`: Enhanced file upload with drag-and-drop, multi-file selection, and predefined tag assignment.
+*   `PredefinedTagSelector`: Reusable tag selection component with search, keyboard navigation, and validation.
+*   `DocumentTagEditor`: Inline and full-mode tag editing for existing documents with real-time updates.
+
 **Notification System Components:**
 *   `NotificationProvider`: Global provider that initializes real-time toast notifications
 *   Uses `usePersistentNotifications` for 24-hour notification persistence
