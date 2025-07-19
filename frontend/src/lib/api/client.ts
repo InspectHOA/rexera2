@@ -762,14 +762,13 @@ export const documentsApi = {
 // Tags API functions
 export const tagsApi = {
   async list(): Promise<string[]> {
-    const result = await apiRequest<{ data: string[] }>('/tags');
-    return result.data;
+    return apiRequest<string[]>('/tags');
   },
 
   async search(query: string): Promise<string[]> {
     const params = new URLSearchParams({ q: query });
-    const result = await apiRequest<{ data: string[] }>(`/tags/search?${params}`);
-    return result.data;
+    const result = await apiRequest<string[]>(`/tags/search?${params}`);
+    return result;
   },
 };
 
