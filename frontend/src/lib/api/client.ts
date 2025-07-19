@@ -772,6 +772,17 @@ export const tagsApi = {
   },
 };
 
+// Clients API functions
+export const clientsApi = {
+  async list(): Promise<{ id: string; name: string; domain?: string }[]> {
+    return apiRequest('/clients');
+  },
+
+  async byId(id: string): Promise<{ id: string; name: string; domain?: string }> {
+    return apiRequest(`/clients/${id}`);
+  },
+};
+
 // Export main API object
 export const api = {
   workflows: workflowsApi,
@@ -783,6 +794,7 @@ export const api = {
   communications: communicationsApi,
   documents: documentsApi,
   tags: tagsApi,
+  clients: clientsApi,
   health: healthApi,
 };
 

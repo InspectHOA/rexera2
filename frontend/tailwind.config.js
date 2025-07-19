@@ -112,7 +112,7 @@ module.exports = {
         },
       },
       backgroundImage: {
-        'rexera-gradient': 'linear-gradient(to bottom right, white, #E6F2F2, #D9E9E9)',
+        'rexera-gradient': 'linear-gradient(to bottom right, hsl(var(--background)), hsl(var(--muted)/0.5), hsl(var(--muted)))',
         'noise-texture': 'url(https://www.transparenttextures.com/patterns/noisy-grid.png)',
       },
       animation: {

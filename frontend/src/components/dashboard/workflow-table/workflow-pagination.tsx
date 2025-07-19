@@ -60,14 +60,14 @@ export function WorkflowPagination({
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
+    <div className="flex items-center justify-between px-4 py-3 bg-background border-t border-border">
       {/* Results info */}
       <div className="flex-1 flex justify-between items-center">
         <div>
-          <p className="text-sm text-gray-700">
-            Showing <span className="font-medium">{startItem}</span> to{' '}
-            <span className="font-medium">{endItem}</span> of{' '}
-            <span className="font-medium">{total}</span> results
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{startItem}</span> to{' '}
+            <span className="font-medium text-foreground">{endItem}</span> of{' '}
+            <span className="font-medium text-foreground">{total}</span> results
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export function WorkflowPagination({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground bg-background border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="sr-only">Previous</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,14 +90,14 @@ export function WorkflowPagination({
             {getVisiblePages().map((page, index) => (
               <span key={index}>
                 {page === '...' ? (
-                  <span className="px-3 py-2 text-sm text-gray-500">...</span>
+                  <span className="px-3 py-2 text-sm text-muted-foreground">...</span>
                 ) : (
                   <button
                     onClick={() => onPageChange(page as number)}
-                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       currentPage === page
-                        ? 'bg-blue-500 text-white'
-                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground bg-background border border-input hover:bg-muted'
                     }`}
                   >
                     {page}
@@ -111,7 +111,7 @@ export function WorkflowPagination({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground bg-background border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="sr-only">Next</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

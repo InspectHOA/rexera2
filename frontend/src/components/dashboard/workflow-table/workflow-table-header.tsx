@@ -9,61 +9,61 @@ interface WorkflowTableHeaderProps {
 
 export function WorkflowTableHeader({ onSort, getSortIndicator }: WorkflowTableHeaderProps) {
   return (
-    <thead className="bg-slate-50/80">
+    <thead className="bg-muted/50">
       <tr>
         <th 
           onClick={() => onSort('id')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          ID <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('id')}</span>
+          ID <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('id')}</span>
         </th>
         <th 
           onClick={() => onSort('created_at')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          Created <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('created_at')}</span>
+          Created <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('created_at')}</span>
         </th>
         <th 
           onClick={() => onSort('type')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          Type <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('type')}</span>
+          Type <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('type')}</span>
         </th>
         <th 
           onClick={() => onSort('property')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          Property <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('property')}</span>
+          Property <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('property')}</span>
         </th>
         <th 
           onClick={() => onSort('client')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          Client <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('client')}</span>
+          Client <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('client')}</span>
         </th>
         <th 
           onClick={() => onSort('status')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          Status <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('status')}</span>
+          Status <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('status')}</span>
         </th>
         <th 
           onClick={() => onSort('interrupts')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          Interrupts <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('interrupts')}</span>
+          Interrupts <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('interrupts')}</span>
         </th>
         <th 
           onClick={() => onSort('due')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          DUE <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('due')}</span>
+          DUE <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('due')}</span>
         </th>
         <th 
           onClick={() => onSort('due')} 
-          className="px-3 py-1.5 text-left border-b border-slate-200/50 font-normal text-[9px] text-slate-400 uppercase tracking-wider cursor-pointer"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
-          ETA <span className="ml-1.5 text-slate-300 text-[8px]">{getSortIndicator('due')}</span>
+          ETA <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('due')}</span>
         </th>
       </tr>
     </thead>

@@ -9,6 +9,7 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
@@ -17,6 +18,26 @@ const customJestConfig = {
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
+  ],
+  projects: [
+    {
+      displayName: 'components',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/src/components/**/*.test.tsx'],
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+    },
+    {
+      displayName: 'api',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/src/app/api/**/*.test.ts'],
+      setupFilesAfterEnv: ['<rootDir>/jest.api.setup.js'],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+    },
   ],
 }
 
