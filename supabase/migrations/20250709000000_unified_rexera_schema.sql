@@ -79,6 +79,24 @@ CREATE TABLE user_profiles (
     )
 );
 
+-- Create a development user in auth.users for SKIP_AUTH mode
+-- This maintains referential integrity while supporting development
+INSERT INTO auth.users (
+    id,
+    email,
+    created_at,
+    updated_at,
+    email_confirmed_at,
+    role
+) VALUES (
+    '284219ff-3a1f-4e86-9ea4-3536f940451f',
+    'admin@rexera.com',
+    NOW(),
+    NOW(),
+    NOW(),
+    'authenticated'
+) ON CONFLICT (id) DO NOTHING;
+
 -- =====================================================
 -- 3. AI AGENTS
 -- =====================================================

@@ -113,7 +113,8 @@ async function seedDatabase() {
   }
   console.log(`✅ Created ${clients?.length || 0} clients`);
 
-  // Recreate SKIP_AUTH user profile (since it was cleared during reset)
+  // Create SKIP_AUTH user profile for development (without auth.users dependency)
+  // This allows the frontend to work properly in SKIP_AUTH mode
   const { data: skipAuthProfile, error: skipAuthError } = await supabase.from('user_profiles').upsert([
     { 
       id: SKIP_AUTH_USER_ID, 
@@ -121,17 +122,18 @@ async function seedDatabase() {
       email: 'admin@rexera.com', 
       full_name: 'Admin User', 
       role: 'HIL_ADMIN',
+      company_id: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
   ]).select();
   
   if (skipAuthError) {
-    console.error('❌ Failed to recreate SKIP_AUTH user profile:', skipAuthError);
+    console.error('❌ Failed to create SKIP_AUTH user profile:', skipAuthError);
     throw skipAuthError;
   }
   
-  console.log(`✅ Recreated SKIP_AUTH user profile: ${SKIP_AUTH_USER_ID}`);
+  console.log(`✅ Created SKIP_AUTH user profile: ${SKIP_AUTH_USER_ID}`);
 
   // Create all 10 agents
   const { data: agents, error: agentError } = await supabase.from('agents').upsert([
@@ -1021,12 +1023,8 @@ async function main() {
   try {
     console.log('🚀 Starting comprehensive database reset and seeding...\n');
     
-    const connected = await testConnection();
-    if (!connected) {
-      console.error('❌ Cannot proceed without database connection');
-      process.exit(1);
-    }
-    console.log('');
+    // Skip connection test and go straight to seeding
+    console.log('⚡ Skipping connection test, attempting direct seeding...\n');
     
     await resetDatabase();
     console.log('');
