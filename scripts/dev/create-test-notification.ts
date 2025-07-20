@@ -147,7 +147,7 @@ class CreateTestNotificationScript extends BaseScript {
         description: 'This is a test task to verify the notification system',
         sequence_order: 1,
         task_type: 'DOCUMENT_REVIEW',
-        status: 'AWAITING_REVIEW',
+        status: 'INTERRUPTED',
         interrupt_type: 'MANUAL_VERIFICATION',
         executor_type: 'HIL',
         priority: 'NORMAL',

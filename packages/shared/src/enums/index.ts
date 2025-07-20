@@ -10,8 +10,25 @@
 export type UserType = 'client_user' | 'hil_user';
 
 export type WorkflowType = 'MUNI_LIEN_SEARCH' | 'HOA_ACQUISITION' | 'PAYOFF_REQUEST';
-export type WorkflowStatus = 'PENDING' | 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'BLOCKED' | 'COMPLETED';
-export type TaskStatus = 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED';
+/**
+ * Workflow Status Definitions:
+ * - NOT_STARTED: Workflow created but not yet started
+ * - IN_PROGRESS: Workflow is actively being processed
+ * - BLOCKED: Something prevents both agents and HIL from completing workflow
+ * - WAITING_FOR_CLIENT: Workflow waiting for client response or action
+ * - COMPLETED: Workflow successfully finished
+ */
+export type WorkflowStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'BLOCKED' | 'WAITING_FOR_CLIENT' | 'COMPLETED';
+
+/**
+ * Task Status Definitions:
+ * - NOT_STARTED: Task created but not yet started
+ * - IN_PROGRESS: Task is actively being processed
+ * - INTERRUPT: Task requires human review or approval (replaces AWAITING_REVIEW)
+ * - COMPLETED: Task successfully finished
+ * - FAILED: Task failed and cannot proceed
+ */
+export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'COMPLETED' | 'FAILED';
 export type ExecutorType = 'AI' | 'HIL';
 export type SlaStatus = 'ON_TIME' | 'AT_RISK' | 'BREACHED';
 
@@ -78,16 +95,17 @@ export const PRIORITY_LEVELS = [
 ] as const;
 
 export const WORKFLOW_STATUSES = [
-  'PENDING',
+  'NOT_STARTED',
   'IN_PROGRESS',
-  'AWAITING_REVIEW', 
   'BLOCKED',
+  'WAITING_FOR_CLIENT',
   'COMPLETED'
 ] as const;
 
 export const TASK_STATUSES = [
-  'PENDING',
-  'AWAITING_REVIEW',
+  'NOT_STARTED',
+  'IN_PROGRESS',
+  'INTERRUPT',
   'COMPLETED',
   'FAILED'
 ] as const;

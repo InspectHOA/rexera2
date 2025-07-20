@@ -34,7 +34,7 @@ export const WorkflowSchema = z.object({
   workflow_type: z.enum(['MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF_REQUEST']),
   client_id: z.string().uuid(),
   title: z.string(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']),
+  status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'BLOCKED', 'WAITING_FOR_CLIENT', 'COMPLETED']),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
@@ -47,7 +47,7 @@ export const WorkflowSchema = z.object({
   tasks: z.array(z.object({
     id: z.string().uuid(),
     task_name: z.string(),
-    status: z.enum(['PENDING', 'RUNNING', 'COMPLETED', 'FAILED']),
+    status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED']),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime()
   })).optional()
@@ -77,7 +77,7 @@ export const WorkflowListResponseSchema = z.object({
 
 export const WorkflowQuerySchema = z.object({
   workflow_type: z.enum(['MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF_REQUEST']).optional(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED']).optional(),
+  status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'BLOCKED', 'WAITING_FOR_CLIENT', 'COMPLETED']).optional(),
   include: z.string().optional().describe('Comma-separated list: client,tasks'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -107,11 +107,11 @@ export const TaskExecutionSchema = z.object({
 
 export const TaskExecutionQuerySchema = z.object({
   workflowId: z.string().uuid(),
-  status: z.enum(['PENDING', 'RUNNING', 'COMPLETED', 'FAILED']).optional()
+  status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED']).optional()
 });
 
 export const UpdateTaskExecutionSchema = z.object({
-  status: z.enum(['PENDING', 'RUNNING', 'COMPLETED', 'FAILED']),
+  status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED']),
   error_message: z.string().optional()
 });
 

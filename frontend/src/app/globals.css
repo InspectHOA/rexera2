@@ -5,6 +5,12 @@
 /* Import Rexera Design System */
 @import './design-system.css';
 
+/* Global animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -276,7 +282,7 @@
     @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset;
   }
   
-  .status-pending {
+  .status-not-started {
     @apply bg-muted text-muted-foreground ring-border;
   }
   
@@ -284,12 +290,16 @@
     @apply bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-300/10;
   }
   
-  .status-awaiting-review {
+  .status-interrupt {
     @apply bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-950 dark:text-yellow-300 dark:ring-yellow-300/20;
   }
   
   .status-blocked {
     @apply bg-destructive/10 text-destructive ring-destructive/10;
+  }
+  
+  .status-waiting-for-client {
+    @apply bg-orange-50 text-orange-700 ring-orange-600/20 dark:bg-orange-950 dark:text-orange-300 dark:ring-orange-300/20;
   }
   
   .status-completed {

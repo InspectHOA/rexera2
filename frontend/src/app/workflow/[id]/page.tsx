@@ -10,7 +10,7 @@ import { TaskDetailView } from '@/components/workflow/task-detail-view';
 import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
 import { useWorkflow } from '@/lib/hooks/useWorkflows';
-import { formatWorkflowIdWithType } from '@rexera/shared';
+import { formatWorkflowIdWithType, type WorkflowStatus, type TaskStatus } from '@rexera/shared';
 import type { WorkflowData } from '@/types/workflow';
 import { api } from '@/lib/api/client';
 import { EmailInterface } from '@/components/agents/mia/email-interface';
@@ -48,8 +48,19 @@ export default function WorkflowDetailPage() {
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
   const [isStartingN8n, setIsStartingN8n] = useState(false);
   const [n8nError, setN8nError] = useState<string | null>(null);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
   const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
+  
+  // Track when we've initially loaded to prevent flashing
+  useEffect(() => {
+    if (!loading && (workflowData || error)) {
+      const timer = setTimeout(() => {
+        setHasInitiallyLoaded(true);
+      }, 300); // Small delay to ensure smooth transition
+      return () => clearTimeout(timer);
+    }
+  }, [loading, workflowData, error]);
 
   
   // Transform API data to component format
@@ -98,25 +109,25 @@ export default function WorkflowDetailPage() {
   }
 
   function getDisplayStatus(status: string) {
-    const statusMap: Record<string, string> = {
-      'PENDING': 'Pending',
+    const statusMap: Record<WorkflowStatus, string> = {
+      'NOT_STARTED': 'Not Started',
       'IN_PROGRESS': 'In Progress', 
-      'AWAITING_REVIEW': 'Awaiting Review',
-      'COMPLETED': 'Completed',
-      'BLOCKED': 'Blocked'
+      'BLOCKED': 'Blocked',
+      'WAITING_FOR_CLIENT': 'Waiting for Client',
+      'COMPLETED': 'Completed'
     };
-    return statusMap[status] || status;
+    return statusMap[status as WorkflowStatus] || status;
   }
 
   function getTaskStatus(status: string) {
-    const statusMap: Record<string, string> = {
+    const statusMap: Record<TaskStatus, string> = {
       'COMPLETED': 'completed',
-      'AWAITING_REVIEW': 'awaiting-review',
-      'PENDING': 'pending',
+      'INTERRUPT': 'interrupted',
+      'NOT_STARTED': 'pending',
       'IN_PROGRESS': 'pending',
-      'FAILED': 'awaiting-review'
+      'FAILED': 'interrupted'
     };
-    return statusMap[status] || 'pending';
+    return statusMap[status as TaskStatus] || 'pending';
   }
 
   function getAgentDisplay(task: any) {
@@ -140,10 +151,13 @@ export default function WorkflowDetailPage() {
   }
 
   function getTaskMeta(task: any) {
-    if (task.status === 'COMPLETED' && task.completed_at) {
+    const COMPLETED_STATUS: TaskStatus = 'COMPLETED';
+    const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
+    
+    if (task.status === COMPLETED_STATUS && task.completed_at) {
       return `Completed ${formatDateTime(task.completed_at)}`;
     }
-    if (task.status === 'AWAITING_REVIEW') {
+    if (task.status === INTERRUPT_STATUS) {
       return `Needs review • ${task.metadata?.failure_reason || 'Low confidence'}`;
     }
     if (task.due_date) {
@@ -189,10 +203,64 @@ export default function WorkflowDetailPage() {
     });
   }
 
-  if (loading) {
+  if (loading || !hasInitiallyLoaded) {
     return (
-      <div className="flex justify-center items-center h-96 text-muted-foreground">
-        Loading workflow details...
+      <div className="min-h-[600px] flex items-center justify-center">
+        <div className="text-center space-y-6">
+          {/* Animated workflow icon */}
+          <div className="relative">
+            <div className="w-16 h-16 mx-auto relative">
+              {/* Outer spinning ring */}
+              <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+              
+              {/* Inner pulsing circle */}
+              <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse"></div>
+              
+              {/* Center icon */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Play className="w-6 h-6 text-primary animate-pulse" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Loading text with typewriter effect */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-foreground animate-pulse">
+              Loading Workflow
+            </h3>
+            <div className="flex items-center justify-center space-x-1">
+              <span className="text-sm text-muted-foreground">Preparing workflow details</span>
+              <div className="flex space-x-0.5">
+                <div className="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
+                <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Progress indicators */}
+          <div className="space-y-3 w-64">
+            {[
+              { label: 'Loading workflow data', delay: '0s' },
+              { label: 'Fetching task details', delay: '0.5s' },
+              { label: 'Preparing interface', delay: '1s' }
+            ].map((item, index) => (
+              <div key={index} className="flex items-center space-x-3">
+                <div 
+                  className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
+                  style={{ animationDelay: item.delay }}
+                ></div>
+                <span 
+                  className="text-xs text-muted-foreground animate-fade-in"
+                  style={{ animationDelay: item.delay }}
+                >
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

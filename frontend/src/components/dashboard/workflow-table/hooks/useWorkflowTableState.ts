@@ -58,7 +58,7 @@ export function useWorkflowTableState() {
     // Status filter - map frontend values to backend values
     if (filterStatus) {
       const statusMap: Record<string, string> = {
-        'urgent': 'BLOCKED,AWAITING_REVIEW', // Map to multiple statuses
+        'urgent': 'BLOCKED,INTERRUPT', // Map to multiple statuses (note: workflows don't have INTERRUPT, but tasks do)
         'progress': 'IN_PROGRESS',
         'completed': 'COMPLETED'
       };

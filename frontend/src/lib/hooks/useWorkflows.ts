@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/lib/supabase/provider';
 import { api } from '@/lib/api/client';
+import { type WorkflowStatus, type TaskStatus } from '@rexera/shared';
 import type { WorkflowData, TaskExecution } from '@/types/workflow';
 
 interface WorkflowFilters {
@@ -67,16 +68,20 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
       const today = new Date().toDateString();
       const calculatedStats = {
         total: pagination.total,
-        active: workflows.filter((w: WorkflowData) => 
-          ['IN_PROGRESS', 'PENDING', 'AWAITING_REVIEW'].includes(w.status)
+        active: workflows.filter((w: WorkflowData) => {
+          const activeStatuses: WorkflowStatus[] = ['IN_PROGRESS', 'NOT_STARTED', 'BLOCKED', 'WAITING_FOR_CLIENT'];
+          return activeStatuses.includes(w.status as WorkflowStatus);
+        }).length,
+        interrupts: workflows.filter((w: WorkflowData) => {
+          const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
+          return (w.tasks || w.task_executions || []).some((t: TaskExecution) => t.status === INTERRUPT_STATUS);
+        }
         ).length,
-        interrupts: workflows.filter((w: WorkflowData) => 
-          (w.tasks || w.task_executions || []).some((t: TaskExecution) => t.status === 'AWAITING_REVIEW')
-        ).length,
-        completedToday: workflows.filter((w: WorkflowData) => 
-          w.status === 'COMPLETED' && 
-          w.updated_at && new Date(w.updated_at).toDateString() === today
-        ).length
+        completedToday: workflows.filter((w: WorkflowData) => {
+          const COMPLETED_STATUS: WorkflowStatus = 'COMPLETED';
+          return w.status === COMPLETED_STATUS && 
+            w.updated_at && new Date(w.updated_at).toDateString() === today;
+        }).length
       };
       setStats(calculatedStats);
     }

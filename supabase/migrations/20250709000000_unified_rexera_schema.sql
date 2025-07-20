@@ -21,8 +21,8 @@ CREATE TYPE user_type AS ENUM ('client_user', 'hil_user');
 
 -- Workflow and task execution types
 CREATE TYPE workflow_type AS ENUM ('MUNI_LIEN_SEARCH', 'HOA_ACQUISITION', 'PAYOFF_REQUEST');
-CREATE TYPE workflow_status AS ENUM ('PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW','BLOCKED', 'COMPLETED');
-CREATE TYPE task_status AS ENUM ('PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED');
+CREATE TYPE workflow_status AS ENUM ('NOT_STARTED', 'IN_PROGRESS','BLOCKED', 'WAITING_FOR_CLIENT', 'COMPLETED');
+CREATE TYPE task_status AS ENUM ('NOT_STARTED', 'IN_PROGRESS',  'INTERRUPT', 'COMPLETED', 'FAILED');
 CREATE TYPE executor_type AS ENUM ('AI', 'HIL');
 CREATE TYPE sla_status AS ENUM ('ON_TIME', 'AT_RISK', 'BREACHED');
 CREATE TYPE interrupt_type AS ENUM ('MISSING_DOCUMENT', 'PAYMENT_REQUIRED', 'CLIENT_CLARIFICATION', 'MANUAL_VERIFICATION');
@@ -108,7 +108,7 @@ CREATE TABLE workflows (
     client_id UUID NOT NULL REFERENCES clients(id),
     title TEXT NOT NULL,
     description TEXT,
-    status workflow_status NOT NULL DEFAULT 'PENDING',
+    status workflow_status NOT NULL DEFAULT 'NOT_STARTED',
     priority priority_level NOT NULL DEFAULT 'NORMAL',
     metadata JSONB NOT NULL DEFAULT '{}',
     created_by UUID REFERENCES user_profiles(id),
@@ -116,7 +116,14 @@ CREATE TABLE workflows (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
-    due_date TIMESTAMPTZ
+    due_date TIMESTAMPTZ,
+    -- n8n Integration Tracking
+    n8n_execution_id TEXT,
+    n8n_started_at TIMESTAMPTZ,
+    n8n_status TEXT DEFAULT 'not_started',
+    
+    -- Constraints
+    CONSTRAINT check_n8n_status CHECK (n8n_status IN ('not_started', 'running', 'success', 'error', 'canceled', 'crashed', 'waiting'))
 );
 
 -- Task Executions with integrated SLA tracking and read tracking
@@ -128,7 +135,7 @@ CREATE TABLE task_executions (
     description TEXT,
     sequence_order INTEGER NOT NULL, -- Defines the order of the task in the workflow
     task_type TEXT NOT NULL, -- The stable identifier from the workflow definition
-    status task_status NOT NULL DEFAULT 'PENDING',
+    status task_status NOT NULL DEFAULT 'NOT_STARTED',
     interrupt_type interrupt_type,
     executor_type executor_type NOT NULL,
     priority priority_level NOT NULL DEFAULT 'NORMAL',
@@ -426,6 +433,8 @@ CREATE INDEX idx_user_profiles_company ON user_profiles(company_id);
 CREATE INDEX idx_workflows_client ON workflows(client_id);
 CREATE INDEX idx_workflows_type ON workflows(workflow_type);
 CREATE INDEX idx_workflows_status ON workflows(status);
+CREATE INDEX idx_workflows_n8n_execution ON workflows(n8n_execution_id);
+CREATE INDEX idx_workflows_n8n_status ON workflows(n8n_status);
 CREATE INDEX idx_task_executions_workflow ON task_executions(workflow_id);
 CREATE INDEX idx_task_executions_status ON task_executions(status);
 CREATE INDEX idx_task_executions_executor_type ON task_executions(executor_type);
@@ -461,49 +470,11 @@ CREATE INDEX idx_task_executions_search ON task_executions USING gin(to_tsvector
 -- 14. ROW LEVEL SECURITY
 -- =====================================================
 
--- Enable RLS on all tables
-ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workflows ENABLE ROW LEVEL SECURITY;
-ALTER TABLE task_executions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_performance_metrics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE communications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE email_metadata ENABLE ROW LEVEL SECURITY;
-ALTER TABLE phone_metadata ENABLE ROW LEVEL SECURITY;
-ALTER TABLE counterparties ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workflow_counterparties ENABLE ROW LEVEL SECURITY;
-ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE costs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_labels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workflow_contacts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE hil_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE hil_notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+-- RLS will be enabled after seeding
+-- Tables are created without RLS to allow initial seeding
 
--- Basic RLS policies (Allow all for now - can be refined later)
-CREATE POLICY "Enable all access for authenticated users" ON clients FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON user_profiles FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON workflows FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON task_executions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON agents FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON agent_performance_metrics FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON communications FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON email_metadata FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON phone_metadata FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON counterparties FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON workflow_counterparties FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON documents FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON costs FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON invoices FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON audit_events FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON contact_labels FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON workflow_contacts FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON hil_notes FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON hil_notifications FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for authenticated users" ON user_preferences FOR ALL USING (auth.role() = 'authenticated');
+-- RLS policies will be added in a separate migration after seeding
+-- For now, tables are open for seeding
 
 -- =====================================================
 -- 15. TRIGGERS AND FUNCTIONS
@@ -599,6 +570,14 @@ WHERE status != 'COMPLETED';
 
 -- Table comments
 COMMENT ON TABLE workflows IS 'Workflows table uses UUID primary key only. Human-readable formatting is handled in application layer.';
+
+-- Enum type comments
+COMMENT ON TYPE workflow_type IS 'Workflow types: MUNI_LIEN_SEARCH (municipal lien searches), HOA_ACQUISITION (HOA document requests), PAYOFF_REQUEST (mortgage payoff requests)';
+
+-- n8n Integration Comments
+COMMENT ON COLUMN workflows.n8n_execution_id IS 'n8n Cloud execution ID for correlation and monitoring';
+COMMENT ON COLUMN workflows.n8n_started_at IS 'Timestamp when n8n workflow execution was triggered';
+COMMENT ON COLUMN workflows.n8n_status IS 'Current n8n execution status: not_started, running, success, error, canceled, crashed, waiting';
 COMMENT ON VIEW task_sla_status IS 'Convenient view for monitoring SLA status with calculated time remaining and percentage elapsed';
 
 -- SLA field comments

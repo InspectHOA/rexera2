@@ -143,7 +143,7 @@ async function findBreachedTasksFallback(): Promise<BreachedTask[]> {
     .select('id, workflow_id, title, task_type, status, created_at')
     .lt('created_at', twentyFourHoursAgo) // Older than 24 hours
     .neq('status', 'COMPLETED') // Not completed
-    .in('status', ['PENDING', 'AWAITING_REVIEW']); // Active statuses
+    .in('status', ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT']); // Active statuses
   
   if (error) {
     throw new Error(`Failed to query breached tasks (fallback): ${error.message}`);

@@ -200,7 +200,7 @@ export interface N8nWebhookEvent {
  *
  * Business Context:
  * - Confirms successful workflow triggering from Rexera
- * - Updates workflow status from PENDING to IN_PROGRESS
+ * - Updates workflow status from NOT_STARTED to IN_PROGRESS
  * - Enables customer notifications about processing start
  * - Provides correlation between Rexera and n8n workflow IDs
  *
@@ -461,10 +461,11 @@ export interface N8nExecutionStatus {
  * - PAYOFF: Loan payoff request processing (n8n automated)
  *
  * Status Lifecycle:
- * - PENDING: Created but not yet started
+ * - NOT_STARTED: Created but not yet started
  * - IN_PROGRESS: Active processing (may be in n8n)
- * - AWAITING_REVIEW: Requires human review or approval
- * - BLOCKED: Waiting for external input or resolution
+ * - INTERRUPT: Requires human review or approval (tasks only)
+ * - BLOCKED: Prevents both agents and HIL from completing workflow (workflows only)
+ * - WAITING_FOR_CLIENT: Workflow waiting for client response (workflows only)
  * - COMPLETED: Successfully finished with results
  *
  * n8n Integration:
@@ -484,7 +485,7 @@ export interface WorkflowWithN8n {
   /** Optional detailed description */
   description?: string;
   /** Current workflow processing status */
-  status: 'PENDING' | 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'BLOCKED' | 'COMPLETED';
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'BLOCKED' | 'WAITING_FOR_CLIENT' | 'COMPLETED';
   /** Processing priority for queue management */
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   /** Workflow-specific data and configuration */

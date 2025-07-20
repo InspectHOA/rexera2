@@ -321,8 +321,8 @@ export type Database = {
       // Add essential functions as needed
     }
     Enums: {
-      task_status: "PENDING" | "AWAITING_REVIEW" | "COMPLETED" | "FAILED"
-      workflow_status: "PENDING" | "IN_PROGRESS" | "AWAITING_REVIEW" | "BLOCKED" | "COMPLETED"
+      task_status: "NOT_STARTED" | "IN_PROGRESS" | "INTERRUPT" | "COMPLETED" | "FAILED"
+      workflow_status: "NOT_STARTED" | "IN_PROGRESS" | "BLOCKED" | "WAITING_FOR_CLIENT" | "COMPLETED"
       workflow_type: "MUNI_LIEN_SEARCH" | "HOA_ACQUISITION" | "PAYOFF_REQUEST"
       priority_level: "LOW" | "NORMAL" | "HIGH" | "URGENT"
       executor_type: "AI" | "HIL"

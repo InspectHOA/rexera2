@@ -58,7 +58,7 @@ function TaskDetailHeader({ task }: { task: Task }) {
       </div>
       
       <span className="px-2 py-1 text-xs font-medium uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/20 rounded">
-        AWAITING REVIEW
+        INTERRUPTED
       </span>
     </div>
   );
@@ -71,7 +71,7 @@ function TaskInformation({ task }: { task: Task }) {
       <div className="bg-muted border border-border p-3 space-y-3">
         <div className="grid grid-cols-2 gap-4">
           <DetailItem label="Agent" value={task.agent} />
-          <DetailItem label="Status" value="Awaiting Review" />
+          <DetailItem label="Status" value="Interrupt" />
           <DetailItem label="Completed" value="Dec 29, 1:45 PM" />
           <DetailItem label="Duration" value="15 minutes" />
         </div>

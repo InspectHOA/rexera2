@@ -332,7 +332,7 @@ export const tasksApi = {
   },
 
   async update(id: string, data: {
-    status?: 'PENDING' | 'AWAITING_REVIEW' | 'COMPLETED' | 'FAILED';
+    status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'COMPLETED' | 'FAILED';
     output_data?: Record<string, any>;
     completed_at?: string;
     started_at?: string;

@@ -18,10 +18,53 @@ import * as path from 'path';
 
 config({ path: path.join(__dirname, '../../serverless-api/.env') });
 
+console.log('🔧 Environment check:');
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Present' : 'Missing');
+
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+      }
+    }
+  }
 );
+
+async function testConnection() {
+  console.log('🔌 Testing database connection...');
+  try {
+    // First check what role we're using
+    const { data: roleData, error: roleError } = await supabase.rpc('auth.role');
+    console.log('🔍 Current auth role:', roleData, roleError);
+    
+    // Try direct SQL to check role
+    const { data: sqlData, error: sqlError } = await supabase
+      .from('clients')
+      .select('*')
+      .limit(1);
+      
+    if (sqlError) {
+      console.error('❌ Connection test failed:', sqlError);
+      return false;
+    }
+    console.log('✅ Connection test successful');
+    return true;
+  } catch (err) {
+    console.error('❌ Connection test error:', err);
+    return false;
+  }
+}
 
 async function resetDatabase() {
   console.log('🗃️ Resetting database...');
@@ -117,14 +160,15 @@ async function seedDatabase() {
   const costs = [];
   const hilNotifications = [];
   
-  const workflowStatuses = ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'];
-  const taskStatuses = ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED'];
+  // Use new enum values from migration
+  const workflowStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'WAITING_FOR_CLIENT', 'COMPLETED'];
+  const taskStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED'];
   const priorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
   const clientIds = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555', '66666666-6666-6666-6666-666666666666', '77777777-7777-7777-7777-777777777777', '88888888-8888-8888-8888-888888888888'];
 
   // Helper function to create HIL notification for interrupted task
   function createHilNotification(taskExecution: any, workflowId: string, workflowTitle: string) {
-    if (taskExecution.status === 'AWAITING_REVIEW' && taskExecution.interrupt_type) {
+    if (taskExecution.status === 'INTERRUPT' && taskExecution.interrupt_type) {
       const interruptTypeMessages: Record<string, string> = {
         'CLIENT_CLARIFICATION': 'Client clarification required',
         'MISSING_DOCUMENT': 'Missing required documentation',
@@ -180,7 +224,7 @@ async function seedDatabase() {
     if (i <= 15) {
       // Primary research task
       const status1 = taskStatuses[i % taskStatuses.length];
-      const hasInterrupt1 = status1 === 'AWAITING_REVIEW' || i % 4 === 0;
+      const hasInterrupt1 = status1 === 'INTERRUPT' || i % 4 === 0;
       
       const task1 = {
         id: randomUUID(),
@@ -207,8 +251,8 @@ async function seedDatabase() {
 
       // Secondary verification task for workflows 8-15 (creates more interrupts)
       if (i >= 8) {
-        const status2 = i % 5 === 0 ? 'AWAITING_REVIEW' : (i % 3 === 0 ? 'FAILED' : 'PENDING');
-        const hasInterrupt2 = status2 === 'AWAITING_REVIEW' || status2 === 'FAILED';
+        const status2 = i % 5 === 0 ? 'INTERRUPT' : (i % 3 === 0 ? 'FAILED' : 'NOT_STARTED');
+        const hasInterrupt2 = status2 === 'INTERRUPT' || status2 === 'FAILED';
         
         taskExecutions.push({
           id: randomUUID(),
@@ -234,8 +278,8 @@ async function seedDatabase() {
 
       // Document generation task for workflows 5-15 (more potential interrupts)
       if (i >= 5) {
-        const status3 = i % 6 === 0 ? 'AWAITING_REVIEW' : (i % 4 === 0 ? 'PENDING' : 'COMPLETED');
-        const hasInterrupt3 = status3 === 'AWAITING_REVIEW';
+        const status3 = i % 6 === 0 ? 'INTERRUPT' : (i % 4 === 0 ? 'NOT_STARTED' : 'COMPLETED');
+        const hasInterrupt3 = status3 === 'INTERRUPT';
         
         taskExecutions.push({
           id: randomUUID(),
@@ -271,7 +315,7 @@ async function seedDatabase() {
           description: 'Notify client of findings and next steps',
           sequence_order: 4,
           task_type: 'send_email',
-          status: 'AWAITING_REVIEW',
+          status: 'INTERRUPT',
           executor_type: 'AI',
           priority: 'HIGH',
           input_data: { email_template: 'lien_results', client_contact: 'primary' },
@@ -386,7 +430,7 @@ async function seedDatabase() {
           sender_id: null,
           recipient_email: clientEmails[addressIndex],
           subject: `DRAFT: Legal Review Required - ${propertyAddresses[addressIndex]}`,
-          body: `Dear ${clientNames[addressIndex]},\n\n[DRAFT - AWAITING LEGAL REVIEW]\n\nFOLLOW-UP ON EMERGENCY CONFERENCE CALL:\n\nAfter consultation with our legal team and title company, we have identified resolution options for the additional service connection fee:\n\nOPTION 1 - FULL CLEARANCE:\n- Pay additional fee: $487.50\n- Obtain legal release documentation\n- Close on original timeline (Friday)\n- Total additional cost: $612.50 (includes legal fees)\n\nOPTION 2 - TITLE INSURANCE EXCEPTION:\n- Proceed with closing as scheduled\n- Add exception to title policy\n- Buyer assumes responsibility for fee resolution\n- Additional premium: $250.00\n\nOPTION 3 - DELAYED CLOSING:\n- Request 1-week extension\n- Full legal resolution with city\n- Clean title delivery\n- No additional buyer costs\n\nRECOMMENDATION:\n[LEGAL TEAM INPUT REQUIRED]\nOur preliminary recommendation is Option 1, but this requires review of municipal code section 14.7.3 regarding retroactive service fees and their enforceability.\n\nLEGAL RESEARCH PENDING:\n- Municipal ordinance review\n- Statute of limitations analysis\n- Title insurance underwriter consultation\n- Lender requirement verification\n\nI will provide final recommendation within 24 hours pending legal team analysis.\n\n[THIS EMAIL REQUIRES LEGAL DEPARTMENT APPROVAL BEFORE SENDING]\n\nMia Chen\nEmail Communication Agent\nRexera Title Services\n(555) 123-4567\n\n--- INTERNAL NOTES ---\nLegal Review Items:\n- Verify municipal authority for retroactive fees\n- Confirm title insurance coverage options\n- Review lender policy on additional liens\n- Prepare client consultation call script`,
+          body: `Dear ${clientNames[addressIndex]},\n\n[DRAFT - AWAITING LEGAL REVIEW]\n\nFOLLOW-UP ON EMERGENCY CONFERENCE CALL:\n\nAfter consultation with our legal team and title company, we have identified resolution options for the additional service connection fee:\n\nOPTION 1 - FULL CLEARANCE:\n- Pay additional fee: $487.50\n- Obtain legal release documentation\n- Close on original timeline (Friday)\n- Total additional cost: $612.50 (includes legal fees)\n\nOPTION 2 - TITLE INSURANCE EXCEPTION:\n- Proceed with closing as scheduled\n- Add exception to title policy\n- Buyer assumes responsibility for fee resolution\n- Additional premium: $250.00\n\nOPTION 3 - DELAYED CLOSING:\n- Request 1-week extension\n- Full legal resolution with city\n- Clean title delivery\n- No additional buyer costs\n\nRECOMMENDATION:\n[LEGAL TEAM INPUT REQUIRED]\nOur preliminary recommendation is Option 1, but this requires review of municipal code section 14.7.3 regarding retroactive service fees and their enforceability.\n\nLEGAL RESEARCH NOT_STARTED:\n- Municipal ordinance review\n- Statute of limitations analysis\n- Title insurance underwriter consultation\n- Lender requirement verification\n\nI will provide final recommendation within 24 hours pending legal team analysis.\n\n[THIS EMAIL REQUIRES LEGAL DEPARTMENT APPROVAL BEFORE SENDING]\n\nMia Chen\nEmail Communication Agent\nRexera Title Services\n(555) 123-4567\n\n--- INTERNAL NOTES ---\nLegal Review Items:\n- Verify municipal authority for retroactive fees\n- Confirm title insurance coverage options\n- Review lender policy on additional liens\n- Prepare client consultation call script`,
           communication_type: 'email',
           direction: 'OUTBOUND',
           status: 'FAILED',
@@ -412,7 +456,7 @@ async function seedDatabase() {
             description: 'Schedule follow-up call and prepare documentation',
             sequence_order: 5,
             task_type: 'client_coordination',
-            status: 'AWAITING_REVIEW',
+            status: 'INTERRUPT',
             executor_type: 'AI',
             priority: 'NORMAL',
             input_data: { client_preference: 'phone_call', urgency: 'standard' },
@@ -486,7 +530,7 @@ async function seedDatabase() {
     if (i <= 12) {
       // Primary HOA identification task
       const status1 = taskStatuses[i % taskStatuses.length];
-      const hasInterrupt1 = status1 === 'AWAITING_REVIEW' || i % 3 === 0;
+      const hasInterrupt1 = status1 === 'INTERRUPT' || i % 3 === 0;
       
       taskExecutions.push({
         id: randomUUID(),
@@ -511,8 +555,8 @@ async function seedDatabase() {
 
       // Request estoppel documents task for workflows 6-12 (more interrupts)
       if (i >= 6) {
-        const status2 = i % 4 === 0 ? 'AWAITING_REVIEW' : (i % 5 === 0 ? 'FAILED' : 'PENDING');
-        const hasInterrupt2 = status2 === 'AWAITING_REVIEW' || status2 === 'FAILED';
+        const status2 = i % 4 === 0 ? 'INTERRUPT' : (i % 5 === 0 ? 'FAILED' : 'NOT_STARTED');
+        const hasInterrupt2 = status2 === 'INTERRUPT' || status2 === 'FAILED';
         
         taskExecutions.push({
           id: randomUUID(),
@@ -546,8 +590,8 @@ async function seedDatabase() {
 
       // Follow up and document processing task for workflows 3-12
       if (i >= 3) {
-        const status3 = i % 7 === 0 ? 'AWAITING_REVIEW' : (i % 5 === 0 ? 'PENDING' : 'COMPLETED');
-        const hasInterrupt3 = status3 === 'AWAITING_REVIEW';
+        const status3 = i % 7 === 0 ? 'INTERRUPT' : (i % 5 === 0 ? 'NOT_STARTED' : 'COMPLETED');
+        const hasInterrupt3 = status3 === 'INTERRUPT';
         
         taskExecutions.push({
           id: randomUUID(),
@@ -590,7 +634,7 @@ async function seedDatabase() {
           description: 'Analyze HOA fees and special assessments',
           sequence_order: 4,
           task_type: 'financial_review',
-          status: 'AWAITING_REVIEW',
+          status: 'INTERRUPT',
           executor_type: 'AI',
           priority: 'HIGH',
           input_data: { hoa_fees: true, special_assessments: true },
@@ -613,7 +657,7 @@ async function seedDatabase() {
             description: 'Call HOA management for expedited processing',
             sequence_order: 5,
             task_type: 'phone_call',
-            status: 'AWAITING_REVIEW',
+            status: 'INTERRUPT',
             executor_type: 'AI',
             priority: 'URGENT',
             input_data: { phone_number: 'hoa_management', call_type: 'follow_up' },
@@ -687,7 +731,7 @@ async function seedDatabase() {
     if (i <= 12) {
       // Primary lender research task
       const status1 = taskStatuses[i % taskStatuses.length];
-      const hasInterrupt1 = status1 === 'AWAITING_REVIEW' || i % 3 === 0;
+      const hasInterrupt1 = status1 === 'INTERRUPT' || i % 3 === 0;
       
       taskExecutions.push({
         id: randomUUID(),
@@ -717,8 +761,8 @@ async function seedDatabase() {
 
       // Submit payoff request task for workflows 7-12 (more interrupts)
       if (i >= 7) {
-        const status2 = i % 5 === 0 ? 'AWAITING_REVIEW' : (i % 4 === 0 ? 'FAILED' : 'PENDING');
-        const hasInterrupt2 = status2 === 'AWAITING_REVIEW' || status2 === 'FAILED';
+        const status2 = i % 5 === 0 ? 'INTERRUPT' : (i % 4 === 0 ? 'FAILED' : 'NOT_STARTED');
+        const hasInterrupt2 = status2 === 'INTERRUPT' || status2 === 'FAILED';
         
         taskExecutions.push({
           id: randomUUID(),
@@ -752,8 +796,8 @@ async function seedDatabase() {
 
       // Follow up and process response task for workflows 4-12
       if (i >= 4) {
-        const status3 = i % 6 === 0 ? 'AWAITING_REVIEW' : (i % 7 === 0 ? 'PENDING' : 'COMPLETED');
-        const hasInterrupt3 = status3 === 'AWAITING_REVIEW';
+        const status3 = i % 6 === 0 ? 'INTERRUPT' : (i % 7 === 0 ? 'NOT_STARTED' : 'COMPLETED');
+        const hasInterrupt3 = status3 === 'INTERRUPT';
         
         taskExecutions.push({
           id: randomUUID(),
@@ -857,7 +901,7 @@ async function seedDatabase() {
 
   // Create HIL notifications for all interrupted tasks (after task executions are inserted)
   console.log('📝 Creating HIL notifications for interrupted tasks...');
-  const interruptedTasks = taskExecutions.filter(task => task.status === 'AWAITING_REVIEW' && task.interrupt_type);
+  const interruptedTasks = taskExecutions.filter(task => task.status === 'INTERRUPT' && task.interrupt_type);
   
   for (const task of interruptedTasks) {
     const workflow = workflows.find(w => w.id === task.workflow_id);
@@ -956,9 +1000,9 @@ async function verifyData() {
   console.log(`📝 Task executions: ${tasks?.length || 0}`);
   
   // Count interrupts
-  const interruptTasks = tasks?.filter(t => t.status === 'AWAITING_REVIEW') || [];
+  const interruptTasks = tasks?.filter(t => t.status === 'INTERRUPT') || [];
   const failedTasks = tasks?.filter(t => t.status === 'FAILED') || [];
-  console.log(`⚠️ Tasks with interrupts: ${interruptTasks.length} (AWAITING_REVIEW)`);
+  console.log(`⚠️ Tasks with interrupts: ${interruptTasks.length} (INTERRUPT)`);
   console.log(`❌ Failed tasks: ${failedTasks.length}`);
   
   console.log(`📧 Communications: ${comms?.length || 0}`);
@@ -976,6 +1020,13 @@ async function verifyData() {
 async function main() {
   try {
     console.log('🚀 Starting comprehensive database reset and seeding...\n');
+    
+    const connected = await testConnection();
+    if (!connected) {
+      console.error('❌ Cannot proceed without database connection');
+      process.exit(1);
+    }
+    console.log('');
     
     await resetDatabase();
     console.log('');

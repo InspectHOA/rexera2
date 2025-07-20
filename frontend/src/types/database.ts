@@ -1232,7 +1232,7 @@ export type Database = {
       sender_type: "CLIENT" | "INTERNAL"
       sla_status: "ON_TIME" | "AT_RISK" | "BREACHED"
       sla_tracking_status: "ACTIVE" | "COMPLETED" | "BREACHED" | "PAUSED"
-      task_status: "PENDING" | "AWAITING_REVIEW" | "COMPLETED" | "FAILED"
+      task_status: "NOT_STARTED" | "IN_PROGRESS" | "INTERRUPT" | "COMPLETED" | "FAILED"
       thread_status: "ACTIVE" | "RESOLVED" | "ARCHIVED"
       user_type: "client_user" | "hil_user"
       workflow_counterparty_status:
@@ -1241,10 +1241,10 @@ export type Database = {
         | "RESPONDED"
         | "COMPLETED"
       workflow_status:
-        | "PENDING"
+        | "NOT_STARTED"
         | "IN_PROGRESS"
-        | "AWAITING_REVIEW"
         | "BLOCKED"
+        | "WAITING_FOR_CLIENT"
         | "COMPLETED"
       workflow_type:
         | "MUNI_LIEN_SEARCH"
@@ -1410,7 +1410,7 @@ export const Constants = {
       sender_type: ["CLIENT", "INTERNAL"],
       sla_status: ["ON_TIME", "AT_RISK", "BREACHED"],
       sla_tracking_status: ["ACTIVE", "COMPLETED", "BREACHED", "PAUSED"],
-      task_status: ["PENDING", "AWAITING_REVIEW", "COMPLETED", "FAILED"],
+      task_status: ["NOT_STARTED", "IN_PROGRESS", "INTERRUPT", "COMPLETED", "FAILED"],
       thread_status: ["ACTIVE", "RESOLVED", "ARCHIVED"],
       user_type: ["client_user", "hil_user"],
       workflow_counterparty_status: [
@@ -1420,10 +1420,10 @@ export const Constants = {
         "COMPLETED",
       ],
       workflow_status: [
-        "PENDING",
+        "NOT_STARTED",
         "IN_PROGRESS",
-        "AWAITING_REVIEW",
         "BLOCKED",
+        "WAITING_FOR_CLIENT",
         "COMPLETED",
       ],
       workflow_type: [

@@ -18,7 +18,7 @@ interface TaskListProps {
 const getTaskStatusColor = (status: string) => {
   switch (status) {
     case 'completed': return 'bg-green-500 dark:bg-green-600';
-    case 'awaiting-review': return 'bg-destructive';
+    case 'interrupted': return 'bg-destructive';
     case 'pending': return 'bg-muted border-2 border-border';
     default: return 'bg-muted';
   }

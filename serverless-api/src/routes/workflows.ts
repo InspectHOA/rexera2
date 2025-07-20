@@ -108,7 +108,7 @@ workflows.get('/', async (c) => {
     
     // Handle interrupt count sorting specially since it requires aggregation
     if (sortField === 'interrupt_count') {
-      // For interrupt count, we need to sort by the count of AWAITING_REVIEW tasks
+      // For interrupt count, we need to sort by the count of INTERRUPTED tasks
       // This is more complex and will be handled after the main query
     } else {
       dbQuery = dbQuery.order(sortField, { ascending });
@@ -134,7 +134,7 @@ workflows.get('/', async (c) => {
         .map((workflow: any) => {
           const interruptCount = workflow.task_executions
             ? workflow.task_executions
-                .filter((task: any) => task.status === 'AWAITING_REVIEW').length
+                .filter((task: any) => task.status === 'INTERRUPT').length
             : 0;
           return { ...workflow, interrupt_count: interruptCount };
         })

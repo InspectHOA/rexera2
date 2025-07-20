@@ -3,7 +3,7 @@
  */
 
 import { useMemo } from 'react';
-import { formatWorkflowIdWithType } from '@rexera/shared';
+import { formatWorkflowIdWithType, type WorkflowStatus, type TaskStatus } from '@rexera/shared';
 import type { WorkflowData, TaskExecution, TransformedWorkflow } from '@/types/workflow';
 
 export function useWorkflowTransformation(
@@ -14,7 +14,8 @@ export function useWorkflowTransformation(
   const transformedWorkflows = useMemo(() => {
     return workflowData.map((workflow: WorkflowData) => {
       const tasks: TaskExecution[] = workflow.task_executions || workflow.tasks || [];
-      const interruptCount = tasks.filter((t: TaskExecution) => t.status === 'AWAITING_REVIEW')?.length || 0;
+      const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
+      const interruptCount = tasks.filter((t: TaskExecution) => t.status === INTERRUPT_STATUS)?.length || 0;
       const hasInterrupts = interruptCount > 0;
       
       // Use simple UUID-based display ID
@@ -35,7 +36,7 @@ export function useWorkflowTransformation(
         interrupts: hasInterrupts ? {
           type: workflow.priority === 'URGENT' ? 'critical' as const : 'standard' as const,
           count: interruptCount,
-          icons: getInterruptIcons(tasks.filter((t: TaskExecution) => t.status === 'AWAITING_REVIEW') || [])
+          icons: getInterruptIcons(tasks.filter((t: TaskExecution) => t.status === INTERRUPT_STATUS) || [])
         } : null,
         interruptCount: interruptCount, // For sorting
         due: formatDate(workflow.due_date),
@@ -111,32 +112,33 @@ function formatCreatedDate(dateString: string): string {
 }
 
 function getDisplayStatus(status: string) {
-  const statusMap: Record<string, string> = {
-    'PENDING': 'Pending',
+  const statusMap: Record<WorkflowStatus, string> = {
+    'NOT_STARTED': 'Not Started',
     'IN_PROGRESS': 'In Progress',
-    'AWAITING_REVIEW': 'Review',
     'BLOCKED': 'Blocked',
+    'WAITING_FOR_CLIENT': 'Waiting for Client',
     'COMPLETED': 'Completed'
   };
-  return statusMap[status] || status;
+  return statusMap[status as WorkflowStatus] || status;
 }
 
 function getStatusClass(status: string) {
-  const statusClasses: Record<string, string> = {
-    'PENDING': 'bg-gray-100 text-gray-700',
+  const statusClasses: Record<WorkflowStatus, string> = {
+    'NOT_STARTED': 'bg-gray-100 text-gray-700',
     'IN_PROGRESS': 'bg-blue-100 text-gray-900',
-    'AWAITING_REVIEW': 'bg-yellow-100 text-yellow-700',
     'BLOCKED': 'bg-red-100 text-red-700',
+    'WAITING_FOR_CLIENT': 'bg-orange-100 text-orange-700',
     'COMPLETED': 'bg-green-100 text-green-700'
   };
-  return statusClasses[status] || 'bg-gray-100 text-gray-700';
+  return statusClasses[status as WorkflowStatus] || 'bg-gray-100 text-gray-700';
 }
 
 function getInterruptIcons(tasks: TaskExecution[]): { icon: string; agent: string; }[] {
   const icons: { icon: string; agent: string; }[] = [];
-  const hasDocumentIssue = tasks.some(t => t.status === 'AWAITING_REVIEW' && (t as any).agents?.name === 'iris');
-  const hasEmailIssue = tasks.some(t => t.status === 'AWAITING_REVIEW' && (t as any).agents?.name === 'mia');
-  const hasNinaIssue = tasks.some(t => t.status === 'AWAITING_REVIEW' && (t as any).agents?.name === 'nina');
+  const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
+  const hasDocumentIssue = tasks.some(t => t.status === INTERRUPT_STATUS && (t as any).agents?.name === 'iris');
+  const hasEmailIssue = tasks.some(t => t.status === INTERRUPT_STATUS && (t as any).agents?.name === 'mia');
+  const hasNinaIssue = tasks.some(t => t.status === INTERRUPT_STATUS && (t as any).agents?.name === 'nina');
 
   if (hasDocumentIssue) icons.push({ icon: '📄', agent: 'iris' });
   if (hasEmailIssue) icons.push({ icon: '✉️', agent: 'mia' });

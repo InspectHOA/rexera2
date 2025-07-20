@@ -34,7 +34,7 @@ export const openApiComponents = {
         description: { type: 'string', nullable: true },
         status: { 
           type: 'string', 
-          enum: ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'],
+          enum: ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'BLOCKED', 'WAITING_FOR_CLIENT', 'COMPLETED'],
           description: 'Current workflow status'
         },
         priority: { 
@@ -70,7 +70,7 @@ export const openApiComponents = {
         task_type: { type: 'string', description: 'Stable task identifier' },
         status: { 
           type: 'string', 
-          enum: ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED'],
+          enum: ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED'],
           description: 'Current task status'
         },
         interrupt_type: {

@@ -46,7 +46,7 @@ export const openApiPaths = {
         {
           name: 'status',
           in: 'query',
-          schema: { type: 'string', enum: ['PENDING', 'IN_PROGRESS', 'AWAITING_REVIEW', 'BLOCKED', 'COMPLETED'] },
+          schema: { type: 'string', enum: ['PENDING', 'IN_PROGRESS', 'INTERRUPTED', 'BLOCKED', 'COMPLETED'] },
           description: 'Filter by status'
         },
         {
@@ -239,7 +239,7 @@ export const openApiPaths = {
         {
           name: 'status',
           in: 'query',
-          schema: { type: 'string', enum: ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED'] },
+          schema: { type: 'string', enum: ['PENDING', 'INTERRUPTED', 'COMPLETED', 'FAILED'] },
           description: 'Filter by status'
         },
         {
@@ -307,7 +307,7 @@ export const openApiPaths = {
                       workflow_id: { type: 'string', format: 'uuid' },
                       agent_id: { type: 'string', format: 'uuid' },
                       task_type: { type: 'string' },
-                      status: { type: 'string', enum: ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED'], default: 'PENDING' },
+                      status: { type: 'string', enum: ['PENDING', 'INTERRUPTED', 'COMPLETED', 'FAILED'], default: 'PENDING' },
                       metadata: { type: 'object' }
                     }
                   }
@@ -359,7 +359,7 @@ export const openApiPaths = {
             schema: {
               type: 'object',
               properties: {
-                status: { type: 'string', enum: ['PENDING', 'AWAITING_REVIEW', 'COMPLETED', 'FAILED'] },
+                status: { type: 'string', enum: ['PENDING', 'INTERRUPTED', 'COMPLETED', 'FAILED'] },
                 metadata: { type: 'object' },
                 started_at: { type: 'string', format: 'date-time' },
                 completed_at: { type: 'string', format: 'date-time' }
