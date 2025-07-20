@@ -282,10 +282,10 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
     } catch (error) {
       console.error('❌ Failed to create workflow:', error);
       console.error('❌ Error details:', {
-        message: error?.message,
-        status: error?.status,
-        response: error?.response?.data,
-        stack: error?.stack
+        message: (error as any)?.message,
+        status: (error as any)?.status,
+        response: (error as any)?.response?.data,
+        stack: (error as any)?.stack
       });
       setErrors({ submit: 'Failed to create workflow. Please try again.' });
     }

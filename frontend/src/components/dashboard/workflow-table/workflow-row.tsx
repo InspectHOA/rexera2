@@ -35,14 +35,14 @@ export function WorkflowRow({ workflow, isEven }: WorkflowRowProps) {
       </td>
 
       {/* Type */}
-      <td className="px-3 py-2 text-xs">
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+      <td className="px-3 py-2 text-xs w-32">
+        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
           {workflow.type}
         </span>
       </td>
 
       {/* Property */}
-      <td className="px-3 py-2 text-xs text-foreground max-w-0">
+      <td className="px-3 py-2 text-xs text-foreground w-64">
         <div className="truncate" title={workflow.property}>
           {workflow.property}
         </div>
@@ -57,7 +57,7 @@ export function WorkflowRow({ workflow, isEven }: WorkflowRowProps) {
 
       {/* Status */}
       <td className="px-3 py-2 text-xs">
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${workflow.statusClass}`}>
+        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${workflow.statusClass}`}>
           {workflow.status}
         </span>
       </td>

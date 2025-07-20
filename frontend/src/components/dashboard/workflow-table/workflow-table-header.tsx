@@ -25,13 +25,13 @@ export function WorkflowTableHeader({ onSort, getSortIndicator }: WorkflowTableH
         </th>
         <th 
           onClick={() => onSort('type')} 
-          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors w-32"
         >
           Type <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('type')}</span>
         </th>
         <th 
           onClick={() => onSort('property')} 
-          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
+          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors w-64"
         >
           Property <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('property')}</span>
         </th>
