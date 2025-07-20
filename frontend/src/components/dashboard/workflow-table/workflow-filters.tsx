@@ -53,9 +53,9 @@ export function WorkflowFilters({
       </div>
 
       {/* Filter Dropdowns */}
-      <div className="flex items-center gap-3 text-sm">
+      <div className="flex items-center gap-3 text-sm pl-4">
         {/* Type Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <label className="text-muted-foreground font-medium">Type:</label>
           <select
             value={filterType}
@@ -70,7 +70,7 @@ export function WorkflowFilters({
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <label className="text-muted-foreground font-medium">Status:</label>
           <select
             value={filterStatus}
@@ -85,7 +85,7 @@ export function WorkflowFilters({
         </div>
 
         {/* Interrupts Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <label className="text-muted-foreground font-medium">Interrupts:</label>
           <select
             value={filterInterrupts}

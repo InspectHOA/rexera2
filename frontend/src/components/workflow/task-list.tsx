@@ -17,30 +17,30 @@ interface TaskListProps {
 
 const getTaskStatusColor = (status: string) => {
   switch (status) {
-    case 'completed': return 'bg-green-500';
-    case 'awaiting-review': return 'bg-red-500';
-    case 'pending': return 'bg-gray-400 border-2 border-gray-300';
-    default: return 'bg-gray-400';
+    case 'completed': return 'bg-green-500 dark:bg-green-600';
+    case 'awaiting-review': return 'bg-destructive';
+    case 'pending': return 'bg-muted border-2 border-border';
+    default: return 'bg-muted';
   }
 };
 
 const getSlaStatusStyle = (sla: string) => {
   switch (sla) {
     case 'ON TIME':
-      return 'text-green-600 bg-green-50';
+      return 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-950';
     case 'LATE':
-      return 'text-red-600 bg-red-50';
+      return 'text-destructive bg-destructive/10';
     case 'DUE SOON':
-      return 'text-yellow-600 bg-yellow-50';
+      return 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-950';
     default:
-      return 'text-gray-400 bg-transparent';
+      return 'text-muted-foreground bg-transparent';
   }
 };
 
 export function TaskList({ tasks, selectedTask, onTaskClick, progress }: TaskListProps) {
   return (
     <div className="h-[30vh] flex flex-col">
-      <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-100 flex-shrink-0 text-xs font-semibold text-gray-800 uppercase tracking-wider flex items-center h-10">
+      <div className="px-4 py-2 border-b border-border/50 bg-muted flex-shrink-0 text-xs font-semibold text-foreground uppercase tracking-wider flex items-center h-10">
         Tasks ({progress})
       </div>
       
@@ -67,22 +67,22 @@ function TaskItem({ task, isSelected, onClick }: {
     <div
       onClick={onClick}
       className={`
-        flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-100 transition-all duration-200 cursor-pointer
+        flex items-center gap-2 px-2 py-1.5 bg-card border border-border transition-all duration-200 cursor-pointer
         ${isSelected
-          ? 'bg-primary-100 border-primary-600'
+          ? 'bg-primary/10 border-primary'
           : task.conditional
-            ? 'bg-gray-50 border-l-2 border-l-yellow-400 hover:bg-gray-100 hover:border-primary-600'
-            : 'hover:bg-gray-50 hover:border-primary-600'
+            ? 'bg-muted border-l-2 border-l-yellow-400 dark:border-l-yellow-500 hover:bg-muted/80 hover:border-primary'
+            : 'hover:bg-muted/50 hover:border-primary'
         }
       `}
     >
       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getTaskStatusColor(task.status)}`} />
       
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <div className="text-xs font-medium text-gray-900 truncate">
+        <div className="text-xs font-medium text-foreground truncate">
           {task.name}
         </div>
-        <div className="text-xs text-gray-500 truncate">
+        <div className="text-xs text-muted-foreground truncate">
           {task.agent} • {task.meta}
         </div>
       </div>

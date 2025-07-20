@@ -54,7 +54,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
   const { filteredDocuments, paginatedDocuments, totalPages, totalCount } = useMemo(() => {
     let filtered = documents.filter(doc => {
       const matchesSearch = doc.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+                           doc.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesType = filterType === 'ALL' || doc.document_type === filterType;
       const matchesStatus = filterStatus === 'ALL' || doc.status === filterStatus;
       

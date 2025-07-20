@@ -56,7 +56,7 @@ export default function WorkflowDetailPage() {
   const workflow: Workflow | null = workflowData ? {
     id: formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type),
     title: workflowData.title || 'Workflow Details',
-    subtitle: `${formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type)} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF_REQUEST')} - ${workflowData.clients?.name || 'Unknown Client'}`,
+    subtitle: `${formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type)} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF_REQUEST')} - ${workflowData.client?.name || 'Unknown Client'}`,
     status: getDisplayStatus(workflowData.status || 'PENDING'),
     eta: formatDateTime(workflowData.due_date),
     due: formatDate(workflowData.due_date),
@@ -191,7 +191,7 @@ export default function WorkflowDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96 text-gray-500">
+      <div className="flex justify-center items-center h-96 text-muted-foreground">
         Loading workflow details...
       </div>
     );
@@ -199,7 +199,7 @@ export default function WorkflowDetailPage() {
 
   if (error || !workflow) {
     return (
-      <div className="flex justify-center items-center h-96 text-red-500">
+      <div className="flex justify-center items-center h-96 text-destructive">
         {error || 'Workflow not found'}
       </div>
     );
@@ -256,18 +256,18 @@ export default function WorkflowDetailPage() {
         <div className="relative flex-grow" style={{ height: 'calc(100vh - 120px)' }}>
           <button
             onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            className="absolute top-1/2 z-20 bg-white border border-gray-300 rounded-full p-1 shadow-md hover:bg-gray-100 transition-all duration-300 ease-in-out"
+            className="absolute top-1/2 z-20 bg-background border border-border rounded-full p-1 shadow-md hover:bg-muted transition-all duration-300 ease-in-out"
             style={{
               left: isLeftPanelCollapsed ? '24px' : '40%',
               transform: `translate(-50%, -50%) ${isLeftPanelCollapsed ? 'rotate(180deg)' : ''}`,
             }}
           >
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           </button>
 
           <div className={`grid ${isLeftPanelCollapsed ? 'grid-cols-[0fr_1fr]' : 'grid-cols-[40%_1fr]'} h-full transition-all duration-300 ease-in-out gap-4`}>
             {/* Left Panel */}
-            <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-lg border border-gray-200/50 flex flex-col overflow-hidden">
+            <div className="bg-background/80 backdrop-blur-sm shadow-2xl rounded-lg border border-border/50 flex flex-col overflow-hidden">
               <div className="flex-shrink-0">
                 <TaskList
                   tasks={tasks}
@@ -276,7 +276,7 @@ export default function WorkflowDetailPage() {
                   progress={workflow.progress}
                 />
               </div>
-              <div className="flex-1 border-t border-gray-200/50 p-4 space-y-4 overflow-y-auto">
+              <div className="flex-1 border-t border-border/50 p-4 space-y-4 overflow-y-auto">
                 <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
                 <TabContent
                   activeTab={activeTab}
@@ -289,15 +289,15 @@ export default function WorkflowDetailPage() {
             </div>
 
             {/* Right Panel */}
-            <div className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-lg border border-gray-200/50 flex flex-col overflow-hidden">
+            <div className="bg-background/80 backdrop-blur-sm shadow-2xl rounded-lg border border-border/50 flex flex-col overflow-hidden">
               {/* Right Panel Tabs */}
-              <div className="px-4 py-2 border-b border-gray-200/50 bg-gray-100 flex-shrink-0 flex gap-6">
+              <div className="px-4 py-2 border-b border-border/50 bg-muted flex-shrink-0 flex gap-6">
                 <button
                   onClick={() => setRightPanelTab('task-details')}
                   className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'task-details'
-                      ? 'text-gray-800 border-primary-600'
-                      : 'text-gray-500 hover:text-gray-700 border-transparent'
+                      ? 'text-foreground border-primary'
+                      : 'text-muted-foreground hover:text-foreground border-transparent'
                   }`}
                 >
                   Task Details
@@ -306,8 +306,8 @@ export default function WorkflowDetailPage() {
                   onClick={() => setRightPanelTab('agent-interface')}
                   className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'agent-interface'
-                      ? 'text-gray-800 border-primary-600'
-                      : 'text-gray-500 hover:text-gray-700 border-transparent'
+                      ? 'text-foreground border-primary'
+                      : 'text-muted-foreground hover:text-foreground border-transparent'
                   }`}
                 >
                   {selectedTask && tasks.find(t => t.id === selectedTask)?.agent ? `${tasks.find(t => t.id === selectedTask)?.agent} Interface` : 'Agent Interface'}
@@ -348,11 +348,11 @@ function TabContent({
     case 'details':
       const detailFields = workflowData ? [
         { label: 'Borrower Name', value: workflowData.metadata?.borrower_name || 'Not specified' },
-        { label: 'Lender Name', value: workflowData.clients?.name || 'Unknown' },
+        { label: 'Lender Name', value: workflowData.client?.name || 'Unknown' },
         { label: 'Loan Number', value: workflowData.metadata?.loan_number || 'Not specified', mono: true },
         { label: 'Payoff Date', value: workflowData.due_date ? new Date(workflowData.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' },
         { label: 'Primary HIL', value: workflowData.assigned_user?.full_name || 'Unassigned' },
-        { label: 'Client', value: workflowData.clients?.name || 'Unknown' }
+        { label: 'Client', value: workflowData.client?.name || 'Unknown' }
       ] : [];
 
       const n8nStatus = (workflowData as any)?.n8n_status || 'not_started';
@@ -364,10 +364,10 @@ function TabContent({
           <div className="grid grid-cols-2 gap-4">
             {detailFields.map((field) => (
               <div key={field.label} className="flex flex-col gap-1">
-                <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                   {field.label}
                 </div>
-                <div className={`text-sm text-gray-900 ${field.mono ? 'font-mono' : ''}`}>
+                <div className={`text-sm text-foreground ${field.mono ? 'font-mono' : ''}`}>
                   {field.value}
                 </div>
               </div>
@@ -375,29 +375,29 @@ function TabContent({
           </div>
 
           {/* n8n Workflow Controls */}
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-border pt-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-900">n8n Workflow Automation</h3>
+              <h3 className="text-sm font-medium text-foreground">n8n Workflow Automation</h3>
               <div className="flex items-center gap-2">
                 {n8nStatus === 'not_started' && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                     Not Started
                   </span>
                 )}
                 {n8nStatus === 'running' && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
                     <Clock className="w-3 h-3 mr-1" />
                     Running
                   </span>
                 )}
                 {n8nStatus === 'success' && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Completed
                   </span>
                 )}
                 {n8nStatus === 'error' && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
                     <XCircle className="w-3 h-3 mr-1" />
                     Error
                   </span>
@@ -407,19 +407,19 @@ function TabContent({
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="flex flex-col gap-1">
-                <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                   n8n Status
                 </div>
-                <div className="text-sm text-gray-900 capitalize">
+                <div className="text-sm text-foreground capitalize">
                   {n8nStatus.replace('_', ' ')}
                 </div>
               </div>
               {n8nStartedAt && (
                 <div className="flex flex-col gap-1">
-                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                  <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                     n8n Started At
                   </div>
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-foreground">
                     {new Date(n8nStartedAt).toLocaleString()}
                   </div>
                 </div>
@@ -427,8 +427,8 @@ function TabContent({
             </div>
 
             {n8nError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <div className="text-sm text-red-800">
+              <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <div className="text-sm text-destructive">
                   <strong>Error:</strong> {n8nError}
                 </div>
               </div>
@@ -437,10 +437,10 @@ function TabContent({
             <button
               onClick={onStartN8nWorkflow}
               disabled={isStartingN8n || n8nStatus === 'running' || n8nStatus === 'success'}
-              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white transition-colors ${
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-primary-foreground transition-colors ${
                 isStartingN8n || n8nStatus === 'running' || n8nStatus === 'success'
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                  ? 'bg-muted cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary'
               }`}
             >
               {isStartingN8n ? (
@@ -497,13 +497,13 @@ function TabContent({
 function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask: string | null; tasks: Task[]; workflowId: string }): JSX.Element {
   if (!selectedTask) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
         <div className="mb-4">
-          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+          <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center mb-3">
             🤖
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-medium text-foreground mb-2">Agent Interface</h3>
+          <p className="text-sm text-muted-foreground">
             Select a task to view the associated agent interface.
           </p>
         </div>
@@ -514,13 +514,13 @@ function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask:
   const task = tasks.find(t => t.id === selectedTask);
   if (!task) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
         <div className="mb-4">
-          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+          <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center mb-3">
             🤖
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-medium text-foreground mb-2">Agent Interface</h3>
+          <p className="text-sm text-muted-foreground">
             Task not found.
           </p>
         </div>
@@ -560,17 +560,17 @@ function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask:
       
       default:
         return (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
             <div className="mb-4">
-              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center mb-3">
                 🤖
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Agent Interface</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-foreground mb-2">Agent Interface</h3>
+              <p className="text-sm text-muted-foreground mb-4">
                 Connected to agent: <span className="font-medium">{task.agent}</span>
               </p>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="text-sm text-gray-600">
+              <div className="bg-muted border border-border rounded-lg p-4">
+                <div className="text-sm text-muted-foreground">
                   Interface not available for agent "{task.agent}".
                   <br />
                   Available agents: Mia, Nina, Iris
@@ -591,7 +591,7 @@ function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask:
 
 function PlaceholderContent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-gray-500 text-sm text-center py-5">
+    <div className="text-muted-foreground text-sm text-center py-5">
       {children}
     </div>
   );

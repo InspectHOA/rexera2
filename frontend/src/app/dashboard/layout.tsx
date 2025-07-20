@@ -18,7 +18,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading && !user && !SKIP_AUTH) {
       console.log('🔒 No authenticated user, redirecting to login');
-      router.push('/auth/login');
+      router.push('/auth/login' as any);
     }
   }, [loading, user, router]);
 

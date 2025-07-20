@@ -114,8 +114,8 @@ export function WorkflowTable() {
           />
           
           <tbody className="bg-background divide-y divide-border/50">
-            {workflows.map((workflow) => (
-              <WorkflowRow key={workflow.workflowId} workflow={workflow} />
+            {workflows.map((workflow, index) => (
+              <WorkflowRow key={workflow.workflowId} workflow={workflow} isEven={index % 2 === 0} />
             ))}
           </tbody>
         </table>

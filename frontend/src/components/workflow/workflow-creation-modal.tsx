@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Building, MapPin, Calendar, User, FileText, DollarSign, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWorkflows } from '@/lib/hooks/useWorkflows';
 import { useAuth } from '@/lib/auth/provider';
 import { api } from '@/lib/api/client';
+import { SKIP_AUTH, SKIP_AUTH_USER } from '@/lib/auth/config';
 import type { WorkflowType, PriorityLevel } from '@rexera/shared';
 
 interface WorkflowCreationModalProps {
@@ -52,9 +53,9 @@ const WORKFLOW_TYPES: Record<WorkflowType, WorkflowTypeInfo> = {
     icon: '🏛️',
     fields: [
       { key: 'property_address', label: 'Property Address', type: 'text', placeholder: '123 Main St, City, State 12345', required: true, icon: MapPin },
-      { key: 'municipality_name', label: 'Municipality', type: 'text', placeholder: 'City of Springfield', required: true, icon: Building },
+      { key: 'closing_date', label: 'Closing Date', type: 'date', placeholder: '', required: true, icon: Calendar },
+      { key: 'municipality_name', label: 'Municipality', type: 'text', placeholder: 'City of Springfield', icon: Building },
       { key: 'apn', label: 'APN/Parcel Number', type: 'text', placeholder: '123-456-789', icon: FileText },
-      { key: 'closing_date', label: 'Closing Date', type: 'date', placeholder: '', icon: Calendar },
     ],
     titleTemplate: (metadata) => `Muni Lien Search - ${metadata.property_address || 'New Property'}`
   },
@@ -64,10 +65,10 @@ const WORKFLOW_TYPES: Record<WorkflowType, WorkflowTypeInfo> = {
     icon: '🏘️',
     fields: [
       { key: 'property_address', label: 'Property Address', type: 'text', placeholder: '123 Main St, City, State 12345', required: true, icon: MapPin },
-      { key: 'hoa_name', label: 'HOA Name', type: 'text', placeholder: 'Sunset Ridge HOA', required: true, icon: Building },
+      { key: 'closing_date', label: 'Closing Date', type: 'date', placeholder: '', required: true, icon: Calendar },
+      { key: 'hoa_name', label: 'HOA Name', type: 'text', placeholder: 'Sunset Ridge HOA', icon: Building },
       { key: 'hoa_management_company', label: 'Management Company', type: 'text', placeholder: 'ABC Property Management', icon: Building },
       { key: 'hoa_phone', label: 'HOA Phone', type: 'text', placeholder: '(555) 123-4567', icon: User },
-      { key: 'closing_date', label: 'Closing Date', type: 'date', placeholder: '', icon: Calendar },
     ],
     titleTemplate: (metadata) => `HOA Docs - ${metadata.hoa_name || metadata.property_address || 'New Request'}`
   },
@@ -77,10 +78,10 @@ const WORKFLOW_TYPES: Record<WorkflowType, WorkflowTypeInfo> = {
     icon: '💰',
     fields: [
       { key: 'property_address', label: 'Property Address', type: 'text', placeholder: '123 Main St, City, State 12345', required: true, icon: MapPin },
-      { key: 'borrower_name', label: 'Borrower Name', type: 'text', placeholder: 'John & Jane Smith', required: true, icon: User },
-      { key: 'loan_number', label: 'Loan Number', type: 'text', placeholder: '1234567890', required: true, icon: FileText },
-      { key: 'lender_name', label: 'Lender Name', type: 'text', placeholder: 'First National Bank', required: true, icon: Building },
       { key: 'closing_date', label: 'Closing Date', type: 'date', placeholder: '', required: true, icon: Calendar },
+      { key: 'borrower_name', label: 'Borrower Name', type: 'text', placeholder: 'John & Jane Smith', icon: User },
+      { key: 'loan_number', label: 'Loan Number', type: 'text', placeholder: '1234567890', icon: FileText },
+      { key: 'lender_name', label: 'Lender Name', type: 'text', placeholder: 'First National Bank', icon: Building },
       { key: 'payoff_amount_estimate', label: 'Est. Payoff Amount', type: 'number', placeholder: '250000', icon: DollarSign },
     ],
     titleTemplate: (metadata) => `Payoff - ${metadata.borrower_name || metadata.property_address || 'New Request'}`
@@ -88,10 +89,10 @@ const WORKFLOW_TYPES: Record<WorkflowType, WorkflowTypeInfo> = {
 };
 
 const PRIORITY_OPTIONS: { value: PriorityLevel; label: string; color: string }[] = [
-  { value: 'LOW', label: 'Low', color: 'text-green-600' },
-  { value: 'NORMAL', label: 'Normal', color: 'text-blue-600' },
-  { value: 'HIGH', label: 'High', color: 'text-orange-600' },
-  { value: 'URGENT', label: 'Urgent', color: 'text-red-600' },
+  { value: 'LOW', label: 'Low', color: 'text-green-600 dark:text-green-400' },
+  { value: 'NORMAL', label: 'Normal', color: 'text-blue-600 dark:text-blue-400' },
+  { value: 'HIGH', label: 'High', color: 'text-orange-600 dark:text-orange-400' },
+  { value: 'URGENT', label: 'Urgent', color: 'text-destructive' },
 ];
 
 export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCreationModalProps) {
@@ -172,20 +173,41 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
   };
 
   const validateForm = (): boolean => {
+    console.log('🔍 Starting form validation...');
     const newErrors: Record<string, string> = {};
     const workflowInfo = WORKFLOW_TYPES[formData.workflow_type];
 
-    // Required fields
-    if (!formData.client_id) newErrors.client_id = 'Client is required';
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
+    console.log('📋 Validating required fields:');
+    console.log('  - Client ID:', formData.client_id);
+    console.log('  - Due Date:', formData.due_date);
 
-    // Validate workflow-specific metadata
+    // Required fields
+    if (!formData.client_id) {
+      newErrors.client_id = 'Client is required';
+      console.log('❌ Client is missing');
+    }
+    if (!formData.due_date) {
+      newErrors.due_date = 'Due date is required';
+      console.log('❌ Due date is missing');
+    }
+
+    console.log('📋 Validating workflow-specific metadata:');
+    console.log('  - Workflow type:', formData.workflow_type);
+    console.log('  - Workflow fields:', workflowInfo.fields);
+    console.log('  - Current metadata:', formData.metadata);
+
+    // Validate workflow-specific metadata (property_address and closing_date are required)
     workflowInfo.fields.forEach(field => {
-      if (field.required && !formData.metadata[field.key]?.trim()) {
+      const value = formData.metadata[field.key];
+      console.log(`  - ${field.label} (${field.key}): "${value}" (required: ${field.required})`);
+      
+      if (field.required && !value?.trim()) {
         newErrors[`metadata.${field.key}`] = `${field.label} is required`;
+        console.log(`❌ ${field.label} is missing`);
       }
     });
 
+    console.log('🔍 Validation complete. Errors found:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -193,26 +215,78 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    if (!user?.id) return;
+    console.log('🚀 Form submission started');
+    console.log('📝 Current form data:', formData);
+    console.log('👤 Current user:', user);
+    console.log('❌ Current errors before validation:', errors);
+    
+    const isFormValid = validateForm();
+    console.log('✅ Form validation result:', isFormValid);
+    console.log('❌ Validation errors:', errors);
+    
+    if (!isFormValid) {
+      console.log('❌ Form validation failed, stopping submission');
+      return;
+    }
+    
+    // Handle SKIP_AUTH mode - use hardcoded user if no user is available
+    let userId = user?.id;
+    if (!userId && SKIP_AUTH) {
+      console.log('🔧 No user in auth context, but SKIP_AUTH is enabled. Using SKIP_AUTH_USER');
+      userId = SKIP_AUTH_USER.id;
+    }
+    
+    if (!userId) {
+      console.log('❌ No user ID found and not in SKIP_AUTH mode, stopping submission');
+      console.log('🔧 SKIP_AUTH enabled:', SKIP_AUTH);
+      console.log('👤 Auth user:', user);
+      setErrors({ submit: 'User not authenticated. Please refresh and try again.' });
+      return;
+    }
+    
+    console.log('✅ Using user ID:', userId);
 
     try {
+      // Convert date string to ISO datetime format
+      const convertToDateTime = (dateString: string) => {
+        if (!dateString) return undefined;
+        const date = new Date(dateString + 'T23:59:59.999Z'); // End of day
+        return date.toISOString();
+      };
+
+      // Convert any date fields in metadata to datetime format
+      const processedMetadata = { ...formData.metadata };
+      if (processedMetadata.closing_date) {
+        processedMetadata.closing_date = convertToDateTime(processedMetadata.closing_date);
+      }
+
       const workflowData = {
         workflow_type: formData.workflow_type,
         client_id: formData.client_id,
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         priority: formData.priority,
-        metadata: formData.metadata,
-        due_date: formData.due_date || undefined,
-        created_by: user.id
+        metadata: processedMetadata,
+        due_date: convertToDateTime(formData.due_date),
+        created_by: userId
       };
 
-      await createWorkflowAsync(workflowData);
+      console.log('📦 Prepared workflow data:', workflowData);
+      console.log('🔄 Calling createWorkflowAsync...');
+      
+      const result = await createWorkflowAsync(workflowData);
+      console.log('✅ Workflow created successfully:', result);
+      
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Failed to create workflow:', error);
+      console.error('❌ Failed to create workflow:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        status: error?.status,
+        response: error?.response?.data,
+        stack: error?.stack
+      });
       setErrors({ submit: 'Failed to create workflow. Please try again.' });
     }
   };
@@ -223,35 +297,33 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl border border-gray-200/50 w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-card rounded-lg shadow-2xl border border-border/50 w-full max-w-4xl max-h-[95vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 border-b border-gray-200">
+        <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-2xl">{currentWorkflowInfo.icon}</div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Create New Workflow</h2>
-                <p className="text-sm text-gray-600 mt-1">{currentWorkflowInfo.description}</p>
+                <h2 className="text-xl font-semibold text-foreground">Create New Workflow</h2>
+                <p className="text-sm text-muted-foreground mt-1">{currentWorkflowInfo.description}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
               disabled={isCreating}
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(95vh-140px)]">
+          <div className="p-6 space-y-4">
             {/* Workflow Type Selection */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-900">
-                Workflow Type <span className="text-red-500">*</span>
-              </label>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {Object.entries(WORKFLOW_TYPES).map(([type, info]) => (
                   <button
@@ -260,8 +332,8 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                     onClick={() => handleInputChange('workflow_type', type as WorkflowType)}
                     className={`p-3 rounded-lg border text-left transition-all ${
                       formData.workflow_type === type
-                        ? 'border-primary-500 bg-primary-50 text-primary-900'
-                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card hover:border-border/70 text-foreground'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -274,16 +346,16 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
             </div>
 
             {/* Client Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-900">
-                Client <span className="text-red-500">*</span>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground/70">
+                Client <span className="text-destructive">*</span>
               </label>
               <select
                 value={formData.client_id}
                 onChange={(e) => handleInputChange('client_id', e.target.value)}
                 disabled={loadingClients}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.client_id ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
+                  errors.client_id ? 'border-destructive' : 'border-border'
                 }`}
               >
                 <option value="">
@@ -296,7 +368,7 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                 ))}
               </select>
               {errors.client_id && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
+                <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   {errors.client_id}
                 </p>
@@ -305,55 +377,84 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
 
             {/* Workflow-Specific Fields */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-                <span className="text-xl">{currentWorkflowInfo.icon}</span>
-                {currentWorkflowInfo.name} Details
-              </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {currentWorkflowInfo.fields.map((field) => {
+                {currentWorkflowInfo.fields.map((field, index) => {
                   const IconComponent = field.icon;
+                  const isPropertyAddress = field.key === 'property_address';
+                  const isClosingDate = field.key === 'closing_date';
+                  
                   return (
-                    <div key={field.key} className={field.key === 'property_address' ? 'sm:col-span-2' : ''}>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {field.label} {field.required && <span className="text-red-500">*</span>}
-                      </label>
-                      <div className="relative">
-                        {IconComponent && (
-                          <IconComponent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <React.Fragment key={field.key}>
+                      <div className={`${isPropertyAddress ? 'sm:col-span-2' : ''} space-y-1`}>
+                        <label className="text-xs text-muted-foreground/70">
+                          {field.label} {field.required && <span className="text-destructive">*</span>}
+                        </label>
+                        <div className="relative">
+                          {IconComponent && (
+                            <IconComponent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          )}
+                          <input
+                            type={field.type}
+                            value={formData.metadata[field.key] || ''}
+                            onChange={(e) => handleMetadataChange(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                            className={`w-full ${IconComponent ? 'pl-10' : 'pl-3'} pr-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
+                              errors[`metadata.${field.key}`] ? 'border-destructive' : 'border-border'
+                            }`}
+                          />
+                        </div>
+                        {errors[`metadata.${field.key}`] && (
+                          <p className="text-xs text-destructive flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {errors[`metadata.${field.key}`]}
+                          </p>
                         )}
-                        <input
-                          type={field.type}
-                          value={formData.metadata[field.key] || ''}
-                          onChange={(e) => handleMetadataChange(field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                          className={`w-full ${IconComponent ? 'pl-10' : 'pl-3'} pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                            errors[`metadata.${field.key}`] ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                        />
                       </div>
-                      {errors[`metadata.${field.key}`] && (
-                        <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          {errors[`metadata.${field.key}`]}
-                        </p>
+                      
+                      {/* Add Due Date right after Closing Date */}
+                      {isClosingDate && (
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground/70">
+                            Due Date <span className="text-destructive">*</span>
+                          </label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <input
+                              type="date"
+                              value={formData.due_date}
+                              onChange={(e) => handleInputChange('due_date', e.target.value)}
+                              min={new Date().toISOString().split('T')[0]}
+                              className={`w-full pl-10 pr-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
+                                errors.due_date ? 'border-destructive' : 'border-border'
+                              }`}
+                            />
+                          </div>
+                          {errors.due_date && (
+                            <p className="text-xs text-destructive flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              {errors.due_date}
+                            </p>
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </React.Fragment>
                   );
                 })}
               </div>
             </div>
 
             {/* General Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-3">
               {/* Priority */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Priority</label>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground/70">Priority</label>
                 <select
                   value={formData.priority}
                   onChange={(e) => handleInputChange('priority', e.target.value as PriorityLevel)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
                 >
+                  <option value="" disabled>Select Priority</option>
                   {PRIORITY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -361,59 +462,26 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                   ))}
                 </select>
               </div>
-
-              {/* Due Date */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Due Date</label>
-                <input
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => handleInputChange('due_date', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
             </div>
 
-            {/* Title (Auto-generated but editable) */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Workflow title will be auto-generated"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.title ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {errors.title && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  {errors.title}
-                </p>
-              )}
-            </div>
 
             {/* Description */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Description</label>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground/70">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Optional additional details about this workflow..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+          <div className="bg-muted/50 px-6 py-4 border-t border-border flex items-center justify-between">
             {errors.submit && (
-              <p className="text-sm text-red-600 flex items-center gap-1">
+              <p className="text-sm text-destructive flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" />
                 {errors.submit}
               </p>
@@ -431,6 +499,12 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                 type="submit"
                 disabled={isCreating || loadingClients}
                 className="flex items-center gap-2"
+                onClick={() => {
+                  console.log('🖱️ Create Workflow button clicked');
+                  console.log('🔄 isCreating:', isCreating);
+                  console.log('⏳ loadingClients:', loadingClients);
+                  console.log('🚫 Button disabled:', isCreating || loadingClients);
+                }}
               >
                 {isCreating ? (
                   <>

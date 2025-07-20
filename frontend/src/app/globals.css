@@ -64,6 +64,213 @@
 }
 
 @layer components {
+  /* Dark mode utility classes for consistent theming */
+  .dm-bg {
+    background-color: hsl(var(--background));
+  }
+  
+  .dm-bg-card {
+    background-color: hsl(var(--card));
+  }
+  
+  .dm-bg-muted {
+    background-color: hsl(var(--muted));
+  }
+  
+  .dm-bg-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .dm-bg-destructive {
+    background-color: hsl(var(--destructive));
+    color: hsl(var(--destructive-foreground));
+  }
+  
+  .dm-text {
+    color: hsl(var(--foreground));
+  }
+  
+  .dm-text-muted {
+    color: hsl(var(--muted-foreground));
+  }
+  
+  .dm-border {
+    border-color: hsl(var(--border));
+  }
+  
+  .dm-hover:hover {
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  
+  .dm-focus:focus {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  
+  /* Common UI patterns */
+  .dm-panel {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    border-radius: 0.5rem;
+  }
+  
+  .dm-button-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    transition: all 0.2s;
+  }
+  
+  .dm-button-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
+  }
+  
+  .dm-button-secondary {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    transition: all 0.2s;
+  }
+  
+  .dm-button-secondary:hover {
+    background-color: hsl(var(--muted) / 0.8);
+  }
+  
+  .dm-button-ghost {
+    color: hsl(var(--muted-foreground));
+    transition: all 0.2s;
+  }
+  
+  .dm-button-ghost:hover {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+  
+  .dm-input {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+  
+  .dm-input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  
+  .dm-input:focus {
+    border-color: hsl(var(--ring));
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  
+  .dm-select {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+  
+  .dm-dropdown {
+    background-color: hsl(var(--popover));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border-radius: 0.5rem;
+  }
+  
+  .dm-list-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .dm-list-item:hover {
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  
+  .dm-list-item-selected {
+    background-color: hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.2);
+  }
+  
+  .dm-modal {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    border-radius: 0.5rem;
+  }
+  
+  .dm-divider {
+    border-color: hsl(var(--border));
+  }
+  
+  /* Email/Communication specific utilities */
+  .dm-email-thread {
+    background-color: hsl(var(--card));
+    border-right: 1px solid hsl(var(--border));
+  }
+  
+  .dm-email-header {
+    background-color: hsl(var(--muted));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  
+  .dm-email-item {
+    border-bottom: 1px solid hsl(var(--border));
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .dm-email-item:hover {
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  
+  .dm-email-item-selected {
+    background-color: hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.2);
+  }
+  
+  .dm-email-content {
+    background-color: hsl(var(--card));
+  }
+  
+  .dm-email-inbound {
+    margin-right: 2rem;
+  }
+  
+  .dm-email-outbound {
+    margin-left: 2rem;
+    background-color: hsl(var(--primary) / 0.05);
+    border: 1px solid hsl(var(--primary) / 0.1);
+  }
+  
+  .dm-avatar-inbound {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+  
+  .dm-avatar-outbound {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  
+  /* Status utilities with semantic colors */
+  .dm-status-sent {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+  
+  .dm-status-delivered {
+    @apply text-green-600 dark:text-green-400;
+  }
+  
+  .dm-status-failed {
+    color: hsl(var(--destructive));
+  }
+  
+  .dm-status-bounced {
+    @apply text-orange-600 dark:text-orange-400;
+  }
+  
+  .dm-status-read {
+    @apply text-green-600 dark:text-green-400;
+  }
+
   /* Status badges */
   .status-badge {
     @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset;

@@ -11,9 +11,9 @@ export function WorkflowTableHeader({ onSort, getSortIndicator }: WorkflowTableH
   return (
     <thead className="bg-muted/50">
       <tr>
-        <th 
-          onClick={() => onSort('id')} 
-          className="px-3 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
+        <th
+          onClick={() => onSort('id')}
+          className="px-4 py-1.5 text-left border-b border-border font-normal text-[9px] text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
         >
           ID <span className="ml-1.5 text-muted-foreground/70 text-[8px]">{getSortIndicator('id')}</span>
         </th>

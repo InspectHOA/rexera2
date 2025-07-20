@@ -60,11 +60,16 @@ export const WorkflowFiltersSchema = z.object({
 
 // Extended workflow with relationships
 export const WorkflowWithRelationsSchema = WorkflowSchema.extend({
-  clients: z.object({
+  client: z.object({
     id: z.string().uuid(),
     name: z.string(),
     domain: z.string().optional(),
   }).optional(),
+  clients: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    domain: z.string().optional(),
+  }).optional(), // Deprecated: kept for backward compatibility
   assigned_user: z.object({
     id: z.string().uuid(),
     full_name: z.string(),

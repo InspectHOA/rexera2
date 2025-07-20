@@ -7,9 +7,10 @@ import type { TransformedWorkflow } from '@/types/workflow';
 
 interface WorkflowRowProps {
   workflow: TransformedWorkflow;
+  isEven: boolean;
 }
 
-export function WorkflowRow({ workflow }: WorkflowRowProps) {
+export function WorkflowRow({ workflow, isEven }: WorkflowRowProps) {
   const router = useRouter();
 
   const handleRowClick = () => {
@@ -19,10 +20,12 @@ export function WorkflowRow({ workflow }: WorkflowRowProps) {
   return (
     <tr 
       onClick={handleRowClick}
-      className="hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50"
+      className={`hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50 ${
+        isEven ? 'bg-background' : 'bg-muted/20'
+      }`}
     >
       {/* ID */}
-      <td className="px-3 py-2 text-xs text-foreground font-mono">
+      <td className="px-4 py-2 text-xs text-foreground font-mono">
         {workflow.id}
       </td>
 
@@ -62,19 +65,12 @@ export function WorkflowRow({ workflow }: WorkflowRowProps) {
       {/* Interrupts */}
       <td className="px-3 py-2 text-xs">
         {workflow.interrupts ? (
-          <div className="flex items-center gap-1">
-            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold text-white ${
-              workflow.interrupts.type === 'critical' ? 'bg-red-500' : 'bg-amber-500'
-            }`}>
-              {workflow.interrupts.count}
-            </span>
-            <div className="flex gap-0.5">
-              {workflow.interrupts.icons.map((iconData, index) => (
-                <span key={index} className="text-xs" title={`${iconData.agent} interrupt`}>
-                  {iconData.icon}
-                </span>
-              ))}
-            </div>
+          <div className="flex gap-0.5">
+            {workflow.interrupts.icons.map((iconData, index) => (
+              <span key={index} className="text-xs" title={`${iconData.agent} interrupt`}>
+                {iconData.icon}
+              </span>
+            ))}
           </div>
         ) : (
           <span className="text-muted-foreground/70">-</span>

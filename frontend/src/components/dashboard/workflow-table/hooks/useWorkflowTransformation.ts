@@ -27,7 +27,7 @@ export function useWorkflowTransformation(
         createdRaw: workflow.created_at, // For sorting
         type: getDisplayWorkflowType(workflow.workflow_type),
         typeRaw: workflow.workflow_type, // For sorting
-        client: workflow.clients?.name || 'Unknown Client',
+        client: workflow.client?.name || 'Unknown Client',
         property: workflow.metadata?.property_address || workflow.title || 'No property info',
         status: getDisplayStatus(workflow.status),
         statusRaw: workflow.status, // For sorting

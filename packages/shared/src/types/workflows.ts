@@ -99,11 +99,16 @@ export interface WorkflowData {
     closing_date?: string;
     [key: string]: string | number | boolean | null | undefined;
   };
-  clients?: {
+  client?: {
     id: string;
     name: string;
     domain?: string;
   };
+  clients?: {
+    id: string;
+    name: string;
+    domain?: string;
+  }; // Deprecated: kept for backward compatibility
   assigned_user?: {
     id: string;
     full_name: string;

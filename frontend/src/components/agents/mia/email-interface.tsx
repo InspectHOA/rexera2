@@ -138,18 +138,18 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'read': return 'text-green-600';
-      case 'sent': return 'text-blue-600';
-      case 'delivered': return 'text-green-600';
-      case 'failed': return 'text-red-600';
-      case 'bounced': return 'text-orange-600';
-      default: return 'text-gray-600';
+      case 'read': return 'dm-status-read';
+      case 'sent': return 'dm-status-sent';
+      case 'delivered': return 'dm-status-delivered';
+      case 'failed': return 'dm-status-failed';
+      case 'bounced': return 'dm-status-bounced';
+      default: return 'dm-text-muted';
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 text-gray-500">
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
           <Mail className="w-8 h-8 mx-auto mb-2 animate-pulse" />
           <p>Loading conversations...</p>
@@ -161,14 +161,14 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
   return (
     <div className="flex h-full">
       {/* Thread List - Left Side */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-card border-r border-border flex flex-col">
         {/* Compact Header */}
-        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Email Threads ({threads.length})</h3>
+        <div className="p-3 border-b border-border flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">Email Threads ({threads.length})</h3>
           <div className="flex gap-2">
             <button
               onClick={() => setComposeOpen(true)}
-              className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-blue-700"
+              className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-primary/90"
             >
               <Plus className="w-3.5 h-3.5" />
               New
@@ -179,8 +179,8 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
         {/* Thread List */}
         <div className="flex-1 overflow-y-auto">
           {threads.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              <Mail className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <div className="p-6 text-center text-muted-foreground">
+              <Mail className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm">No email conversations yet</p>
             </div>
           ) : (
@@ -188,29 +188,29 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
               <div
                 key={thread.thread_id}
                 onClick={() => setSelectedThread(thread.thread_id)}
-                className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                  selectedThread === thread.thread_id ? 'bg-blue-50 border-blue-200' : ''
+                className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 ${
+                  selectedThread === thread.thread_id ? 'bg-primary/10 border-primary/20' : ''
                 }`}
               >
                 <div className="flex items-start justify-between mb-1">
-                  <h4 className="text-sm font-medium text-gray-900 truncate flex-1 mr-2">
+                  <h4 className="text-sm font-medium text-foreground truncate flex-1 mr-2">
                     {thread.subject}
                   </h4>
-                  <span className="text-xs text-gray-500 flex-shrink-0">
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
                     {formatTimestamp(thread.lastActivity)}
                   </span>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-600 truncate flex-1">
+                  <div className="text-xs text-muted-foreground truncate flex-1">
                     {thread.participants.filter(p => p !== 'mia@rexera.com').join(', ')}
                   </div>
                   <div className="flex items-center gap-1 ml-2">
-                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded-full text-gray-600">
+                    <span className="text-xs px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">
                       {thread.emails.length}
                     </span>
                     {thread.emails.some(e => e.direction === 'INBOUND' && e.status !== 'READ') && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
                     )}
                   </div>
                 </div>
@@ -221,15 +221,15 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
       </div>
 
       {/* Thread View - Right Side */}
-      <div className="flex-1 bg-white flex flex-col">
+      <div className="flex-1 bg-card flex flex-col">
         {selectedThreadData ? (
           <>
             {/* Thread Header */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{selectedThreadData.subject}</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-foreground mb-1">{selectedThreadData.subject}</h3>
+                  <p className="text-sm text-muted-foreground">
                     {selectedThreadData.participants.filter(p => p !== 'mia@rexera.com').join(', ')}
                   </p>
                 </div>
@@ -245,8 +245,8 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
                     }}
                     className={`p-2 rounded transition-colors ${
                       replyOpen 
-                        ? 'bg-blue-100 text-blue-600' 
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-muted-foreground hover:bg-muted'
                     }`}
                     title="Reply to this conversation"
                   >
@@ -272,15 +272,15 @@ ${latestEmail.body}`);
                     }}
                     className={`p-2 rounded transition-colors ${
                       forwardOpen 
-                        ? 'bg-blue-100 text-blue-600' 
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-muted-foreground hover:bg-muted'
                     }`}
                     title="Forward this conversation"
                   >
                     <Forward className="w-4 h-4" />
                   </button>
                   <button 
-                    className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+                    className="p-2 text-muted-foreground hover:bg-muted rounded"
                     title="Archive this conversation"
                     onClick={() => {
                       // Archive functionality not implemented yet
@@ -298,17 +298,17 @@ ${latestEmail.body}`);
               {selectedThreadData.emails.map((email, index) => (
                 <div key={email.id} className={`${
                   email.direction === 'INBOUND' 
-                    ? 'mr-8' 
-                    : 'ml-8 bg-blue-50 border border-blue-100'
+                    ? 'mr-8 bg-card border border-border' 
+                    : 'ml-8 bg-primary/5 border border-primary/20'
                 } rounded-lg p-4`}>
                   
                   {/* Email Header */}
-                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         email.direction === 'INBOUND' 
-                          ? 'bg-gray-200 text-gray-700' 
-                          : 'bg-blue-600 text-white'
+                          ? 'bg-muted text-muted-foreground' 
+                          : 'bg-primary text-primary-foreground'
                       }`}>
                         {email.direction === 'INBOUND' 
                           ? email.sender.charAt(0).toUpperCase()
@@ -316,17 +316,17 @@ ${latestEmail.body}`);
                         }
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-foreground">
                           {email.direction === 'INBOUND' ? email.sender : 'Mia'}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {email.direction === 'INBOUND' ? 'to mia@rexera.com' : `to ${email.recipient_email}`}
                         </div>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {new Date(email.created_at).toLocaleDateString('en-US', { 
                           month: 'short', 
                           day: 'numeric',
@@ -341,17 +341,17 @@ ${latestEmail.body}`);
                   </div>
                   
                   {/* Email Body */}
-                  <div className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                     {email.body}
                   </div>
                   
                   {/* Attachments */}
                   {email.attachments && email.attachments.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="text-xs text-gray-500 mb-2">Attachments:</div>
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs text-muted-foreground mb-2">Attachments:</div>
                       <div className="space-y-1">
                         {email.attachments.map((attachment, idx) => (
-                          <div key={idx} className="text-xs text-blue-600 hover:underline cursor-pointer">
+                          <div key={idx} className="text-xs text-primary hover:underline cursor-pointer">
                             📎 {attachment.filename || `Attachment ${idx + 1}`}
                           </div>
                         ))}
@@ -364,17 +364,17 @@ ${latestEmail.body}`);
 
             {/* Reply Interface */}
             {replyOpen && selectedThreadData && (
-              <div className="border-t border-gray-200 bg-gray-50">
+              <div className="border-t border-border bg-muted">
                 <div className="p-4">
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="bg-card rounded-lg border border-border shadow-sm">
                     {/* Reply Header */}
-                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                    <div className="px-4 py-3 border-b border-border bg-muted rounded-t-lg">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
                             M
                           </div>
-                          <div className="text-sm font-medium text-gray-900">Reply as Mia</div>
+                          <div className="text-sm font-medium text-foreground">Reply as Mia</div>
                         </div>
                         <button
                           onClick={() => {
@@ -382,7 +382,7 @@ ${latestEmail.body}`);
                             setReplyText('');
                             setReplyTo('');
                           }}
-                          className="text-gray-400 hover:text-gray-600"
+                          className="text-muted-foreground hover:text-foreground"
                         >
                           ✕
                         </button>
@@ -390,13 +390,13 @@ ${latestEmail.body}`);
                       
                       {/* Editable To Field */}
                       <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 min-w-[24px]">To:</label>
+                        <label className="text-sm font-medium text-foreground min-w-[24px]">To:</label>
                         <input
                           type="email"
                           value={replyTo}
                           onChange={(e) => setReplyTo(e.target.value)}
                           placeholder="Enter recipient email addresses..."
-                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="flex-1 px-3 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
                         />
                       </div>
                     </div>
@@ -408,15 +408,15 @@ ${latestEmail.body}`);
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder="Type your reply..."
                         rows={6}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-card text-foreground"
                       />
                     </div>
 
                     {/* Reply Actions */}
-                    <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center justify-between">
+                    <div className="px-4 py-3 border-t border-border bg-muted/50 rounded-b-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 text-sm text-gray-600">
-                          <input type="checkbox" className="rounded border-gray-300" />
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <input type="checkbox" className="rounded border-border bg-card" />
                           Send copy to team
                         </label>
                       </div>
@@ -427,7 +427,7 @@ ${latestEmail.body}`);
                             setReplyText('');
                             setReplyTo('');
                           }}
-                          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
+                          className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg text-sm"
                         >
                           Cancel
                         </button>
@@ -435,8 +435,8 @@ ${latestEmail.body}`);
                           disabled={!replyText.trim() || !replyTo.trim()}
                           className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
                             replyText.trim() && replyTo.trim()
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                              : 'bg-muted text-muted-foreground cursor-not-allowed'
                           }`}
                           onClick={() => {
                             if (replyText.trim() && replyTo.trim()) {
@@ -460,17 +460,17 @@ ${latestEmail.body}`);
 
             {/* Forward Interface */}
             {forwardOpen && selectedThreadData && (
-              <div className="border-t border-gray-200 bg-gray-50">
+              <div className="border-t border-border bg-muted/50">
                 <div className="p-4">
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="bg-card rounded-lg border border-border shadow-sm">
                     {/* Forward Header */}
-                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                    <div className="px-4 py-3 border-b border-border bg-muted rounded-t-lg">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
                             M
                           </div>
-                          <div className="text-sm font-medium text-gray-900">Forward as Mia</div>
+                          <div className="text-sm font-medium text-foreground">Forward as Mia</div>
                         </div>
                         <button
                           onClick={() => {
@@ -479,7 +479,7 @@ ${latestEmail.body}`);
                             setForwardTo('');
                             setForwardSubject('');
                           }}
-                          className="text-gray-400 hover:text-gray-600"
+                          className="text-muted-foreground hover:text-foreground"
                         >
                           ✕
                         </button>
@@ -487,25 +487,25 @@ ${latestEmail.body}`);
                       
                       {/* Forward To Field */}
                       <div className="flex items-center gap-2 mb-2">
-                        <label className="text-sm font-medium text-gray-700 min-w-[24px]">To:</label>
+                        <label className="text-sm font-medium text-foreground min-w-[24px]">To:</label>
                         <input
                           type="email"
                           value={forwardTo}
                           onChange={(e) => setForwardTo(e.target.value)}
                           placeholder="Enter recipient email addresses..."
-                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="flex-1 px-3 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
                         />
                       </div>
 
                       {/* Forward Subject Field */}
                       <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 min-w-[24px]">Subject:</label>
+                        <label className="text-sm font-medium text-foreground min-w-[24px]">Subject:</label>
                         <input
                           type="text"
                           value={forwardSubject}
                           onChange={(e) => setForwardSubject(e.target.value)}
                           placeholder="Enter subject..."
-                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="flex-1 px-3 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
                         />
                       </div>
                     </div>
@@ -517,15 +517,15 @@ ${latestEmail.body}`);
                         onChange={(e) => setForwardText(e.target.value)}
                         placeholder="Add your message above the forwarded content..."
                         rows={10}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm font-mono"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm font-mono bg-card text-foreground"
                       />
                     </div>
 
                     {/* Forward Actions */}
-                    <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center justify-between">
+                    <div className="px-4 py-3 border-t border-border bg-muted/50 rounded-b-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 text-sm text-gray-600">
-                          <input type="checkbox" className="rounded border-gray-300" />
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <input type="checkbox" className="rounded border-border bg-card" />
                           Send copy to team
                         </label>
                       </div>
@@ -537,7 +537,7 @@ ${latestEmail.body}`);
                             setForwardTo('');
                             setForwardSubject('');
                           }}
-                          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
+                          className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg text-sm"
                         >
                           Cancel
                         </button>
@@ -545,8 +545,8 @@ ${latestEmail.body}`);
                           disabled={!forwardText.trim() || !forwardTo.trim() || !forwardSubject.trim()}
                           className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
                             forwardText.trim() && forwardTo.trim() && forwardSubject.trim()
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                              : 'bg-muted text-muted-foreground cursor-not-allowed'
                           }`}
                           onClick={() => {
                             if (forwardText.trim() && forwardTo.trim() && forwardSubject.trim()) {
@@ -570,9 +570,9 @@ ${latestEmail.body}`);
             )}
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
-              <Mail className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <Mail className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
               <p>Select a conversation to view messages</p>
             </div>
           </div>
@@ -582,13 +582,13 @@ ${latestEmail.body}`);
       {/* Compose Modal */}
       {composeOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
-            <div className="border-b border-gray-200 p-4">
+          <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div className="border-b border-border p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Compose Email</h3>
                 <button
                   onClick={() => setComposeOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   ✕
                 </button>
@@ -598,26 +598,26 @@ ${latestEmail.body}`);
               <input
                 type="email"
                 placeholder="To:"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
               <input
                 type="text"
                 placeholder="Subject:"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
               <textarea
                 placeholder="Compose your email..."
                 rows={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setComposeOpen(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg"
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
                   <Send className="w-4 h-4" />
                   Send
                 </button>

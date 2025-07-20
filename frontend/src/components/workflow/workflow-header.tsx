@@ -14,20 +14,20 @@ interface WorkflowHeaderProps {
 
 export function WorkflowHeader({ workflow, onBackClick }: WorkflowHeaderProps) {
   return (
-    <header className="bg-white/80 backdrop-blur-sm px-4 py-3 mb-4 flex justify-between items-center shadow-2xl rounded-2xl border border-gray-200/50">
+    <header className="bg-background/80 backdrop-blur-sm px-4 py-3 mb-4 flex justify-between items-center shadow-2xl rounded-2xl border border-border/50">
       <div className="flex items-center gap-4">
         <button
           onClick={onBackClick}
-          className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100/50 border border-gray-200/50 hover:bg-gray-200/50 transition-colors flex items-center gap-1 rounded-md"
+          className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50 border border-border/50 hover:bg-muted transition-colors flex items-center gap-1 rounded-md"
         >
           <ArrowLeft className="h-3 w-3" />
           Back
         </button>
         <div>
-          <h1 className="text-base font-semibold text-gray-900">
+          <h1 className="text-base font-semibold text-foreground">
             {workflow.title}
           </h1>
-          <p className="font-mono text-gray-500 text-xs">
+          <p className="font-mono text-muted-foreground text-xs">
             {workflow.subtitle}
           </p>
         </div>
@@ -39,7 +39,7 @@ export function WorkflowHeader({ workflow, onBackClick }: WorkflowHeaderProps) {
           <DateField label="Due" value={workflow.due} isUrgent />
           <DateField label="Closing" value={workflow.closing} />
         </div>
-        <span className="px-2 py-1 text-xs font-semibold uppercase tracking-wider bg-red-50 text-red-600 border border-red-200">
+        <span className="px-2 py-1 text-xs font-semibold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/20">
           {workflow.status}
         </span>
       </div>
@@ -50,10 +50,10 @@ export function WorkflowHeader({ workflow, onBackClick }: WorkflowHeaderProps) {
 function DateField({ label, value, isUrgent = false }: { label: string; value: string; isUrgent?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className="text-xs text-gray-400 uppercase font-semibold tracking-wider">
+      <span className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">
         {label}:
       </span>
-      <span className={`text-xs font-medium whitespace-nowrap ${isUrgent ? 'text-red-500' : 'text-gray-600'}`}>
+      <span className={`text-xs font-medium whitespace-nowrap ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
         {value}
       </span>
     </div>

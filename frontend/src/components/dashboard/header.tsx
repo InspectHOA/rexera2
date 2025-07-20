@@ -124,17 +124,17 @@ export function DashboardHeader() {
             alt="Rexera Logo"
             className="h-8 w-auto"
           />
-          <Button
-            onClick={() => setShowWorkflowModal(true)}
-            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-md transition-colors"
-            size="sm"
-          >
-            <Plus className="h-4 w-4" />
-            Create Workflow
-          </Button>
         </div>
         
         <div className="flex items-center gap-3 text-sm relative">
+        <Button
+          onClick={() => setShowWorkflowModal(true)}
+          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-md transition-colors"
+          size="sm"
+        >
+          <Plus className="h-4 w-4" />
+          Create Workflow
+        </Button>
         {/* Notification Bell */}
         <div className="relative" ref={notificationRef}>
           <button

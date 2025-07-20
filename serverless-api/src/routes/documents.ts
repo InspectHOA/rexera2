@@ -111,7 +111,7 @@ documents.get('/', async (c) => {
     }
     
     if (tags) {
-      const tagArray = tags.split(',').map(tag => tag.trim());
+      const tagArray = tags.split(',').map((tag: string) => tag.trim());
       query = query.overlaps('tags', tagArray);
     }
 
