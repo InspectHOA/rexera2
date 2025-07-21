@@ -185,7 +185,8 @@ jobs:
       - name: Setup test database
         run: |
           # Install and setup Supabase CLI for local testing
-          wget -qO- https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar xvz
+          [ -f supabase ] && rm supabase || true
+          wget -qO- https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar xz
           sudo mv supabase /usr/local/bin
           
           # Run database migrations for testing
