@@ -71,6 +71,21 @@ tsx scripts/utils/script-runner.ts list
 - Zod schemas for API validation
 - Import order: external → internal → relative
 
+### File Naming Convention
+**All files MUST use kebab-case naming consistently:**
+- **API Routes**: `kebab-case.ts` (e.g., `hil-notes.ts`, `audit-events.ts`)
+- **Schemas**: `kebab-case.ts` (e.g., `hil-notes.ts`, `task-executions.ts`)
+- **React Components**: `kebab-case.tsx` (e.g., `notes-tab.tsx`, `mention-input.tsx`)
+- **React Hooks**: `use-kebab-case.ts` (e.g., `use-workflows.ts`, `use-documents.ts`)
+- **Utilities**: `kebab-case.ts` (e.g., `audit-logger.ts`, `uuid-formatter.ts`)
+- **Scripts**: `kebab-case.ts/.js` (e.g., `create-skip-auth-user.js`)
+
+**Examples:**
+```
+✅ Good: hil-notes.ts, use-workflows.ts, notes-tab.tsx
+❌ Bad: hilNotes.ts, useWorkflows.ts, NotesTab.tsx
+```
+
 ### Database
 - **DML operations**: Supported via TypeScript scripts
 - **DDL operations**: Manual via Supabase dashboard (enum changes, schema)
@@ -109,9 +124,9 @@ tsx scripts/utils/script-runner.ts list
 - Automatic `created_at`/`updated_at` timestamps
 
 ### Frontend Components
-- `NotesTab`: Main notes interface in workflow detail view
-- `MentionInput`: @username autocomplete component
-- Real-time notifications via `useUnifiedNotifications` hook
+- `notes-tab.tsx`: Main notes interface in workflow detail view
+- `mention-input.tsx`: @username autocomplete component
+- Real-time notifications via `use-unified-notifications.ts` hook
 
 ### Notifications Flow
 1. User mentions @username in note → `HIL_MENTION` notification created

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/provider';
-import { toast } from '@/hooks/useToast';
+import { toast } from '@/hooks/use-toast';
 
 interface UnifiedNotification {
   id: string;

@@ -9,7 +9,7 @@ import { TabNavigation } from '@/components/workflow/tab-navigation';
 import { TaskDetailView } from '@/components/workflow/task-detail-view';
 import { FileUpload } from '@/components/workflow/file-upload';
 import { DocumentList } from '@/components/workflow/document-list';
-import { useWorkflow } from '@/lib/hooks/useWorkflows';
+import { useWorkflow } from '@/lib/hooks/use-workflows';
 import { formatWorkflowIdWithType, type WorkflowStatus, type TaskStatus } from '@rexera/shared';
 import type { WorkflowData } from '@/types/workflow';
 import { api } from '@/lib/api/client';

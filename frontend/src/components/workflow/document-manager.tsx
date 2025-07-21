@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/useDocuments';
+import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/use-documents';
 import { DocumentVersionHistory } from './document-version-history';
 import { DocumentTagEditor } from './document-tag-editor';
 import type { Document, DocumentWithRelations } from '@rexera/shared';

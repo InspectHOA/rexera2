@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Building, MapPin, Calendar, User, FileText, DollarSign, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useWorkflows } from '@/lib/hooks/useWorkflows';
+import { useWorkflows } from '@/lib/hooks/use-workflows';
 import { useAuth } from '@/lib/auth/provider';
 import { api } from '@/lib/api/client';
 import { SKIP_AUTH, SKIP_AUTH_USER } from '@/lib/auth/config';

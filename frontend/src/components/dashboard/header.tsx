@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/provider';
-import { useUnifiedNotifications } from '@/lib/hooks/useUnifiedNotifications';
+import { useUnifiedNotifications } from '@/lib/hooks/use-unified-notifications';
 import { Bell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WorkflowCreationModal } from '@/components/workflow/workflow-creation-modal';
 import { ThemeSwitcher } from '../ui/theme-switcher';
+import { RexeraLogo } from '../ui/rexera-logo';
 
 export function DashboardHeader() {
   const router = useRouter();
@@ -119,11 +120,7 @@ export function DashboardHeader() {
     <>
       <header className="bg-background/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-lg border border-border/50">
         <div className="flex items-center gap-4">
-          <img
-            src="/rexera-logo.svg"
-            alt="Rexera Logo"
-            className="h-8 w-auto"
-          />
+          <RexeraLogo className="h-8 w-auto" />
         </div>
         
         <div className="flex items-center gap-3 text-sm relative">

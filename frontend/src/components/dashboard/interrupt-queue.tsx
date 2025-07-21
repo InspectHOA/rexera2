@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Clock, User, ArrowRight } from 'lucide-react';
-import { useUnifiedNotifications } from '@/lib/hooks/useUnifiedNotifications';
+import { useUnifiedNotifications } from '@/lib/hooks/use-unified-notifications';
 
 export function InterruptQueue() {
   const { interruptNotifications, loading, error } = useUnifiedNotifications();

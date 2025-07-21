@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, Loader2 } from 'lucide-react';
-import { useDocumentUpload } from '@/lib/hooks/useDocuments';
+import { useDocumentUpload } from '@/lib/hooks/use-documents';
 import type { Document } from '@rexera/shared';
 
 interface FileUploadProps {

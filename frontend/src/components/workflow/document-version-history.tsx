@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Clock, FileText, User, ChevronDown, ChevronRight, Download } from 'lucide-react';
-import { useDocument, useDocumentMutations } from '@/lib/hooks/useDocuments';
+import { useDocument, useDocumentMutations } from '@/lib/hooks/use-documents';
 import type { Document, CreateDocumentVersion } from '@rexera/shared';
 
 interface DocumentVersionHistoryProps {

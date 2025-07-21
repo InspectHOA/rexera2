@@ -4,9 +4,9 @@
 
 'use client';
 
-import { useWorkflows } from '@/lib/hooks/useWorkflows';
-import { useWorkflowTableState } from './hooks/useWorkflowTableState';
-import { useWorkflowTransformation } from './hooks/useWorkflowTransformation';
+import { useWorkflows } from '@/lib/hooks/use-workflows';
+import { useWorkflowTableState } from './hooks/use-workflow-table-state';
+import { useWorkflowTransformation } from './hooks/use-workflow-transformation';
 import { WorkflowFilters } from './workflow-filters';
 import { WorkflowTableHeader } from './workflow-table-header';
 import { WorkflowRow } from './workflow-row';

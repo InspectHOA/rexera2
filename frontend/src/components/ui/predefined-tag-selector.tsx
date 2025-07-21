@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown, Search, Tag } from 'lucide-react';
-import { useTags } from '@/lib/hooks/useTags';
+import { useTags } from '@/lib/hooks/use-tags';
 
 interface PredefinedTagSelectorProps {
   selectedTags: string[];

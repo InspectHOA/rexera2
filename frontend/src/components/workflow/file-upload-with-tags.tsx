@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, Loader2, FileText, Settings } from 'lucide-react';
-import { useDocumentUpload } from '@/lib/hooks/useDocuments';
+import { useDocumentUpload } from '@/lib/hooks/use-documents';
 import { PredefinedTagSelector } from '@/components/ui/predefined-tag-selector';
 import type { Document } from '@rexera/shared';
 

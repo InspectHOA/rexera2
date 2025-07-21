@@ -1,7 +1,7 @@
 'use client';
 
 import { FileText, Download, Trash2, Loader2, AlertCircle } from 'lucide-react';
-import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/useDocuments';
+import { useDocumentsByWorkflow, useDocumentMutations } from '@/lib/hooks/use-documents';
 import { DocumentTagEditor } from './document-tag-editor';
 import type { Document } from '@rexera/shared';
 

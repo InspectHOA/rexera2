@@ -1,6 +1,6 @@
 'use client';
 
-import { useWorkflows } from '@/lib/hooks/useWorkflows';
+import { useWorkflows } from '@/lib/hooks/use-workflows';
 
 export function DashboardStats() {
   const { stats, loading, error, pagination } = useWorkflows({ 

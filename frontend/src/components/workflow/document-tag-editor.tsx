@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Tag, Edit3, Check, X } from 'lucide-react';
-import { useDocumentMutations } from '@/lib/hooks/useDocuments';
+import { useDocumentMutations } from '@/lib/hooks/use-documents';
 import { PredefinedTagSelector } from '@/components/ui/predefined-tag-selector';
 import type { Document } from '@rexera/shared';
 
