@@ -117,11 +117,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build all packages
-        run: pnpm build
-
       - name: Build shared packages
         run: pnpm --filter=@rexera/shared build
+
+      - name: Build all packages
+        run: pnpm build
 
       - name: Cache build artifacts
         uses: actions/cache@v4
