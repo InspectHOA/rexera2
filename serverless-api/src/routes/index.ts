@@ -11,3 +11,4 @@ export { tagsRoutes as tags } from './tags';
 export { default as clients } from './clients';
 export { auditEvents } from './audit-events';
 export { default as hilNotes } from './hil-notes';
+export { default as users } from './users';

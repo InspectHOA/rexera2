@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api/client';
 
 interface User {
   id: string;
@@ -18,14 +19,6 @@ interface MentionInputProps {
   className?: string;
 }
 
-// Mock users - in a real app, this would come from an API
-const MOCK_USERS: User[] = [
-  { id: 'user-1', name: 'John Doe', email: 'john@example.com' },
-  { id: 'user-2', name: 'Jane Smith', email: 'jane@example.com' },
-  { id: 'user-3', name: 'Mike Johnson', email: 'mike@example.com' },
-  { id: 'user-4', name: 'Sarah Wilson', email: 'sarah@example.com' },
-];
-
 export function MentionInput({ 
   value, 
   onChange, 
@@ -37,10 +30,45 @@ export function MentionInput({
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPosition, setMentionPosition] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  const filteredUsers = MOCK_USERS.filter(user =>
+  // Fetch users when component mounts or when search query changes
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        // Try to fetch real users, fallback to known users if API not ready
+        try {
+          const realUsers = await api.users.list({ limit: 50 });
+          setUsers(realUsers);
+        } catch (apiError) {
+          console.log('Users API not available, using fallback users');
+          // Use the actual user ID from our seed data
+          const fallbackUsers: User[] = [
+            { id: '284219ff-3a1f-4e86-9ea4-3536f940451f', name: 'Admin User', email: 'admin@rexera.com' },
+            { id: 'user-hil-1', name: 'HIL Operator', email: 'hil@rexera.com' },
+            { id: 'user-client-1', name: 'Client User', email: 'client@example.com' },
+          ];
+          setUsers(fallbackUsers);
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        // Fallback to basic users
+        setUsers([
+          { id: '284219ff-3a1f-4e86-9ea4-3536f940451f', name: 'Admin User', email: 'admin@rexera.com' },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []); // Only fetch once on mount for now
+
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(mentionQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(mentionQuery.toLowerCase())
   );

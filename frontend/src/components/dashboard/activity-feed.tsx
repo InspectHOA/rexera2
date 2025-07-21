@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { api } from '@/lib/api/client';
 
 /**
  * Activity item representing an audit event in the feed
@@ -48,24 +49,14 @@ export function ActivityFeed({
       setLoading(true);
       setError(null);
       
-      // Build API URL with query parameters
-      const params = new URLSearchParams();
-      if (workflowId) params.append('workflow_id', workflowId);
-      params.append('per_page', limit.toString());
-      params.append('page', '1');
-      
-      const response = await fetch(`/api/audit-events?${params.toString()}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Use the API client for proper authentication and base URL handling
+      const response = await api.auditEvents.list({
+        workflow_id: workflowId,
+        per_page: limit,
+        page: 1
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch activities: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const auditEvents = data.data || [];
+      const auditEvents = response.data || [];
 
       // Transform audit events into activity items
       const transformedActivities: ActivityItem[] = auditEvents.map((event: any) => ({

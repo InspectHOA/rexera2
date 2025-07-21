@@ -941,8 +941,6 @@ async function seedDatabase() {
     "Need clarification on special assessment dates from HOA management company.",
     "@test-user This workflow is taking longer than expected. Can you check the bottleneck?"
   ];
-
-  const priorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
   
   // Create notes for about 30% of workflows (15 workflows)
   const workflowsWithNotes = workflows.slice(0, 15);
@@ -1103,6 +1101,183 @@ async function seedDatabase() {
         console.log(`✅ Created ${mentionData?.length || 0} HIL mention notifications`);
       }
     }
+  }
+
+  // Create audit events for workflows and tasks
+  console.log('📋 Creating audit events...');
+  const auditEvents = [];
+  
+  // Create audit events for each workflow
+  workflows.forEach((workflow, index) => {
+    const baseTime = new Date(Date.now() - (index * 24 * 60 * 60 * 1000));
+    
+    // Workflow created event
+    auditEvents.push({
+      id: randomUUID(),
+      actor_type: 'human',
+      actor_id: testUserId,
+      actor_name: 'Admin User',
+      event_type: 'workflow_created',
+      action: 'create',
+      resource_type: 'workflow',
+      resource_id: workflow.id,
+      workflow_id: workflow.id,
+      client_id: workflow.client_id,
+      event_data: {
+        workflow_type: workflow.workflow_type,
+        title: workflow.title,
+        priority: workflow.priority
+      },
+      created_at: new Date(baseTime.getTime()).toISOString()
+    });
+
+    // Workflow status changes
+    if (workflow.status !== 'NOT_STARTED') {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'system',
+        actor_id: 'system',
+        actor_name: 'System',
+        event_type: 'workflow_updated',
+        action: 'update',
+        resource_type: 'workflow',
+        resource_id: workflow.id,
+        workflow_id: workflow.id,
+        client_id: workflow.client_id,
+        event_data: {
+          field: 'status',
+          old_value: 'NOT_STARTED',
+          new_value: workflow.status,
+          title: workflow.title
+        },
+        created_at: new Date(baseTime.getTime() + 30 * 60 * 1000).toISOString()
+      });
+    }
+  });
+
+  // Create audit events for task executions
+  taskExecutions.forEach((task, index) => {
+    const taskTime = new Date(task.started_at);
+    const workflow = workflows.find(w => w.id === task.workflow_id);
+    
+    // Task started event
+    auditEvents.push({
+      id: randomUUID(),
+      actor_type: 'agent',
+      actor_id: task.agent_id,
+      actor_name: 'Agent',
+      event_type: 'task_started',
+      action: 'execute',
+      resource_type: 'task_execution',
+      resource_id: task.id,
+      workflow_id: task.workflow_id,
+      client_id: workflow?.client_id,
+      event_data: {
+        task_title: task.title,
+        task_type: task.task_type,
+        sequence_order: task.sequence_order
+      },
+      created_at: taskTime.toISOString()
+    });
+
+    // Task completion or interrupt events
+    if (task.status === 'COMPLETED' && task.completed_at) {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'agent',
+        actor_id: task.agent_id,
+        actor_name: 'Agent',
+        event_type: 'task_completed',
+        action: 'execute',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        client_id: workflow?.client_id,
+        event_data: {
+          task_title: task.title,
+          execution_time_ms: task.execution_time_ms,
+          output_data: task.output_data
+        },
+        created_at: task.completed_at
+      });
+    } else if (task.status === 'INTERRUPT') {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'system',
+        actor_id: 'system',
+        actor_name: 'System',
+        event_type: 'task_interrupted',
+        action: 'update',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        client_id: workflow?.client_id,
+        event_data: {
+          task_title: task.title,
+          interrupt_type: task.interrupt_type,
+          error_message: task.error_message
+        },
+        created_at: new Date(taskTime.getTime() + 15 * 60 * 1000).toISOString()
+      });
+    } else if (task.status === 'FAILED') {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'agent',
+        actor_id: task.agent_id,
+        actor_name: 'Agent',
+        event_type: 'task_failed',
+        action: 'execute',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        client_id: workflow?.client_id,
+        event_data: {
+          task_title: task.title,
+          error_message: task.error_message,
+          retry_count: task.retry_count
+        },
+        created_at: new Date(taskTime.getTime() + 10 * 60 * 1000).toISOString()
+      });
+    }
+  });
+
+  // Add some communication audit events
+  communications.forEach((comm, index) => {
+    const workflow = workflows.find(w => w.id === comm.workflow_id);
+    auditEvents.push({
+      id: randomUUID(),
+      actor_type: 'agent',
+      actor_id: '77777777-7777-7777-7777-777777777777', // Mia agent
+      actor_name: 'Mia',
+      event_type: 'communication_sent',
+      action: 'create',
+      resource_type: 'communication',
+      resource_id: comm.id,
+      workflow_id: comm.workflow_id,
+      client_id: workflow?.client_id,
+      event_data: {
+        communication_type: comm.type,
+        subject: comm.subject,
+        to_email: comm.to_email
+      },
+      created_at: comm.sent_at || comm.created_at
+    });
+  });
+
+  // Insert audit events in batches
+  if (auditEvents.length > 0) {
+    const batchSize = 100;
+    for (let i = 0; i < auditEvents.length; i += batchSize) {
+      const batch = auditEvents.slice(i, i + batchSize);
+      const { error: auditError } = await supabase
+        .from('audit_events')
+        .insert(batch);
+      
+      if (auditError) {
+        console.error(`❌ Failed to create audit events batch ${Math.floor(i / batchSize) + 1}:`, auditError);
+      }
+    }
+    console.log(`✅ Created ${auditEvents.length} audit events`);
   }
 
   // Add sample documents

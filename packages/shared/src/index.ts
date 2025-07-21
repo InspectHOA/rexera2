@@ -28,6 +28,7 @@ export * from './schemas/communications';
 export * from './schemas/documents';
 export * from './schemas/auditEvents';
 export * from './schemas/hilNotes';
+export * from './schemas/users';
 
 // Utility functions
 export * from './utils/uuid-formatter';

@@ -18,10 +18,14 @@ AI-powered workflow automation for real estate and financial services.
 - **[Notifications](systems/notifications.md)** - Real-time alerts
 - **[Audit](systems/audit.md)** - Activity logging
 - **[Agents](systems/agents.md)** - AI interfaces
+- **[Authentication](systems/authentication.md)** - OAuth & user management
+- **[Dark Mode](systems/dark-mode.md)** - Theme system
 
 ## Guides
 
 - **[Adding Features](guides/adding-features.md)** - Development workflow
+- **[Environment Setup](guides/environment-setup.md)** - Local & production config
+- **[Coding Standards](guides/coding-standards.md)** - File naming & patterns
 - **[Testing](guides/testing.md)** - Test strategy
 - **[Deployment](guides/deployment.md)** - Production setup
 

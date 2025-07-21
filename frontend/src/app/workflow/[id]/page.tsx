@@ -17,6 +17,7 @@ import { EmailInterface } from '@/components/agents/mia/email-interface';
 import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
 import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
 import { NotesTab } from '@/components/workflow/notes/NotesTab';
+import { ActivityFeed } from '@/components/dashboard/activity-feed';
 
 // Types
 interface Task {
@@ -553,7 +554,7 @@ function TabContent({
       );
     
     case 'audit':
-      return <PlaceholderContent>Audit trail content would go here</PlaceholderContent>;
+      return <ActivityFeed workflowId={workflowData?.id} />;
     
     case 'notes':
       return <NotesTab workflowId={workflowData?.id || ''} />;
