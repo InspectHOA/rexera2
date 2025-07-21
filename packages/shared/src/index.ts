@@ -22,12 +22,12 @@ export * from './types/api';
 export * from './types/errors';
 
 // Zod validation schemas
-export * from './schemas/taskExecutions';
+export * from './schemas/task-executions';
 export * from './schemas/workflows';
 export * from './schemas/communications';
 export * from './schemas/documents';
-export * from './schemas/auditEvents';
-export * from './schemas/hilNotes';
+export * from './schemas/audit-events';
+export * from './schemas/hil-notes';
 export * from './schemas/users';
 
 // Utility functions
@@ -81,13 +81,13 @@ export {
   TaskExecutionSchema,
   CreateTaskExecutionSchema, 
   UpdateTaskExecutionSchema
-} from './schemas/taskExecutions';
+} from './schemas/task-executions';
 
 export type {
   TaskExecution,
   CreateTaskExecution,
   UpdateTaskExecution
-} from './schemas/taskExecutions';
+} from './schemas/task-executions';
 
 // Communications schemas
 export {
@@ -150,7 +150,7 @@ export {
   TaskAuditEventSchema,
   SlaAuditEventSchema,
   AuthAuditEventSchema
-} from './schemas/auditEvents';
+} from './schemas/audit-events';
 
 export type {
   AuditEvent,
@@ -160,7 +160,7 @@ export type {
   TaskAuditEvent,
   SlaAuditEvent,
   AuthAuditEvent
-} from './schemas/auditEvents';
+} from './schemas/audit-events';
 
 // HIL Notes schemas
 export {
@@ -170,7 +170,7 @@ export {
   HilNoteFiltersSchema,
   ReplyHilNoteSchema,
   PriorityLevelSchema
-} from './schemas/hilNotes';
+} from './schemas/hil-notes';
 
 export type {
   HilNote,
@@ -179,7 +179,7 @@ export type {
   HilNoteFilters,
   ReplyHilNote,
   PriorityLevel
-} from './schemas/hilNotes';
+} from './schemas/hil-notes';
 
 // Audit logger utilities
 export {

@@ -136,9 +136,9 @@ export function FileUploadWithTags({
   if (showFileSettings && pendingFiles.length > 0) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+            <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
               <Settings className="h-5 w-5" />
               Configure Files ({pendingFiles.length})
             </h3>
@@ -146,18 +146,18 @@ export function FileUploadWithTags({
 
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {pendingFiles.map((pendingFile) => (
-              <div key={pendingFile.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+              <div key={pendingFile.id} className="border border-border rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{getFileIcon(pendingFile.file.name)}</span>
                     <div>
-                      <p className="font-medium text-gray-900">{pendingFile.file.name}</p>
-                      <p className="text-sm text-gray-500">{formatFileSize(pendingFile.file.size)}</p>
+                      <p className="font-medium text-foreground">{pendingFile.file.name}</p>
+                      <p className="text-sm text-muted-foreground">{formatFileSize(pendingFile.file.size)}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => removePendingFile(pendingFile.id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    className="text-destructive hover:text-destructive/80 text-sm"
                   >
                     Remove
                   </button>
@@ -165,15 +165,15 @@ export function FileUploadWithTags({
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-foreground mb-1">
                       Document Type
                     </label>
                     <select
                       value={pendingFile.documentType}
-                      onChange={(e) => updatePendingFile(pendingFile.id, { 
-                        documentType: e.target.value as 'WORKING' | 'DELIVERABLE' 
+                      onChange={(e) => updatePendingFile(pendingFile.id, {
+                        documentType: e.target.value as 'WORKING' | 'DELIVERABLE'
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     >
                       <option value="WORKING">Working Document</option>
                       <option value="DELIVERABLE">Deliverable</option>
@@ -181,7 +181,7 @@ export function FileUploadWithTags({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Tags
                     </label>
                     <PredefinedTagSelector
@@ -196,17 +196,17 @@ export function FileUploadWithTags({
             ))}
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between pt-4 border-t border-border">
             <button
               onClick={cancelUpload}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
             >
               Cancel
             </button>
             <button
               onClick={uploadPendingFiles}
               disabled={isUploading}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isUploading ? (
                 <>
@@ -224,8 +224,8 @@ export function FileUploadWithTags({
         </div>
 
         {uploadError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-700">{uploadError}</p>
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+            <p className="text-sm text-destructive">{uploadError}</p>
           </div>
         )}
       </div>
@@ -237,11 +237,11 @@ export function FileUploadWithTags({
       <div
         className={`
           relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
-          ${isUploading 
-            ? 'border-primary-300 bg-primary-50' 
-            : isDragOver 
-              ? 'border-primary-400 bg-primary-50' 
-              : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+          ${isUploading
+            ? 'border-primary/30 bg-primary/5'
+            : isDragOver
+              ? 'border-primary/40 bg-primary/5'
+              : 'border-border bg-card hover:border-border/60 hover:bg-muted/50'
           }
         `}
         onDrop={handleDrop}
@@ -260,18 +260,18 @@ export function FileUploadWithTags({
         />
 
         <div className="space-y-4">
-          <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+          <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-foreground">
               Upload Documents with Tags
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Drag and drop files here, or click to browse
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               You can add tags and set document types after selecting files
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Supports: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX, JPG, PNG (max 50MB)
             </p>
           </div>
@@ -279,8 +279,8 @@ export function FileUploadWithTags({
       </div>
 
       {uploadError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">{uploadError}</p>
+        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive">{uploadError}</p>
         </div>
       )}
     </div>

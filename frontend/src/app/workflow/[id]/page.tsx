@@ -16,7 +16,7 @@ import { api } from '@/lib/api/client';
 import { EmailInterface } from '@/components/agents/mia/email-interface';
 import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
 import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
-import { NotesTab } from '@/components/workflow/notes/NotesTab';
+import { NotesTab } from '@/components/workflow/notes/notes-tab';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
 
 // Types
