@@ -15,7 +15,16 @@ import type {
   UpdateDocument,
   DocumentFilters,
   CreateDocumentVersion,
-  DocumentWithRelations
+  DocumentWithRelations,
+  HilNote,
+  CreateHilNote,
+  UpdateHilNote,
+  HilNoteFilters,
+  ReplyHilNote,
+  User,
+  UserFilters,
+  AuditEvent,
+  CreateAuditEvent
 } from '@rexera/shared';
 import { 
   ApiError as SharedApiError,
@@ -782,6 +791,196 @@ export const clientsApi = {
     return apiRequest(`/clients/${id}`);
   },
 };
+
+// HIL Notes API functions
+export const hilNotesApi = {
+  async list(filters: HilNoteFilters) {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (Array.isArray(value)) {
+          params.append(key, value.join(','));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+
+    const authToken = await getAuthToken();
+    const headers: Record<string, string> = {};
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/hil-notes?${params}`, {
+      headers
+    });
+    
+    const data: ApiResponse = await response.json();
+    
+    if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
+      throw new ApiError(
+        errorData.error?.message || `HTTP ${response.status}`,
+        response.status,
+        errorData.error?.details
+      );
+    }
+
+    return data.data as HilNote[];
+  },
+
+  async create(data: CreateHilNote): Promise<HilNote> {
+    return apiRequest<HilNote>('/hil-notes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: UpdateHilNote): Promise<HilNote> {
+    return apiRequest<HilNote>(`/hil-notes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    return apiRequest(`/hil-notes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async reply(parentId: string, data: ReplyHilNote): Promise<HilNote> {
+    return apiRequest<HilNote>(`/hil-notes/${parentId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// Audit Events API functions
+export const auditEventsApi = {
+  async list(filters: {
+    workflow_id?: string;
+    actor_type?: string;
+    resource_type?: string;
+    action?: string;
+    page?: number;
+    per_page?: number;
+    limit?: number;
+  } = {}): Promise<{
+    data: AuditEvent[];
+    pagination: {
+      page: number;
+      per_page: number;
+      total: number;
+      total_pages: number;
+      has_next: boolean;
+      has_prev: boolean;
+    };
+  }> {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined) {
+        // Map 'limit' to 'per_page' for backend compatibility
+        if (key === 'limit') {
+          params.append('per_page', String(value));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+
+    // We need the full response including pagination
+    const authToken = await getAuthToken();
+    const headers: Record<string, string> = {};
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/audit-events?${params}`, {
+      headers
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new ApiError(
+        data.error?.message || `HTTP ${response.status}`,
+        response.status,
+        data.error?.details
+      );
+    }
+
+    // The audit-events endpoint returns data directly without success wrapper
+    return {
+      data: data.data || [],
+      pagination: data.pagination || {
+        page: 1,
+        per_page: 10,
+        total: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false
+      }
+    };
+  },
+
+  async create(data: CreateAuditEvent): Promise<AuditEvent> {
+    return apiRequest('/audit-events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// Users API functions
+export const usersApi = {
+  async list(filters?: UserFilters): Promise<User[]> {
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      });
+    }
+
+    const authToken = await getAuthToken();
+    const headers: Record<string, string> = {};
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/users?${params}`, {
+      headers
+    });
+    
+    const data: ApiResponse = await response.json();
+    
+    if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
+      throw new ApiError(
+        errorData.error?.message || `HTTP ${response.status}`,
+        response.status,
+        errorData.error?.details
+      );
+    }
+
+    return data.data as User[];
+  },
+
+  async get(id: string): Promise<User> {
+    return apiRequest<User>(`/users/${id}`);
+  },
+};
+
 // Export main API object
 export const api = {
   workflows: workflowsApi,
@@ -794,6 +993,9 @@ export const api = {
   documents: documentsApi,
   tags: tagsApi,
   clients: clientsApi,
+  hilNotes: hilNotesApi,
+  users: usersApi,
+  auditEvents: auditEventsApi,
   health: healthApi,
 };
 

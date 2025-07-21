@@ -922,6 +922,364 @@ async function seedDatabase() {
     console.log(`✅ Created ${notificationData?.length || 0} HIL notifications`);
   }
 
+  // Create sample HIL notes for workflows with rich collaborative content
+  console.log('📝 Creating HIL notes with mentions and threading...');
+  const hilNotes = [];
+  
+  // Sample note content with mentions and various priorities
+  const noteContents = [
+    "This case requires urgent attention - please review ASAP!",
+    "Found discrepancies in the municipal records. @test-user Can you verify these details with the client?",
+    "HOA board meeting minutes from last quarter are missing. We need these before proceeding.",
+    "@test-user Please coordinate with the client about the outstanding balance of $3,450.",
+    "All lien searches completed successfully. No liens found on the property.",
+    "Client requested expedited processing. Moving to high priority.",
+    "Document upload failed - need to troubleshoot the technical issue.",
+    "Financial review shows unusual assessment pattern. Flagging for manual verification.",
+    "Client callback scheduled for tomorrow at 2 PM to discuss findings.",
+    "Final review completed. Ready for delivery to client.",
+    "Need clarification on special assessment dates from HOA management company.",
+    "@test-user This workflow is taking longer than expected. Can you check the bottleneck?"
+  ];
+  
+  // Create notes for about 30% of workflows (15 workflows)
+  const workflowsWithNotes = workflows.slice(0, 15);
+  
+  for (let i = 0; i < workflowsWithNotes.length; i++) {
+    const workflow = workflowsWithNotes[i];
+    const noteCount = Math.floor(Math.random() * 4) + 1; // 1-4 notes per workflow
+    
+    for (let j = 0; j < noteCount; j++) {
+      const noteId = randomUUID();
+      const content = noteContents[Math.floor(Math.random() * noteContents.length)];
+      const priority = priorities[Math.floor(Math.random() * priorities.length)];
+      const isResolved = Math.random() < 0.3; // 30% chance of being resolved
+      const hasMention = content.includes('@test-user');
+      
+      const createdAt = new Date(Date.now() - ((15 - i) * 24 * 60 * 60 * 1000) + (j * 4 * 60 * 60 * 1000)).toISOString();
+      
+      hilNotes.push({
+        id: noteId,
+        workflow_id: workflow.id,
+        author_id: testUserId,
+        content,
+        priority,
+        is_resolved: isResolved,
+        parent_note_id: null,
+        mentions: hasMention ? [testUserId] : [],
+        created_at: createdAt,
+        updated_at: createdAt
+      });
+      
+      // Add a reply to some notes (30% chance)
+      if (Math.random() < 0.3) {
+        const replyContent = [
+          "Thanks for the update! I'll handle this right away.",
+          "Confirmed - I've contacted the client about this.",
+          "Good catch! I've updated the records accordingly.",
+          "This has been resolved. Moving to the next step.",
+          "I'll follow up with the HOA management company tomorrow.",
+          "Updated the client on the timeline. They're okay with the delay."
+        ][Math.floor(Math.random() * 6)];
+        
+        hilNotes.push({
+          id: randomUUID(),
+          workflow_id: workflow.id,
+          author_id: testUserId,
+          content: replyContent,
+          priority: 'NORMAL',
+          is_resolved: false,
+          parent_note_id: noteId,
+          mentions: [],
+          created_at: new Date(new Date(createdAt).getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date(new Date(createdAt).getTime() + 2 * 60 * 60 * 1000).toISOString()
+        });
+      }
+    }
+  }
+
+  // Add some high-value collaborative notes with specific scenarios
+  const collaborativeNotes = [
+    {
+      workflow_id: workflows[0].id,
+      content: "@test-user This municipal lien search revealed an unpaid water bill from 2019. Should we flag this as a critical finding?",
+      priority: 'HIGH',
+      mentions: [testUserId]
+    },
+    {
+      workflow_id: workflows[1].id,
+      content: "HOA president mentioned during our call that there's a pending special assessment for roof repairs. This wasn't in the original documents.",
+      priority: 'URGENT',
+      mentions: []
+    },
+    {
+      workflow_id: workflows[2].id,
+      content: "@test-user Client is asking for rush processing due to closing date moved up. Can we prioritize this payoff request?",
+      priority: 'URGENT',
+      mentions: [testUserId]
+    }
+  ];
+
+  for (const note of collaborativeNotes) {
+    const noteId = randomUUID();
+    const createdAt = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    hilNotes.push({
+      id: noteId,
+      workflow_id: note.workflow_id,
+      author_id: testUserId,
+      content: note.content,
+      priority: note.priority,
+      is_resolved: false,
+      parent_note_id: null,
+      mentions: note.mentions,
+      created_at: createdAt,
+      updated_at: createdAt
+    });
+    
+    // Add realistic replies to these important notes
+    const replies = [
+      "Yes, definitely flag this. I'll contact the client immediately to discuss resolution options.",
+      "Good point! I'll reach out to the HOA management for the complete assessment schedule.",
+      "Absolutely - moving this to priority queue. I'll coordinate with the lender today."
+    ];
+    
+    hilNotes.push({
+      id: randomUUID(),
+      workflow_id: note.workflow_id,
+      author_id: testUserId,
+      content: replies[collaborativeNotes.indexOf(note)],
+      priority: 'NORMAL',
+      is_resolved: false,
+      parent_note_id: noteId,
+      mentions: [],
+      created_at: new Date(new Date(createdAt).getTime() + 30 * 60 * 1000).toISOString(), // 30 min later
+      updated_at: new Date(new Date(createdAt).getTime() + 30 * 60 * 1000).toISOString()
+    });
+  }
+
+  // Insert HIL notes
+  if (hilNotes.length > 0) {
+    const { data: hilNotesData, error: hilNotesError } = await supabase.from('hil_notes').upsert(hilNotes).select();
+    if (hilNotesError) {
+      console.error('❌ Failed to create HIL notes:', hilNotesError);
+      throw hilNotesError;
+    }
+    console.log(`✅ Created ${hilNotesData?.length || 0} HIL notes (including threaded conversations)`);
+    
+    // Create HIL_MENTION notifications for notes with mentions
+    const mentionNotifications = [];
+    for (const note of hilNotes) {
+      if (note.mentions && note.mentions.length > 0 && !note.parent_note_id) { // Only for top-level notes with mentions
+        for (const mentionedUserId of note.mentions) {
+          mentionNotifications.push({
+            id: randomUUID(),
+            user_id: mentionedUserId,
+            type: 'HIL_MENTION',
+            priority: note.priority,
+            title: 'You were mentioned in a note',
+            message: `Someone mentioned you in a ${note.priority} priority note: "${note.content.substring(0, 100)}..."`,
+            action_url: `/workflow/${note.workflow_id}`,
+            metadata: {
+              note_id: note.id,
+              workflow_id: note.workflow_id,
+              author_id: note.author_id
+            },
+            read: Math.random() < 0.4, // 40% chance of being read
+            read_at: Math.random() < 0.4 ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString() : null,
+            created_at: note.created_at
+          });
+        }
+      }
+    }
+    
+    if (mentionNotifications.length > 0) {
+      const { data: mentionData, error: mentionError } = await supabase.from('hil_notifications').upsert(mentionNotifications).select();
+      if (mentionError) {
+        console.error('❌ Failed to create mention notifications:', mentionError);
+      } else {
+        console.log(`✅ Created ${mentionData?.length || 0} HIL mention notifications`);
+      }
+    }
+  }
+
+  // Create audit events for workflows and tasks
+  console.log('📋 Creating audit events...');
+  const auditEvents = [];
+  
+  // Create audit events for each workflow
+  workflows.forEach((workflow, index) => {
+    const baseTime = new Date(Date.now() - (index * 24 * 60 * 60 * 1000));
+    
+    // Workflow created event
+    auditEvents.push({
+      id: randomUUID(),
+      actor_type: 'human',
+      actor_id: testUserId,
+      actor_name: 'Admin User',
+      event_type: 'workflow_created',
+      action: 'create',
+      resource_type: 'workflow',
+      resource_id: workflow.id,
+      workflow_id: workflow.id,
+      client_id: workflow.client_id,
+      event_data: {
+        workflow_type: workflow.workflow_type,
+        title: workflow.title,
+        priority: workflow.priority
+      },
+      created_at: new Date(baseTime.getTime()).toISOString()
+    });
+
+    // Workflow status changes
+    if (workflow.status !== 'NOT_STARTED') {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'system',
+        actor_id: 'system',
+        actor_name: 'System',
+        event_type: 'workflow_updated',
+        action: 'update',
+        resource_type: 'workflow',
+        resource_id: workflow.id,
+        workflow_id: workflow.id,
+        client_id: workflow.client_id,
+        event_data: {
+          field: 'status',
+          old_value: 'NOT_STARTED',
+          new_value: workflow.status,
+          title: workflow.title
+        },
+        created_at: new Date(baseTime.getTime() + 30 * 60 * 1000).toISOString()
+      });
+    }
+  });
+
+  // Create audit events for task executions
+  taskExecutions.forEach((task, index) => {
+    const taskTime = new Date(task.started_at);
+    const workflow = workflows.find(w => w.id === task.workflow_id);
+    
+    // Task started event
+    auditEvents.push({
+      id: randomUUID(),
+      actor_type: 'agent',
+      actor_id: task.agent_id,
+      actor_name: 'Agent',
+      event_type: 'task_started',
+      action: 'execute',
+      resource_type: 'task_execution',
+      resource_id: task.id,
+      workflow_id: task.workflow_id,
+      client_id: workflow?.client_id,
+      event_data: {
+        task_title: task.title,
+        task_type: task.task_type,
+        sequence_order: task.sequence_order
+      },
+      created_at: taskTime.toISOString()
+    });
+
+    // Task completion or interrupt events
+    if (task.status === 'COMPLETED' && task.completed_at) {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'agent',
+        actor_id: task.agent_id,
+        actor_name: 'Agent',
+        event_type: 'task_completed',
+        action: 'execute',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        client_id: workflow?.client_id,
+        event_data: {
+          task_title: task.title,
+          execution_time_ms: task.execution_time_ms,
+          output_data: task.output_data
+        },
+        created_at: task.completed_at
+      });
+    } else if (task.status === 'INTERRUPT') {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'system',
+        actor_id: 'system',
+        actor_name: 'System',
+        event_type: 'task_interrupted',
+        action: 'update',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        client_id: workflow?.client_id,
+        event_data: {
+          task_title: task.title,
+          interrupt_type: task.interrupt_type,
+          error_message: task.error_message
+        },
+        created_at: new Date(taskTime.getTime() + 15 * 60 * 1000).toISOString()
+      });
+    } else if (task.status === 'FAILED') {
+      auditEvents.push({
+        id: randomUUID(),
+        actor_type: 'agent',
+        actor_id: task.agent_id,
+        actor_name: 'Agent',
+        event_type: 'task_failed',
+        action: 'execute',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        client_id: workflow?.client_id,
+        event_data: {
+          task_title: task.title,
+          error_message: task.error_message,
+          retry_count: task.retry_count
+        },
+        created_at: new Date(taskTime.getTime() + 10 * 60 * 1000).toISOString()
+      });
+    }
+  });
+
+  // Add some communication audit events
+  communications.forEach((comm, index) => {
+    const workflow = workflows.find(w => w.id === comm.workflow_id);
+    auditEvents.push({
+      id: randomUUID(),
+      actor_type: 'agent',
+      actor_id: '77777777-7777-7777-7777-777777777777', // Mia agent
+      actor_name: 'Mia',
+      event_type: 'communication_sent',
+      action: 'create',
+      resource_type: 'communication',
+      resource_id: comm.id,
+      workflow_id: comm.workflow_id,
+      client_id: workflow?.client_id,
+      event_data: {
+        communication_type: comm.type,
+        subject: comm.subject,
+        to_email: comm.to_email
+      },
+      created_at: comm.sent_at || comm.created_at
+    });
+  });
+
+  // Insert audit events in batches
+  if (auditEvents.length > 0) {
+    const batchSize = 100;
+    for (let i = 0; i < auditEvents.length; i += batchSize) {
+      const batch = auditEvents.slice(i, i + batchSize);
+      const { error: auditError } = await supabase
+        .from('audit_events')
+        .insert(batch);
+      
+      if (auditError) {
+        console.error(`❌ Failed to create audit events batch ${Math.floor(i / batchSize) + 1}:`, auditError);
+      }
+    }
+    console.log(`✅ Created ${auditEvents.length} audit events`);
+  }
+
   // Add sample documents
   const { data: docData, error: docError } = await supabase.from('documents').upsert([
     {

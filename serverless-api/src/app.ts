@@ -18,7 +18,7 @@ import {
   errorHandlerMiddleware,
   corsMiddleware,
 } from './middleware';
-import { agents, workflows, taskExecutions, communications, documents, tags, clients } from './routes';
+import { agents, workflows, taskExecutions, communications, documents, tags, clients, auditEvents, hilNotes, users } from './routes';
 
 const app = new Hono();
 
@@ -77,6 +77,9 @@ app.use('/api/communications/*', authMiddleware);
 app.use('/api/documents/*', authMiddleware);
 app.use('/api/tags/*', authMiddleware);
 app.use('/api/clients/*', authMiddleware);
+app.use('/api/audit-events/*', authMiddleware);
+app.use('/api/hil-notes/*', authMiddleware);
+app.use('/api/users/*', authMiddleware);
 
 // Mount route modules
 app.route('/api/agents', agents);
@@ -86,6 +89,9 @@ app.route('/api/communications', communications);
 app.route('/api/documents', documents);
 app.route('/api/tags', tags);
 app.route('/api/clients', clients);
+app.route('/api/audit-events', auditEvents);
+app.route('/api/hil-notes', hilNotes);
+app.route('/api/users', users);
 
 // ============================================================================
 // ERROR HANDLING

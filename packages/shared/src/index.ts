@@ -22,13 +22,17 @@ export * from './types/api';
 export * from './types/errors';
 
 // Zod validation schemas
-export * from './schemas/taskExecutions';
+export * from './schemas/task-executions';
 export * from './schemas/workflows';
 export * from './schemas/communications';
 export * from './schemas/documents';
+export * from './schemas/audit-events';
+export * from './schemas/hil-notes';
+export * from './schemas/users';
 
 // Utility functions
 export * from './utils/uuid-formatter';
+export * from './utils/audit-logger';
 
 // =====================================================
 // SPECIFIC EXPORTS FOR COMMON USE CASES
@@ -77,13 +81,13 @@ export {
   TaskExecutionSchema,
   CreateTaskExecutionSchema, 
   UpdateTaskExecutionSchema
-} from './schemas/taskExecutions';
+} from './schemas/task-executions';
 
 export type {
   TaskExecution,
   CreateTaskExecution,
   UpdateTaskExecution
-} from './schemas/taskExecutions';
+} from './schemas/task-executions';
 
 // Communications schemas
 export {
@@ -136,6 +140,57 @@ export type {
   CreateDocumentVersion,
   DocumentWithRelations
 } from './schemas/documents';
+
+// Audit events schemas
+export {
+  AuditEventSchema,
+  CreateAuditEventSchema,
+  AuditEventQuerySchema,
+  WorkflowAuditEventSchema,
+  TaskAuditEventSchema,
+  SlaAuditEventSchema,
+  AuthAuditEventSchema
+} from './schemas/audit-events';
+
+export type {
+  AuditEvent,
+  CreateAuditEvent,
+  AuditEventQuery,
+  WorkflowAuditEvent,
+  TaskAuditEvent,
+  SlaAuditEvent,
+  AuthAuditEvent
+} from './schemas/audit-events';
+
+// HIL Notes schemas
+export {
+  HilNoteSchema,
+  CreateHilNoteSchema,
+  UpdateHilNoteSchema,
+  HilNoteFiltersSchema,
+  ReplyHilNoteSchema,
+  PriorityLevelSchema
+} from './schemas/hil-notes';
+
+export type {
+  HilNote,
+  CreateHilNote,
+  UpdateHilNote,
+  HilNoteFilters,
+  ReplyHilNote,
+  PriorityLevel
+} from './schemas/hil-notes';
+
+// Audit logger utilities
+export {
+  BaseAuditLogger,
+  AuditHelpers
+} from './utils/audit-logger';
+
+export type {
+  IAuditLogger,
+  AuditLoggerConfig
+} from './utils/audit-logger';
 
 // =====================================================
 // CONSTANTS

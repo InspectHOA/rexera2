@@ -111,6 +111,223 @@ export const openApiComponents = {
         created_at: { type: 'string', format: 'date-time' }
       }
     },
+    AuditEvent: {
+      type: 'object',
+      properties: {
+        id: { 
+          type: 'string', 
+          format: 'uuid',
+          description: 'Unique identifier for the audit event'
+        },
+        actor_type: { 
+          type: 'string', 
+          enum: ['human', 'agent', 'system'],
+          description: 'Type of actor that performed the action'
+        },
+        actor_id: { 
+          type: 'string',
+          description: 'Identifier of the actor (user ID, agent ID, etc.)'
+        },
+        actor_name: { 
+          type: 'string', 
+          nullable: true,
+          description: 'Human-readable name of the actor'
+        },
+        event_type: { 
+          type: 'string', 
+          enum: [
+            'workflow_management',
+            'task_execution', 
+            'task_intervention',
+            'sla_management',
+            'user_authentication',
+            'document_management',
+            'communication',
+            'system_operation'
+          ],
+          description: 'Category of the audit event'
+        },
+        action: { 
+          type: 'string', 
+          enum: ['create', 'read', 'update', 'delete', 'execute', 'approve', 'reject', 'login', 'logout'],
+          description: 'Specific action that was performed'
+        },
+        resource_type: { 
+          type: 'string', 
+          enum: [
+            'workflow',
+            'task_execution',
+            'user_profile',
+            'client',
+            'agent',
+            'document',
+            'communication',
+            'notification',
+            'counterparty'
+          ],
+          description: 'Type of resource that was affected'
+        },
+        resource_id: { 
+          type: 'string', 
+          format: 'uuid',
+          description: 'Identifier of the resource that was affected'
+        },
+        workflow_id: { 
+          type: 'string', 
+          format: 'uuid', 
+          nullable: true,
+          description: 'Associated workflow ID (if applicable)'
+        },
+        client_id: { 
+          type: 'string', 
+          format: 'uuid', 
+          nullable: true,
+          description: 'Associated client ID (if applicable)'
+        },
+        event_data: { 
+          type: 'object',
+          description: 'Additional event-specific metadata and context',
+          additionalProperties: true,
+          default: {}
+        },
+        created_at: { 
+          type: 'string', 
+          format: 'date-time',
+          description: 'Timestamp when the audit event was created'
+        }
+      },
+      required: ['actor_type', 'actor_id', 'event_type', 'action', 'resource_type', 'resource_id', 'created_at']
+    },
+    CreateAuditEvent: {
+      type: 'object',
+      properties: {
+        actor_type: { 
+          type: 'string', 
+          enum: ['human', 'agent', 'system'],
+          description: 'Type of actor performing the action'
+        },
+        actor_id: { 
+          type: 'string',
+          description: 'Identifier of the actor'
+        },
+        actor_name: { 
+          type: 'string', 
+          nullable: true,
+          description: 'Human-readable name of the actor'
+        },
+        event_type: { 
+          type: 'string', 
+          enum: [
+            'workflow_management',
+            'task_execution', 
+            'task_intervention',
+            'sla_management',
+            'user_authentication',
+            'document_management',
+            'communication',
+            'system_operation'
+          ],
+          description: 'Category of the audit event'
+        },
+        action: { 
+          type: 'string', 
+          enum: ['create', 'read', 'update', 'delete', 'execute', 'approve', 'reject', 'login', 'logout'],
+          description: 'Specific action being performed'
+        },
+        resource_type: { 
+          type: 'string', 
+          enum: [
+            'workflow',
+            'task_execution',
+            'user_profile',
+            'client',
+            'agent',
+            'document',
+            'communication',
+            'notification',
+            'counterparty'
+          ],
+          description: 'Type of resource being affected'
+        },
+        resource_id: { 
+          type: 'string', 
+          format: 'uuid',
+          description: 'Identifier of the resource being affected'
+        },
+        workflow_id: { 
+          type: 'string', 
+          format: 'uuid', 
+          nullable: true,
+          description: 'Associated workflow ID (optional)'
+        },
+        client_id: { 
+          type: 'string', 
+          format: 'uuid', 
+          nullable: true,
+          description: 'Associated client ID (optional)'
+        },
+        event_data: { 
+          type: 'object',
+          description: 'Additional event-specific metadata',
+          additionalProperties: true,
+          default: {}
+        }
+      },
+      required: ['actor_type', 'actor_id', 'event_type', 'action', 'resource_type', 'resource_id']
+    },
+    AuditEventList: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/AuditEvent' },
+          description: 'List of audit events'
+        },
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'integer', description: 'Current page number' },
+            per_page: { type: 'integer', description: 'Items per page' },
+            total: { type: 'integer', description: 'Total number of items' },
+            total_pages: { type: 'integer', description: 'Total number of pages' },
+            has_next: { type: 'boolean', description: 'Whether there is a next page' },
+            has_prev: { type: 'boolean', description: 'Whether there is a previous page' }
+          },
+          required: ['page', 'per_page', 'total', 'total_pages', 'has_next', 'has_prev']
+        }
+      },
+      required: ['data', 'pagination']
+    },
+    AuditEventStats: {
+      type: 'object',
+      properties: {
+        period: { 
+          type: 'string',
+          description: 'Time period for the statistics',
+          example: '24_hours'
+        },
+        total_events: { 
+          type: 'integer',
+          description: 'Total number of events in the period'
+        },
+        events_by_type: {
+          type: 'object',
+          description: 'Count of events by event type',
+          additionalProperties: { type: 'integer' }
+        },
+        events_by_actor: {
+          type: 'object',
+          description: 'Count of events by actor type',
+          additionalProperties: { type: 'integer' }
+        },
+        generated_at: { 
+          type: 'string', 
+          format: 'date-time',
+          description: 'When these statistics were generated'
+        }
+      },
+      required: ['period', 'total_events', 'events_by_type', 'events_by_actor', 'generated_at']
+    },
     Agent: {
       type: 'object',
       properties: {
@@ -431,6 +648,106 @@ export const openApiComponents = {
         mime_type: { type: 'string' },
         change_summary: { type: 'string', minLength: 1 },
         metadata: { type: 'object', default: {} }
+      }
+    },
+    HilNote: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        workflow_id: { type: 'string', format: 'uuid' },
+        author_id: { type: 'string', format: 'uuid' },
+        content: { type: 'string', description: 'Note content, may include @mentions' },
+        priority: { 
+          type: 'string', 
+          enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'],
+          description: 'Note priority level'
+        },
+        is_resolved: { type: 'boolean', description: 'Whether the note has been resolved' },
+        parent_note_id: { 
+          type: 'string', 
+          format: 'uuid', 
+          nullable: true, 
+          description: 'Parent note ID for threaded conversations' 
+        },
+        mentions: { 
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          description: 'Array of user IDs mentioned in the note'
+        },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' },
+        author: {
+          type: 'object',
+          nullable: true,
+          description: 'Author information (when included)',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            email: { type: 'string', format: 'email' }
+          }
+        },
+        replies: {
+          type: 'array',
+          nullable: true,
+          description: 'Child notes (when included)',
+          items: { $ref: '#/components/schemas/HilNote' }
+        }
+      }
+    },
+    CreateHilNote: {
+      type: 'object',
+      required: ['workflow_id', 'content'],
+      properties: {
+        workflow_id: { type: 'string', format: 'uuid' },
+        content: { type: 'string', minLength: 1, description: 'Note content' },
+        priority: { 
+          type: 'string', 
+          enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'],
+          default: 'NORMAL',
+          description: 'Note priority level'
+        },
+        mentions: { 
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          default: [],
+          description: 'Array of user IDs to mention'
+        },
+        parent_note_id: { 
+          type: 'string', 
+          format: 'uuid', 
+          nullable: true, 
+          description: 'Parent note ID for replies' 
+        }
+      }
+    },
+    UpdateHilNote: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', minLength: 1, description: 'Updated note content' },
+        priority: { 
+          type: 'string', 
+          enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'],
+          description: 'Updated priority level'
+        },
+        is_resolved: { type: 'boolean', description: 'Mark note as resolved/unresolved' },
+        mentions: { 
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          description: 'Updated array of mentioned user IDs'
+        }
+      }
+    },
+    ReplyHilNote: {
+      type: 'object',
+      required: ['content'],
+      properties: {
+        content: { type: 'string', minLength: 1, description: 'Reply content' },
+        mentions: { 
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          default: [],
+          description: 'Array of user IDs to mention in reply'
+        }
       }
     }
   }

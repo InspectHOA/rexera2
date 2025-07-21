@@ -13,6 +13,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { AuditHelpers, BaseAuditLogger, CreateAuditEvent } from '@rexera/shared';
 
 // Initialize Supabase client with service role key for admin access
 const supabase = createClient(
@@ -37,6 +38,41 @@ interface HILUser {
   full_name: string | null;
   role: string;
 }
+
+/**
+ * Supabase-based audit logger for SLA monitoring
+ */
+class SlaMonitorAuditLogger extends BaseAuditLogger {
+  protected async writeEvent(event: CreateAuditEvent): Promise<void> {
+    const { error } = await supabase
+      .from('audit_events')
+      .insert({
+        ...event,
+        created_at: new Date().toISOString()
+      });
+
+    if (error) {
+      throw new Error(`Failed to write audit event: ${error.message}`);
+    }
+  }
+
+  protected async writeBatch(events: CreateAuditEvent[]): Promise<void> {
+    const eventsWithTimestamp = events.map(event => ({
+      ...event,
+      created_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+      .from('audit_events')
+      .insert(eventsWithTimestamp);
+
+    if (error) {
+      throw new Error(`Failed to write audit event batch: ${error.message}`);
+    }
+  }
+}
+
+const auditLogger = new SlaMonitorAuditLogger();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Security: Only allow POST requests from Vercel cron or authorized sources
@@ -198,6 +234,34 @@ async function processSLABreach(task: BreachedTask, hilUsers: HILUser[]): Promis
     if (updateError && !updateError.message.includes('does not exist')) {
       throw new Error(`Failed to update task SLA status: ${updateError.message}`);
     }
+
+    // Log audit event for SLA breach
+    try {
+      await auditLogger.log({
+        actor_type: 'system',
+        actor_id: 'sla_monitor',
+        actor_name: 'SLA Monitoring System',
+        event_type: 'sla_management',
+        action: 'update',
+        resource_type: 'task_execution',
+        resource_id: task.id,
+        workflow_id: task.workflow_id,
+        event_data: {
+          field_changed: 'sla_status',
+          old_value: 'ON_TIME',
+          new_value: 'BREACHED',
+          hours_overdue: hoursOverdue,
+          sla_hours: task.sla_hours,
+          automated_action: true,
+          notifications_sent: hilUsers.length,
+          breach_detected_at: now.toISOString()
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log SLA breach audit event:', auditError);
+      // Don't fail the SLA processing if audit logging fails
+    }
+
   } catch (err) {
     console.log(`⚠️  Could not update SLA status (fields may not exist): ${err instanceof Error ? err.message : 'Unknown error'}`);
   }

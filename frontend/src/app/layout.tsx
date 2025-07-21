@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   description: 'Sophisticated AI-powered real estate workflow automation platform with human-in-the-loop oversight.',
   keywords: ['real estate', 'workflow automation', 'AI', 'municipal lien search', 'HOA acquisition', 'payoff request'],
   authors: [{ name: 'InspectHOA Team' }],
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
+    ],
+  },
 };
 
 export const viewport: Viewport = {

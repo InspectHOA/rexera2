@@ -109,3 +109,90 @@ export const TASK_STATUSES = [
   'COMPLETED',
   'FAILED'
 ] as const;
+
+// =====================================================
+// AUDIT SYSTEM ENUMS
+// =====================================================
+
+/**
+ * Actor types for audit events - who performed the action
+ */
+export type ActorType = 'human' | 'agent' | 'system';
+
+/**
+ * Audit action types - what was done
+ */
+export type AuditAction = 
+  | 'create' 
+  | 'read' 
+  | 'update' 
+  | 'delete' 
+  | 'execute' 
+  | 'approve' 
+  | 'reject' 
+  | 'login' 
+  | 'logout';
+
+/**
+ * Event types for categorizing audit events
+ */
+export type AuditEventType =
+  | 'workflow_management'
+  | 'task_execution'
+  | 'task_intervention'
+  | 'sla_management'
+  | 'user_authentication'
+  | 'document_management'
+  | 'communication'
+  | 'system_operation';
+
+/**
+ * Resource types that can be audited
+ */
+export type AuditResourceType =
+  | 'workflow'
+  | 'task_execution'
+  | 'user_profile'
+  | 'client'
+  | 'agent'
+  | 'document'
+  | 'communication'
+  | 'notification'
+  | 'counterparty';
+
+export const AUDIT_ACTOR_TYPES = ['human', 'agent', 'system'] as const;
+
+export const AUDIT_ACTIONS = [
+  'create',
+  'read', 
+  'update',
+  'delete',
+  'execute',
+  'approve',
+  'reject',
+  'login',
+  'logout'
+] as const;
+
+export const AUDIT_EVENT_TYPES = [
+  'workflow_management',
+  'task_execution',
+  'task_intervention', 
+  'sla_management',
+  'user_authentication',
+  'document_management',
+  'communication',
+  'system_operation'
+] as const;
+
+export const AUDIT_RESOURCE_TYPES = [
+  'workflow',
+  'task_execution',
+  'user_profile',
+  'client',
+  'agent',
+  'document',
+  'communication',
+  'notification',
+  'counterparty'
+] as const;

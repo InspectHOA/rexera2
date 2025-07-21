@@ -165,6 +165,7 @@ export function useUnifiedNotifications() {
       (notification.type === 'WORKFLOW_UPDATE' && settings.enableWorkflowFailures) ||
       (notification.type === 'SLA_WARNING' && settings.enableSlaWarnings) ||
       (notification.type === 'AGENT_FAILURE' && settings.enableWorkflowFailures) ||
+      (notification.type === 'HIL_MENTION') || // Always show mention notifications
       settings.enableTaskCompletions; // For task completions
 
     return typeCheck;

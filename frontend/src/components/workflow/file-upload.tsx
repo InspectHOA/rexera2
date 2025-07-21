@@ -65,11 +65,11 @@ export function FileUpload({ workflowId, onUploadComplete, className = '' }: Fil
       <div
         className={`
           relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
-          ${isUploading 
-            ? 'border-primary-300 bg-primary-50' 
-            : isDragOver 
-              ? 'border-primary-400 bg-primary-50' 
-              : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+          ${isUploading
+            ? 'border-primary/30 bg-primary/5'
+            : isDragOver
+              ? 'border-primary/40 bg-primary/5'
+              : 'border-border bg-card hover:border-border/60 hover:bg-muted/50'
           }
         `}
         onDrop={handleDrop}
@@ -89,14 +89,14 @@ export function FileUpload({ workflowId, onUploadComplete, className = '' }: Fil
 
         {isUploading ? (
           <div className="space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-600 mx-auto" />
-            <p className="text-sm font-medium text-primary-700">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <p className="text-sm font-medium text-primary">
               Uploading... {uploadProgress}%
             </p>
             {uploadProgress > 0 && (
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-300 ease-out"
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
@@ -104,15 +104,15 @@ export function FileUpload({ workflowId, onUploadComplete, className = '' }: Fil
           </div>
         ) : (
           <div className="space-y-4">
-            <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+            <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-foreground">
                 Upload Documents
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Drag and drop files here, or click to browse
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Supports: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX, JPG, PNG (max 50MB)
               </p>
             </div>
@@ -121,8 +121,8 @@ export function FileUpload({ workflowId, onUploadComplete, className = '' }: Fil
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
     </div>
