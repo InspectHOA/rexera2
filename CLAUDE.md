@@ -89,6 +89,49 @@ tsx scripts/utils/script-runner.ts list
 - `POST /api/workflows` - Create workflow
 - `POST /api/taskExecutions/bulk` - Create all tasks
 - `PATCH /api/taskExecutions/:id` - Update task status
+- `GET /api/hil-notes` - List HIL notes for workflow
+- `POST /api/hil-notes` - Create HIL note with mentions
+- `PATCH /api/hil-notes/:id` - Update HIL note
+- `POST /api/hil-notes/:id/reply` - Reply to HIL note
+
+## HIL Notes System
+
+### Features
+- **Threaded Notes**: Support for parent-child note relationships
+- **User Mentions**: @username autocomplete with real-time notifications
+- **Priority Levels**: LOW, NORMAL, HIGH, URGENT with visual indicators
+- **Resolution Tracking**: Mark notes as resolved/unresolved
+- **Real-time Updates**: Live collaboration via Supabase subscriptions
+
+### Database Schema
+- `hil_notes` table with threading, mentions, priorities, and resolution tracking
+- Foreign keys to `workflows` and `user_profiles`
+- Automatic `created_at`/`updated_at` timestamps
+
+### Frontend Components
+- `NotesTab`: Main notes interface in workflow detail view
+- `MentionInput`: @username autocomplete component
+- Real-time notifications via `useUnifiedNotifications` hook
+
+### Notifications Flow
+1. User mentions @username in note → `HIL_MENTION` notification created
+2. Real-time delivery via Supabase subscription
+3. Toast notification shows for mentioned user
+4. Notification appears in header bell icon
+
+### Usage
+```typescript
+// API usage
+await api.hilNotes.create({
+  workflow_id: 'workflow-123',
+  content: '@john.doe Please review this case - urgent!',
+  priority: 'URGENT',
+  mentions: ['user-uuid-for-john-doe']
+});
+
+// Component usage
+<NotesTab workflowId={workflowId} />
+```
 
 ## Quality Standards
 1. Run `pnpm lint` and `pnpm type-check` before commits

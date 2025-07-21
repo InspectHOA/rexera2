@@ -26,9 +26,12 @@ export * from './schemas/taskExecutions';
 export * from './schemas/workflows';
 export * from './schemas/communications';
 export * from './schemas/documents';
+export * from './schemas/auditEvents';
+export * from './schemas/hilNotes';
 
 // Utility functions
 export * from './utils/uuid-formatter';
+export * from './utils/audit-logger';
 
 // =====================================================
 // SPECIFIC EXPORTS FOR COMMON USE CASES
@@ -136,6 +139,57 @@ export type {
   CreateDocumentVersion,
   DocumentWithRelations
 } from './schemas/documents';
+
+// Audit events schemas
+export {
+  AuditEventSchema,
+  CreateAuditEventSchema,
+  AuditEventQuerySchema,
+  WorkflowAuditEventSchema,
+  TaskAuditEventSchema,
+  SlaAuditEventSchema,
+  AuthAuditEventSchema
+} from './schemas/auditEvents';
+
+export type {
+  AuditEvent,
+  CreateAuditEvent,
+  AuditEventQuery,
+  WorkflowAuditEvent,
+  TaskAuditEvent,
+  SlaAuditEvent,
+  AuthAuditEvent
+} from './schemas/auditEvents';
+
+// HIL Notes schemas
+export {
+  HilNoteSchema,
+  CreateHilNoteSchema,
+  UpdateHilNoteSchema,
+  HilNoteFiltersSchema,
+  ReplyHilNoteSchema,
+  PriorityLevelSchema
+} from './schemas/hilNotes';
+
+export type {
+  HilNote,
+  CreateHilNote,
+  UpdateHilNote,
+  HilNoteFilters,
+  ReplyHilNote,
+  PriorityLevel
+} from './schemas/hilNotes';
+
+// Audit logger utilities
+export {
+  BaseAuditLogger,
+  AuditHelpers
+} from './utils/audit-logger';
+
+export type {
+  IAuditLogger,
+  AuditLoggerConfig
+} from './utils/audit-logger';
 
 // =====================================================
 // CONSTANTS

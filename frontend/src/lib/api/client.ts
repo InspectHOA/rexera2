@@ -15,7 +15,12 @@ import type {
   UpdateDocument,
   DocumentFilters,
   CreateDocumentVersion,
-  DocumentWithRelations
+  DocumentWithRelations,
+  HilNote,
+  CreateHilNote,
+  UpdateHilNote,
+  HilNoteFilters,
+  ReplyHilNote
 } from '@rexera/shared';
 import { 
   ApiError as SharedApiError,
@@ -782,6 +787,74 @@ export const clientsApi = {
     return apiRequest(`/clients/${id}`);
   },
 };
+
+// HIL Notes API functions
+export const hilNotesApi = {
+  async list(filters: HilNoteFilters) {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (Array.isArray(value)) {
+          params.append(key, value.join(','));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+
+    const authToken = await getAuthToken();
+    const headers: Record<string, string> = {};
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/hil-notes?${params}`, {
+      headers
+    });
+    
+    const data: ApiResponse = await response.json();
+    
+    if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
+      throw new ApiError(
+        errorData.error?.message || `HTTP ${response.status}`,
+        response.status,
+        errorData.error?.details
+      );
+    }
+
+    return data.data as HilNote[];
+  },
+
+  async create(data: CreateHilNote): Promise<HilNote> {
+    return apiRequest<HilNote>('/hil-notes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: UpdateHilNote): Promise<HilNote> {
+    return apiRequest<HilNote>(`/hil-notes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    return apiRequest(`/hil-notes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async reply(parentId: string, data: ReplyHilNote): Promise<HilNote> {
+    return apiRequest<HilNote>(`/hil-notes/${parentId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
 // Export main API object
 export const api = {
   workflows: workflowsApi,
@@ -794,6 +867,7 @@ export const api = {
   documents: documentsApi,
   tags: tagsApi,
   clients: clientsApi,
+  hilNotes: hilNotesApi,
   health: healthApi,
 };
 

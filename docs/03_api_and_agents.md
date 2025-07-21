@@ -22,6 +22,7 @@ The API provides access to the following core resources:
 - **`/api/tags`** - Manage predefined document tags for organization
 - **`/api/communications`** - Email, phone, and internal message tracking
 - **`/api/agents`** - Monitor AI agent status and performance
+- **`/api/hil-notes`** - HIL collaborative notes with mentions and threading
 
 ### Example API Calls
 
@@ -40,6 +41,17 @@ curl -X POST "https://api.rexera.com/documents/upload" \
   -F "file=@contract.pdf" \
   -F "workflow_id=abc123" \
   -F "document_type=DELIVERABLE"
+
+# Creating a HIL note with mentions
+curl -X POST "https://api.rexera.com/hil-notes" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_id": "abc123",
+    "content": "@john.doe Please review this urgent case",
+    "priority": "URGENT",
+    "mentions": ["user-uuid-for-john-doe"]
+  }'
 ```
 
 **Example Request Body Schema (Zod):**

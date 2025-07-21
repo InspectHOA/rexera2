@@ -287,6 +287,7 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 - **[Frontend & State](docs/04_frontend_and_state.md)**: Frontend architecture and state management
 - **[Deployment & Operations](docs/05_deployment_and_operations.md)**: Deployment guide and operations
 - **[Notification System](docs/06_notification_system.md)**: Comprehensive notification system documentation
+- **[Audit System](docs/07_audit_system.md)**: Comprehensive audit logging and activity tracking
 - **[Cleanup Changelog](docs/07_cleanup_changelog.md)**: Recent improvements and bug fixes
 
 ## 🚀 Deployment

@@ -1190,5 +1190,688 @@ export const openApiPaths = {
         }
       }
     }
+  },
+  '/api/audit-events': {
+    get: {
+      tags: ['Audit'],
+      summary: 'List audit events',
+      description: 'Retrieve a paginated list of audit events with optional filters',
+      parameters: [
+        {
+          name: 'workflow_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by workflow ID'
+        },
+        {
+          name: 'client_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by client ID'
+        },
+        {
+          name: 'actor_type',
+          in: 'query',
+          schema: { type: 'string', enum: ['human', 'agent', 'system'] },
+          description: 'Filter by actor type'
+        },
+        {
+          name: 'actor_id',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Filter by actor ID'
+        },
+        {
+          name: 'event_type',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: [
+              'workflow_management',
+              'task_execution', 
+              'task_intervention',
+              'sla_management',
+              'user_authentication',
+              'document_management',
+              'communication',
+              'system_operation'
+            ]
+          },
+          description: 'Filter by event type'
+        },
+        {
+          name: 'action',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: ['create', 'read', 'update', 'delete', 'execute', 'approve', 'reject', 'login', 'logout']
+          },
+          description: 'Filter by action'
+        },
+        {
+          name: 'resource_type',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: [
+              'workflow',
+              'task_execution',
+              'user_profile',
+              'client',
+              'agent',
+              'document',
+              'communication',
+              'notification',
+              'counterparty'
+            ]
+          },
+          description: 'Filter by resource type'
+        },
+        {
+          name: 'resource_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by resource ID'
+        },
+        {
+          name: 'from_date',
+          in: 'query',
+          schema: { type: 'string', format: 'date-time' },
+          description: 'Filter events from this date'
+        },
+        {
+          name: 'to_date',
+          in: 'query',
+          schema: { type: 'string', format: 'date-time' },
+          description: 'Filter events until this date'
+        },
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, default: 1 },
+          description: 'Page number for pagination'
+        },
+        {
+          name: 'per_page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
+          description: 'Number of items per page'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Audit events retrieved successfully',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AuditEventList' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid query parameters',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['Audit'],
+      summary: 'Create audit event',
+      description: 'Manually create an audit event for specific scenarios',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateAuditEvent' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Audit event created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  message: { type: 'string', example: 'Audit event created successfully' },
+                  event: { $ref: '#/components/schemas/CreateAuditEvent' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid audit event data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/audit-events/batch': {
+    post: {
+      tags: ['Audit'],
+      summary: 'Create multiple audit events',
+      description: 'Create multiple audit events in a single batch operation',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/CreateAuditEvent' },
+              description: 'Array of audit events to create'
+            }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Audit events batch created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  message: { type: 'string', example: 'Audit events batch created successfully' },
+                  count: { type: 'integer', description: 'Number of events created' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid audit events in batch',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: { type: 'string' },
+                  details: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        index: { type: 'integer' },
+                        errors: { type: 'array', items: { type: 'object' } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/audit-events/workflow/{id}': {
+    get: {
+      tags: ['Audit'],
+      summary: 'Get workflow audit trail',
+      description: 'Retrieve the complete audit trail for a specific workflow',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Workflow ID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Workflow audit trail retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  workflow_id: { type: 'string', format: 'uuid' },
+                  audit_trail: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/AuditEvent' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid workflow ID format',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/audit-events/stats': {
+    get: {
+      tags: ['Audit'],
+      summary: 'Get audit event statistics',
+      description: 'Retrieve summary statistics for audit events (last 24 hours)',
+      responses: {
+        '200': {
+          description: 'Audit statistics retrieved successfully',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AuditEventStats' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/hil-notes': {
+    get: {
+      tags: ['HIL Notes'],
+      summary: 'List HIL notes for a workflow',
+      description: 'Retrieve HIL notes for a specific workflow with optional filters',
+      parameters: [
+        {
+          name: 'workflow_id',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Workflow ID to get notes for'
+        },
+        {
+          name: 'is_resolved',
+          in: 'query',
+          schema: { type: 'boolean' },
+          description: 'Filter by resolved status'
+        },
+        {
+          name: 'priority',
+          in: 'query',
+          schema: { type: 'string', enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'] },
+          description: 'Filter by priority level'
+        },
+        {
+          name: 'author_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by author'
+        },
+        {
+          name: 'parent_note_id',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Filter by parent note (for threaded conversations)'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Comma-separated list of relations to include (author,replies)'
+        }
+      ],
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': {
+          description: 'HIL notes retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/HilNote' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid query parameters',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['HIL Notes'],
+      summary: 'Create a new HIL note',
+      description: 'Create a new HIL note with optional mentions and priority',
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateHilNote' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'HIL note created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/HilNote' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/hil-notes/{id}': {
+    patch: {
+      tags: ['HIL Notes'],
+      summary: 'Update a HIL note',
+      description: 'Update an existing HIL note (only author can update)',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'HIL note ID'
+        }
+      ],
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateHilNote' }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'HIL note updated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/HilNote' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '403': {
+          description: 'Forbidden - only author can update note',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'HIL note not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    delete: {
+      tags: ['HIL Notes'],
+      summary: 'Delete a HIL note',
+      description: 'Delete an existing HIL note (only author can delete)',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'HIL note ID'
+        }
+      ],
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': {
+          description: 'HIL note deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Note deleted successfully' }
+                }
+              }
+            }
+          }
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '403': {
+          description: 'Forbidden - only author can delete note',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'HIL note not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/hil-notes/{id}/reply': {
+    post: {
+      tags: ['HIL Notes'],
+      summary: 'Reply to a HIL note',
+      description: 'Create a threaded reply to an existing HIL note',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Parent HIL note ID'
+        }
+      ],
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ReplyHilNote' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'HIL note reply created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/HilNote' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'Parent HIL note not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
   }
 } as const;

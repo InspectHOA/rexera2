@@ -43,6 +43,11 @@ The UI is built from a set of reusable components, primarily using [shadcn/ui](h
 *   `PredefinedTagSelector`: Reusable tag selection component with search, keyboard navigation, and validation.
 *   `DocumentTagEditor`: Inline and full-mode tag editing for existing documents with real-time updates.
 
+**HIL Notes Components:**
+*   `NotesTab`: Main notes interface in workflow detail view with threading, mentions, and priority management.
+*   `MentionInput`: Advanced text input with @username autocomplete, user search, and mention parsing.
+*   Integrates with `useUnifiedNotifications` for real-time `HIL_MENTION` delivery and toast notifications.
+
 **Notification System Components:**
 *   `NotificationProvider`: Global provider that initializes real-time toast notifications
 *   Uses `usePersistentNotifications` for 24-hour notification persistence

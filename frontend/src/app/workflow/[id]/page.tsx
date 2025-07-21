@@ -16,6 +16,7 @@ import { api } from '@/lib/api/client';
 import { EmailInterface } from '@/components/agents/mia/email-interface';
 import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
 import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
+import { NotesTab } from '@/components/workflow/notes/NotesTab';
 
 // Types
 interface Task {
@@ -158,7 +159,7 @@ export default function WorkflowDetailPage() {
       return `Completed ${formatDateTime(task.completed_at)}`;
     }
     if (task.status === INTERRUPT_STATUS) {
-      return `Needs review • ${task.metadata?.failure_reason || 'Low confidence'}`;
+      return `INTERRUPT • ${task.metadata?.failure_reason || ' No Details'}`;
     }
     if (task.due_date) {
       return `Due ${formatDate(task.due_date)}`;
@@ -555,7 +556,7 @@ function TabContent({
       return <PlaceholderContent>Audit trail content would go here</PlaceholderContent>;
     
     case 'notes':
-      return <PlaceholderContent>Notes content would go here</PlaceholderContent>;
+      return <NotesTab workflowId={workflowData?.id || ''} />;
     
     default:
       return null;

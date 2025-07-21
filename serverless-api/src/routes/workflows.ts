@@ -10,8 +10,10 @@ import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middle
 import { resolveWorkflowId, getWorkflowByHumanId, isUUID } from '../utils/workflow-resolver';
 import { 
   WorkflowFiltersSchema, 
-  CreateWorkflowSchema
+  CreateWorkflowSchema,
+  AuditHelpers
 } from '@rexera/shared';
+import { auditLogger } from './audit-events';
 
 const workflows = new Hono();
 
@@ -212,6 +214,28 @@ workflows.post('/', async (c) => {
 
     if (error) {
       throw new Error(`Failed to create workflow: ${error.message}`);
+    }
+
+    // Log audit event for workflow creation
+    try {
+      await auditLogger.log(
+        AuditHelpers.workflowEvent(
+          user.id,
+          user.email, // Use email as actor name for now
+          'create',
+          workflow.id,
+          workflow.client_id,
+          {
+            workflow_type: workflow.workflow_type,
+            initial_status: workflow.status,
+            created_via: 'api',
+            user_agent: c.req.header('user-agent')
+          }
+        )
+      );
+    } catch (auditError) {
+      console.warn('Failed to log audit event for workflow creation:', auditError);
+      // Don't fail the request if audit logging fails
     }
 
     return c.json({
