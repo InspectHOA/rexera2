@@ -185,12 +185,12 @@ jobs:
       - name: Setup test database
         run: |
           # Install and setup Supabase CLI for local testing
-          curl -fsSL https://supabase.com/docs/guides/cli/getting-started | sh
-          export PATH=$PATH:$HOME/.local/bin
+          wget -qO- https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar xvz
+          sudo mv supabase /usr/local/bin
           
           # Run database migrations for testing
           cd serverless-api
-          npm run test:integration
+          pnpm run test:integration
 
   # Job 6: Security Scanning
   security-scan:
@@ -199,6 +199,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -214,10 +227,10 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Run npm audit
+      - name: Run pnpm audit
         run: |
-          cd serverless-api && npm audit --audit-level high
-          cd ../frontend && npm audit --audit-level high
+          cd serverless-api && pnpm audit --audit-level high
+          cd ../frontend && pnpm audit --audit-level high
 
   # Job 7: Deployment Readiness Check
   deployment-ready:
