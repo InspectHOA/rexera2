@@ -178,6 +178,7 @@ export const requestValidationMiddleware = async (c: Context, next: Next) => {
  */
 export const corsMiddleware = async (c: Context, next: Next) => {
   const origin = c.req.header('origin');
+  console.log('[CORS] Incoming Origin:', origin);
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
@@ -188,7 +189,6 @@ export const corsMiddleware = async (c: Context, next: Next) => {
   if (origin && allowedOrigins.includes(origin)) {
     c.header('Access-Control-Allow-Origin', origin);
   }
-
   c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   c.header('Access-Control-Allow-Credentials', 'true');
