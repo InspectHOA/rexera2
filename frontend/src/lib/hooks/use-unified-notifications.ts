@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/provider';
+import { SKIP_AUTH } from '@/lib/auth/config';
 import { toast } from '@/lib/hooks/use-toast';
 
 interface UnifiedNotification {
@@ -52,36 +53,58 @@ export function useUnifiedNotifications() {
   const fetchNotifications = async () => {
     // Wait for auth to complete before fetching
     if (authLoading) {
+      console.log('🔄 Auth still loading, waiting...');
       return;
     }
     
     if (!user) {
+      console.log('❌ No user found, clearing notifications');
       setNotifications([]);
       setLoading(false);
       return;
     }
 
+    console.log('🔍 Fetching notifications for user:', user.id, SKIP_AUTH ? '(using API endpoint)' : '(using Supabase client)');
+
     try {
       setError(null);
       
-      // Get notifications from today (24 hours ago)
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      
-      const { data, error: fetchError } = await supabase
-        .from('hil_notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', twentyFourHoursAgo)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      if (SKIP_AUTH) {
+        // Use API endpoint to bypass RLS in development
+        const response = await fetch(`/api/notifications?user_id=${user.id}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        console.log('✅ Notifications fetched via API:', result.notifications?.length || 0);
+        setNotifications(result.notifications || []);
+      } else {
+        // Use direct Supabase client for production
+        const { data, error: fetchError } = await supabase
+          .from('hil_notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(100);
 
-      if (fetchError) {
-        throw fetchError;
+        if (fetchError) {
+          console.error('❌ Supabase fetch error:', fetchError);
+          throw fetchError;
+        }
+
+        console.log('✅ Notifications fetched via Supabase:', data?.length || 0);
+        setNotifications(data || []);
       }
-
-      setNotifications(data || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
+      console.error('❌ Notification fetch error:', err);
       setError(errorMessage);
       } finally {
       setLoading(false);
@@ -91,16 +114,30 @@ export function useUnifiedNotifications() {
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('hil_notifications')
-        .update({ 
-          read: true, 
-          read_at: new Date().toISOString() 
-        })
-        .eq('id', notificationId);
+      if (SKIP_AUTH) {
+        // Use API endpoint for skip_auth mode
+        const response = await fetch(`/api/notifications/${notificationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ read: true, read_at: new Date().toISOString() })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to mark as read: ${response.statusText}`);
+        }
+      } else {
+        // Use Supabase client for production
+        const { error } = await supabase
+          .from('hil_notifications')
+          .update({ 
+            read: true, 
+            read_at: new Date().toISOString() 
+          })
+          .eq('id', notificationId);
 
-      if (error) {
-        throw error;
+        if (error) {
+          throw error;
+        }
       }
 
       // Update local state
@@ -112,7 +149,8 @@ export function useUnifiedNotifications() {
         )
       );
     } catch (err) {
-      }
+      console.error('Error marking notification as read:', err);
+    }
   };
 
   // Mark all notifications as read
@@ -124,16 +162,22 @@ export function useUnifiedNotifications() {
       
       if (unreadIds.length === 0) return;
 
-      const { error } = await supabase
-        .from('hil_notifications')
-        .update({ 
-          read: true, 
-          read_at: new Date().toISOString() 
-        })
-        .in('id', unreadIds);
+      if (SKIP_AUTH) {
+        // For now, mark all as read by calling markAsRead for each
+        await Promise.all(unreadIds.map(id => markAsRead(id)));
+        return;
+      } else {
+        const { error } = await supabase
+          .from('hil_notifications')
+          .update({ 
+            read: true, 
+            read_at: new Date().toISOString() 
+          })
+          .in('id', unreadIds);
 
-      if (error) {
-        throw error;
+        if (error) {
+          throw error;
+        }
       }
 
       // Update local state
@@ -146,6 +190,24 @@ export function useUnifiedNotifications() {
       );
     } catch (err) {
       }
+  };
+
+  // Dismiss notification (hide it permanently) - Currently disabled
+  const dismissNotification = async (notificationId: string) => {
+    try {
+      // TODO: Implement when dismissed_at column is added to database
+      console.log('Dismiss functionality disabled - database column missing');
+      
+      // For now, just mark as read
+      await markAsRead(notificationId);
+      
+      // Optionally remove from local state for immediate UI feedback
+      // setNotifications(prev => 
+      //   prev.filter(notif => notif.id !== notificationId)
+      // );
+    } catch (err) {
+      console.error('Error dismissing notification:', err);
+    }
   };
 
   // Determine if notification should show popup
@@ -202,9 +264,9 @@ export function useUnifiedNotifications() {
     fetchNotifications();
   }, [user, authLoading]);
 
-  // Real-time subscription for new notifications
+  // Real-time subscription for new notifications (disabled in skip_auth mode)
   useEffect(() => {
-    if (!user) return;
+    if (!user || SKIP_AUTH) return; // Skip real-time in development mode
 
     const subscription = supabase
       .channel('unified_notifications')
@@ -249,6 +311,7 @@ export function useUnifiedNotifications() {
     settings,
     markAsRead,
     markAllAsRead,
+    dismissNotification,
     setSettings,
     refetch: fetchNotifications
   };

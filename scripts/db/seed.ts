@@ -922,6 +922,113 @@ async function seedDatabase() {
     console.log(`✅ Created ${notificationData?.length || 0} HIL notifications`);
   }
 
+  // Create additional diverse notification types for testing
+  console.log('📝 Creating additional notification types for comprehensive testing...');
+  
+  const additionalNotifications = [
+    {
+      id: randomUUID(),
+      user_id: testUserId,
+      type: 'SLA_WARNING',
+      priority: 'HIGH',
+      title: 'SLA Deadline Approaching',
+      message: 'Payoff request workflow is approaching its 24-hour SLA deadline. Only 3 hours remaining.',
+      action_url: `/workflow/${workflows[0]?.id || 'test'}`,
+      metadata: {
+        workflow_id: workflows[0]?.id || 'test',
+        sla_deadline: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+        hours_remaining: 3
+      },
+      read: false,
+      read_at: null,
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+    },
+    {
+      id: randomUUID(),
+      user_id: testUserId,
+      type: 'WORKFLOW_UPDATE',
+      priority: 'NORMAL',
+      title: 'Workflow Completed Successfully',
+      message: 'HOA document request workflow has been completed successfully.',
+      action_url: `/workflow/${workflows[1]?.id || 'test'}`,
+      metadata: {
+        workflow_id: workflows[1]?.id || 'test',
+        completion_time: new Date().toISOString()
+      },
+      read: true,
+      read_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Read 30 min ago
+      created_at: new Date(Date.now() - 60 * 60 * 1000).toISOString() // 1 hour ago
+    },
+    {
+      id: randomUUID(),
+      user_id: testUserId,
+      type: 'AGENT_FAILURE',
+      priority: 'HIGH',
+      title: 'Agent Communication Failed',
+      message: 'Mia agent failed to send client notification email. Manual intervention required.',
+      action_url: '/agents/mia',
+      metadata: {
+        agent_id: 'mia',
+        error_type: 'EMAIL_DELIVERY_FAILED',
+        retry_count: 3
+      },
+      read: false,
+      read_at: null,
+      created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString() // 45 min ago
+    },
+    {
+      id: randomUUID(),
+      user_id: testUserId,
+      type: 'HIL_MENTION',
+      priority: 'NORMAL',
+      title: 'You Have Been Mentioned',
+      message: 'You were mentioned in a comment on workflow: Municipal Lien Search',
+      action_url: `/workflow/${workflows[2]?.id || 'test'}#comments`,
+      metadata: {
+        workflow_id: workflows[2]?.id || 'test',
+        mentioned_by: 'System',
+        comment_id: 'comment-123'
+      },
+      read: false,
+      read_at: null,
+      created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString() // 15 min ago
+    },
+    {
+      id: randomUUID(),
+      user_id: testUserId,
+      type: 'TASK_INTERRUPT',
+      priority: 'URGENT',
+      title: 'Urgent Client Response Required',
+      message: 'Client has specific requirements that need immediate attention before proceeding.',
+      action_url: `/workflow/${workflows[3]?.id || 'test'}`,
+      metadata: {
+        workflow_id: workflows[3]?.id || 'test',
+        task_id: randomUUID(),
+        interrupt_type: 'CLIENT_CLARIFICATION'
+      },
+      read: false,
+      read_at: null,
+      created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString() // 10 min ago
+    }
+  ];
+
+  hilNotifications.push(...additionalNotifications);
+
+  // Insert additional notifications
+  if (additionalNotifications.length > 0) {
+    console.log('📝 Inserting additional notification types...');
+    const { data: additionalNotificationData, error: additionalNotificationError } = await supabase
+      .from('hil_notifications')
+      .upsert(additionalNotifications)
+      .select();
+    
+    if (additionalNotificationError) {
+      console.error('❌ Failed to create additional notifications:', additionalNotificationError);
+    } else {
+      console.log(`✅ Created ${additionalNotificationData?.length || 0} additional notifications`);
+    }
+  }
+
   // Create sample HIL notes for workflows with rich collaborative content
   console.log('📝 Creating HIL notes with mentions and threading...');
   const hilNotes = [];

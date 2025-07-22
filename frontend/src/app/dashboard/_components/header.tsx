@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/provider';
 import { useUnifiedNotifications } from '@/lib/hooks/use-unified-notifications';
 import { Bell, Plus } from 'lucide-react';
@@ -12,17 +13,26 @@ import { RexeraLogo } from '@/components/ui/rexera-logo';
 
 export function DashboardHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, profile, loading, signOut } = useAuth();
   const {
     notifications,
     unreadCount,
     loading: notificationsLoading,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    dismissNotification
   } = useUnifiedNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
+
+  // Handle mounting for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close dropdown when clicking outside (with small delay to prevent immediate closing)
   useEffect(() => {
@@ -99,6 +109,7 @@ export function DashboardHeader() {
     await signOut();
   };
 
+
   const handleNotificationClick = (notification: any) => {
     // Mark as read when clicked
     markAsRead(notification.id);
@@ -120,7 +131,34 @@ export function DashboardHeader() {
     <>
       <header className="bg-background/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-lg border border-border/50">
         <div className="flex items-center gap-4">
-          <RexeraLogo className="h-8 w-auto" />
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="transition-opacity hover:opacity-80"
+            title="Go to Dashboard"
+          >
+            <RexeraLogo className="h-8 w-auto" />
+          </button>
+          
+          {/* Navigation breadcrumb */}
+          <div className="flex items-center gap-2 text-sm">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Workflows
+            </button>
+            {pathname !== '/dashboard' && (
+              <>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-foreground font-medium">
+                  {pathname === '/notifications' ? 'Notifications' : 
+                   pathname === '/sla-breaches' ? 'SLA Breaches' :
+                   pathname.split('/')[1]?.charAt(0).toUpperCase() + 
+                   pathname.split('/')[1]?.slice(1) || 'Page'}
+                </span>
+              </>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center gap-3 text-sm relative">
@@ -135,6 +173,7 @@ export function DashboardHeader() {
         {/* Notification Bell */}
         <div className="relative" ref={notificationRef}>
           <button
+            ref={bellRef}
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
             title="View notifications"
@@ -146,14 +185,22 @@ export function DashboardHeader() {
               </div>
             )}
           </button>
-          
-          {/* Notification Dropdown */}
-          {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-popover border border-border rounded-lg shadow-lg z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+        </div>
+        
+        {/* Notification Dropdown - Rendered as Portal */}
+        {showNotifications && mounted && createPortal(
+          <div className="fixed inset-0 z-[10000]">
+            <div 
+              className="absolute right-4 top-20 w-80 bg-popover border border-border rounded-lg shadow-xl animate-in fade-in-0 slide-in-from-top-2 duration-200"
+              style={{ 
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' 
+              }}
+              ref={notificationRef}
+            >
               <div className="p-3 border-b border-border flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold text-popover-foreground">Notifications</h3>
-                  <p className="text-xs text-muted-foreground">{notifications.length} from today • {unreadCount} unread</p>
+                  <p className="text-xs text-muted-foreground">{notifications.length} notifications • {unreadCount} unread</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
@@ -178,7 +225,7 @@ export function DashboardHeader() {
                 {notificationsLoading && notifications.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground">Loading...</div>
                 ) : notifications.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground">No notifications from today</div>
+                  <div className="p-4 text-center text-muted-foreground">No notifications</div>
                 ) : (
                   notifications.slice(0, 10).map((notification) => (
                     <div 
@@ -205,6 +252,16 @@ export function DashboardHeader() {
                             {new Date(notification.created_at).toLocaleString()}
                           </p>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissNotification(notification.id);
+                          }}
+                          className="text-muted-foreground hover:text-foreground text-xs p-1 flex-shrink-0"
+                          title="Dismiss notification"
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
                   ))
@@ -212,14 +269,21 @@ export function DashboardHeader() {
               </div>
               {notifications.length > 10 && (
                 <div className="p-3 border-t border-border text-center">
-                  <button className="text-sm text-primary hover:text-primary/80">
+                  <button 
+                    onClick={() => {
+                      router.push('/notifications');
+                      setShowNotifications(false);
+                    }}
+                    className="text-sm text-primary hover:text-primary/80"
+                  >
                     View all {notifications.length} notifications
                   </button>
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </div>,
+          document.body
+        )}
         
         <ThemeSwitcher />
         <span className="text-foreground">{getDisplayName()}</span>

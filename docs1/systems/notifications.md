@@ -61,6 +61,35 @@ When users mention `@username` in notes:
 3. Toast popup based on note priority
 4. Persistent in notification tray
 
+## Notifications Dashboard
+
+Comprehensive interface at `/notifications` for managing all system notifications.
+
+### Features
+- **Filtering**: By type, priority, read status
+- **Search**: Across title, message, and type
+- **Sorting**: By date, priority, type
+- **Pagination**: 50 notifications per page
+- **Click Navigation**: Auto-mark as read + redirect to workflow
+
+### Component Structure
+```
+/notifications/
+├── page.tsx              # Main dashboard page
+├── _components/
+│   ├── notifications-stats.tsx     # Metrics display
+│   ├── notifications-table.tsx     # Main table
+│   ├── notifications-filters.tsx   # Filter controls
+│   ├── notification-row.tsx        # Individual rows
+│   └── notifications-pagination.tsx # Page controls
+```
+
+### Navigation Access
+- Notification bell dropdown "View all" link
+- Clickable logo returns to workflows dashboard from any page
+- Breadcrumb navigation: "Workflows / [Current Page]"
+- Supports future pages: Notifications, SLA Breaches, etc.
+
 ## Settings
 
 Users can configure:
