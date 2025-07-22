@@ -148,7 +148,7 @@ taskExecutions.post('/bulk', async (c) => {
         throw new Error(`Failed to verify workflow access: ${workflowError.message}`);
       }
 
-      const unauthorizedWorkflows = workflows?.filter(w => w.client_id !== companyFilter);
+      const unauthorizedWorkflows = workflows?.filter((w: any) => w.client_id !== companyFilter);
       if (unauthorizedWorkflows?.length) {
         return c.json({
           success: false,

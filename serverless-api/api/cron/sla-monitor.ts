@@ -186,7 +186,7 @@ async function findBreachedTasksFallback(): Promise<BreachedTask[]> {
   }
   
   // Add computed SLA fields for compatibility
-  return (tasks || []).map(task => ({
+  return (tasks || []).map((task: any) => ({
     ...task,
     sla_hours: 24,
     sla_due_at: new Date(new Date(task.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString(),

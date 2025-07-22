@@ -601,9 +601,9 @@ documents.post('/upload', async (c) => {
     }
 
     const formData = await c.req.formData();
-    const file = formData.get('file') as File;
-    const workflowId = formData.get('workflow_id') as string;
-    const documentType = (formData.get('document_type') as string) || 'WORKING';
+    const file = (formData as any).get('file') as File;
+    const workflowId = (formData as any).get('workflow_id') as string;
+    const documentType = ((formData as any).get('document_type') as string) || 'WORKING';
 
     if (!file || !workflowId) {
       return c.json({
