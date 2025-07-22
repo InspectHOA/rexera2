@@ -3,21 +3,21 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Play, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { WorkflowHeader } from '@/components/workflow/workflow-header';
-import { TaskList } from '@/components/workflow/task-list';
-import { TabNavigation } from '@/components/workflow/tab-navigation';
-import { TaskDetailView } from '@/components/workflow/task-detail-view';
-import { FileUpload } from '@/components/workflow/file-upload';
-import { DocumentList } from '@/components/workflow/document-list';
+import { WorkflowHeader } from '@/app/workflow/_components/workflow-header';
+import { TaskList } from '@/app/workflow/_components/task-list';
+import { TabNavigation } from '@/app/workflow/_components/tab-navigation';
+import { TaskDetailView } from '@/app/workflow/_components/task-detail-view';
+import { FileUpload } from '@/app/workflow/_components/file-upload';
+import { DocumentList } from '@/app/workflow/_components/document-list';
 import { useWorkflow } from '@/lib/hooks/use-workflows';
 import { formatWorkflowIdWithType, type WorkflowStatus, type TaskStatus } from '@rexera/shared';
 import type { WorkflowData } from '@/types/workflow';
 import { api } from '@/lib/api/client';
-import { EmailInterface } from '@/components/agents/mia/email-interface';
-import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
-import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
-import { NotesTab } from '@/components/workflow/notes/notes-tab';
-import { ActivityFeed } from '@/components/dashboard/activity-feed';
+import { EmailInterface } from '@/app/agents/_components/mia/email-interface';
+import { CounterpartySelector } from '@/app/agents/_components/nina/counterparty-selector';
+import { DocumentExtractor } from '@/app/agents/_components/iris/document-extractor';
+import { NotesTab } from '@/app/workflow/_components/notes/notes-tab';
+import { ActivityFeed } from '@/app/dashboard/_components/activity-feed';
 
 // Types
 interface Task {
@@ -66,14 +66,15 @@ export default function WorkflowDetailPage() {
 
   
   // Transform API data to component format
-  const workflow: Workflow | null = workflowData ? {
-    id: formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type),
-    title: workflowData.title || 'Workflow Details',
-    subtitle: `${formatWorkflowIdWithType(workflowData.id, workflowData.workflow_type)} • ${getDisplayWorkflowType(workflowData.workflow_type || 'PAYOFF_REQUEST')} - ${workflowData.client?.name || 'Unknown Client'}`,
-    status: getDisplayStatus(workflowData.status || 'PENDING'),
-    eta: formatDateTime(workflowData.due_date),
-    due: formatDate(workflowData.due_date),
-    closing: formatDate(workflowData.metadata?.closing_date),
+  const workflowTyped = workflowData as WorkflowData | undefined;
+  const workflow: Workflow | null = workflowTyped ? {
+    id: formatWorkflowIdWithType(workflowTyped.id, workflowTyped.workflow_type),
+    title: workflowTyped.title || 'Workflow Details',
+    subtitle: `${formatWorkflowIdWithType(workflowTyped.id, workflowTyped.workflow_type)} • ${getDisplayWorkflowType(workflowTyped.workflow_type || 'PAYOFF_REQUEST')} - ${workflowTyped.client?.name || 'Unknown Client'}`,
+    status: getDisplayStatus(workflowTyped.status || 'PENDING'),
+    eta: formatDateTime(workflowTyped.due_date),
+    due: formatDate(workflowTyped.due_date),
+    closing: formatDate(workflowTyped.metadata?.closing_date || null),
     progress: `${tasksData?.filter((t: any) => t.status === 'COMPLETED').length || 0} of ${tasksData?.length || 0} tasks`
   } : null;
 
@@ -81,15 +82,15 @@ export default function WorkflowDetailPage() {
   useEffect(() => {
     if (workflow?.title && workflow.title !== 'Workflow Details') {
       document.title = workflow.title;
-    } else if (workflowData?.id) {
-      document.title = `Workflow ${workflowData.id}`;
+    } else if (workflowTyped?.id) {
+      document.title = `Workflow ${workflowTyped.id}`;
     }
     
     // Cleanup: restore default title when component unmounts
     return () => {
       document.title = 'Rexera HIL Dashboard';
     };
-  }, [workflow?.title, workflowData?.id]);
+  }, [workflow?.title, workflowTyped?.id]);
 
   const tasks: Task[] = tasksData && tasksData.length > 0 ? tasksData.map((task: any) => ({
     id: task.id,
@@ -276,25 +277,24 @@ export default function WorkflowDetailPage() {
   }
 
   const handleStartN8nWorkflow = async () => {
-    if (!workflowData?.id) return;
+    if (!workflowTyped?.id) return;
     
     setIsStartingN8n(true);
     setN8nError(null);
     
     try {
       // First update the workflow to mark n8n as starting
-      await api.workflows.updateWorkflow(workflowData.id, {
+      await api.workflows.updateWorkflow(workflowTyped!.id, {
         n8n_status: 'running',
         n8n_started_at: new Date().toISOString()
       });
       
       // Then trigger the n8n workflow
       const result = await api.workflows.triggerN8nWorkflow(
-        workflowData.id,
-        workflowData.workflow_type || 'BASIC_TEST'
+        workflowTyped!.id,
+        workflowTyped!.workflow_type || 'BASIC_TEST'
       );
       
-      console.log('n8n workflow triggered:', result);
       
       // Refresh the workflow data to show updated status
       window.location.reload();
@@ -305,7 +305,7 @@ export default function WorkflowDetailPage() {
       
       // Reset the workflow status on error
       try {
-        await api.workflows.updateWorkflow(workflowData.id, {
+        await api.workflows.updateWorkflow(workflowTyped!.id, {
           n8n_status: 'not_started'
         });
       } catch (resetError) {
@@ -350,7 +350,7 @@ export default function WorkflowDetailPage() {
                 <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
                 <TabContent
                   activeTab={activeTab}
-                  workflowData={workflowData}
+                  workflowData={workflowTyped}
                   onStartN8nWorkflow={handleStartN8nWorkflow}
                   isStartingN8n={isStartingN8n}
                   n8nError={n8nError}
@@ -417,12 +417,12 @@ function TabContent({
   switch (activeTab) {
     case 'details':
       const detailFields = workflowData ? [
-        { label: 'Borrower Name', value: workflowData.metadata?.borrower_name || 'Not specified' },
-        { label: 'Lender Name', value: workflowData.client?.name || 'Unknown' },
-        { label: 'Loan Number', value: workflowData.metadata?.loan_number || 'Not specified', mono: true },
-        { label: 'Payoff Date', value: workflowData.due_date ? new Date(workflowData.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' },
-        { label: 'Primary HIL', value: workflowData.assigned_user?.full_name || 'Unassigned' },
-        { label: 'Client', value: workflowData.client?.name || 'Unknown' }
+        { label: 'Borrower Name', value: workflowData?.metadata?.borrower_name || 'Not specified' },
+        { label: 'Lender Name', value: workflowData?.client?.name || 'Unknown' },
+        { label: 'Loan Number', value: workflowData?.metadata?.loan_number || 'Not specified', mono: true },
+        { label: 'Payoff Date', value: workflowData?.due_date ? new Date(workflowData.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' },
+        { label: 'Primary HIL', value: workflowData?.assigned_user?.full_name || 'Unassigned' },
+        { label: 'Client', value: workflowData?.client?.name || 'Unknown' }
       ] : [];
 
       const n8nStatus = (workflowData as any)?.n8n_status || 'not_started';

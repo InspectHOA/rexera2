@@ -6,9 +6,9 @@ import { useAuth } from '@/lib/auth/provider';
 import { useUnifiedNotifications } from '@/lib/hooks/use-unified-notifications';
 import { Bell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { WorkflowCreationModal } from '@/components/workflow/workflow-creation-modal';
-import { ThemeSwitcher } from '../ui/theme-switcher';
-import { RexeraLogo } from '../ui/rexera-logo';
+import { WorkflowCreationModal } from '@/app/workflow/_components/workflow-creation-modal';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { RexeraLogo } from '@/components/ui/rexera-logo';
 
 export function DashboardHeader() {
   const router = useRouter();

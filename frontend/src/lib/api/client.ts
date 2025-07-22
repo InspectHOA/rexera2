@@ -26,6 +26,16 @@ import type {
   AuditEvent,
   CreateAuditEvent
 } from '@rexera/shared';
+import type { 
+  ApiRequestOptions,
+  PaginatedFilters,
+  SearchFilters,
+  ApiErrorDetails,
+  WorkflowApiResponse,
+  TaskExecutionApiResponse,
+  AgentListResponse
+} from '@/types/api';
+import type { WorkflowData, TaskExecution } from '@/types/workflow';
 import { 
   ApiError as SharedApiError,
   API_ERROR_CODES
@@ -35,14 +45,12 @@ import { SKIP_AUTH } from '@/lib/auth/config';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api`;
 
-console.log('🔍 API_BASE_URL configured as:', API_BASE_URL);
-
-// Use shared ApiError class
+// Use shared ApiError class with proper typing
 class ApiError extends SharedApiError {
   constructor(
     message: string,
     status: number,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     super(message, status, API_ERROR_CODES.INTERNAL_ERROR, details);
     this.name = 'ApiError';
@@ -64,9 +72,9 @@ async function getAuthToken(): Promise<string | null> {
   }
 }
 
-async function apiRequest<T = any>(
+async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -100,7 +108,7 @@ async function apiRequest<T = any>(
     throw new ApiError(
       errorData.error?.message || `HTTP ${response.status}`,
       response.status,
-      errorData.error?.details
+      errorData.error?.details ? { details: errorData.error.details } : undefined
     );
   }
 
@@ -121,7 +129,7 @@ export const workflowsApi = {
     include?: string[];
     sortBy?: string;
     sortDirection?: 'asc' | 'desc';
-  } = {}) {
+  } = {}): Promise<WorkflowApiResponse> {
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
@@ -153,12 +161,12 @@ export const workflowsApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 
     return {
-      data: data.data || [],
+      data: (data.data as WorkflowData[]) || [],
       pagination: data.pagination || {
         page: 1,
         limit: 20,
@@ -265,7 +273,7 @@ export const tasksApi = {
     page?: number;
     limit?: number;
     include?: string[];
-  } = {}) {
+  } = {}): Promise<TaskExecutionApiResponse> {
     // Use workflowId if provided, otherwise fall back to workflow_id
     const workflowId = filters.workflowId || filters.workflow_id;
     
@@ -414,7 +422,7 @@ export const agentsApi = {
     page?: number;
     limit?: number;
     include?: string[];
-  } = {}) {
+  } = {}): Promise<AgentListResponse> {
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
@@ -569,7 +577,7 @@ export const communicationsApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 
@@ -633,7 +641,7 @@ export const documentsApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 
@@ -694,7 +702,7 @@ export const documentsApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 
@@ -760,7 +768,7 @@ export const documentsApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 
@@ -825,7 +833,7 @@ export const hilNotesApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 
@@ -969,7 +977,7 @@ export const usersApi = {
       throw new ApiError(
         errorData.error?.message || `HTTP ${response.status}`,
         response.status,
-        errorData.error?.details
+        errorData.error?.details ? { details: errorData.error.details } : {}
       );
     }
 

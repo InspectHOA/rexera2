@@ -1,8 +1,8 @@
 'use client';
 
-import { DashboardHeader } from '@/components/dashboard/header';
-import { DashboardStats } from '@/components/dashboard/stats';
-import { WorkflowTable } from '@/components/dashboard/workflow-table';
+import { DashboardHeader } from '@/app/dashboard/_components/header';
+import { DashboardStats } from '@/app/dashboard/_components/stats';
+import { WorkflowTable } from '@/app/dashboard/_components/workflow-table';
 
 export default function DashboardPage() {
   return (

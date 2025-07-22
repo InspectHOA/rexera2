@@ -42,7 +42,7 @@ export function useWorkflowTableState() {
 
   // Map frontend filters to backend API parameters
   const getBackendFilters = () => {
-    const filters: any = {
+    const filters: Record<string, unknown> = {
       include: ['client', 'tasks'],
       limit: 20,
       page: currentPage,

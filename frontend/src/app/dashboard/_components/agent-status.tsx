@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { agentsApi } from '@/lib/api/client';
+import type { Agent, AgentListResponse } from '@/types/api';
 
-interface Agent {
-  name: string;
-  type: string;
-  status: 'online' | 'offline' | 'busy' | 'error';
-  current_tasks: number;
-  max_tasks: number;
-  last_activity: string;
+// Map Agent status to display status
+function normalizeStatus(status: Agent['status']): 'online' | 'offline' | 'busy' | 'error' {
+  switch (status) {
+    case 'ONLINE': return 'online';
+    case 'BUSY': return 'busy'; 
+    case 'OFFLINE': return 'offline';
+    case 'ERROR': return 'error';
+    default: return 'offline';
+  }
 }
 
 export function AgentStatus() {
@@ -24,7 +27,7 @@ export function AgentStatus() {
         setError(null);
         
         // Use API client for agents
-        const response = await agentsApi.list({ is_active: true, limit: 20 });
+        const response = await agentsApi.list({ is_active: true, limit: 20 }) as AgentListResponse;
         setAgents(response.data || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load agent status';
@@ -118,7 +121,7 @@ export function AgentStatus() {
             <div key={agent.name} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
-                  <span className={`h-2 w-2 rounded-full ${getStatusDot(agent.status)}`}></span>
+                  <span className={`h-2 w-2 rounded-full ${getStatusDot(normalizeStatus(agent.status))}`}></span>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{agent.name}</p>
@@ -127,11 +130,11 @@ export function AgentStatus() {
               </div>
               
               <div className="text-right">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(agent.status)}`}>
-                  {agent.status}
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(normalizeStatus(agent.status))}`}>
+                  {normalizeStatus(agent.status)}
                 </span>
                 <p className="text-xs text-gray-500 mt-1">
-                  {agent.current_tasks}/{agent.max_tasks} tasks
+                  {agent.current_tasks || 0}/{agent.max_tasks || 0} tasks
                 </p>
               </div>
             </div>
@@ -142,14 +145,14 @@ export function AgentStatus() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">System Load</span>
                 <span className="font-medium text-gray-900">
-                  {agents.reduce((sum, agent) => sum + agent.current_tasks, 0)} / {agents.reduce((sum, agent) => sum + agent.max_tasks, 0)} tasks
+                  {agents.reduce((sum, agent) => sum + (agent.current_tasks || 0), 0)} / {agents.reduce((sum, agent) => sum + (agent.max_tasks || 0), 0)} tasks
                 </span>
               </div>
               <div className="mt-2 bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
                   style={{ 
-                    width: `${Math.min((agents.reduce((sum, agent) => sum + agent.current_tasks, 0) / Math.max(agents.reduce((sum, agent) => sum + agent.max_tasks, 0), 1)) * 100, 100)}%` 
+                    width: `${Math.min((agents.reduce((sum, agent) => sum + (agent.current_tasks || 0), 0) / Math.max(agents.reduce((sum, agent) => sum + (agent.max_tasks || 0), 0), 1)) * 100, 100)}%` 
                   }}
                 ></div>
               </div>

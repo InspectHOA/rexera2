@@ -1,9 +1,9 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import { EmailInterface } from '@/components/agents/mia/email-interface';
-import { CounterpartySelector } from '@/components/agents/nina/counterparty-selector';
-import { DocumentExtractor } from '@/components/agents/iris/document-extractor';
+import { EmailInterface } from '@/app/agents/_components/mia/email-interface';
+import { CounterpartySelector } from '@/app/agents/_components/nina/counterparty-selector';
+import { DocumentExtractor } from '@/app/agents/_components/iris/document-extractor';
 
 interface AgentPageProps {
   params: {

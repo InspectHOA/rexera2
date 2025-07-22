@@ -4,20 +4,17 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/lib/supabase/provider';
 import { api } from '@/lib/api/client';
-import { type WorkflowStatus, type TaskStatus } from '@rexera/shared';
+import { type WorkflowStatus, type TaskStatus, type WorkflowType, type PriorityLevel } from '@rexera/shared';
 import type { WorkflowData, TaskExecution } from '@/types/workflow';
+import type { PaginatedFilters } from '@/types/api';
+import { formatErrorMessage } from '@/lib/utils/formatting';
 
-interface WorkflowFilters {
-  workflow_type?: string;
-  status?: string;
+interface WorkflowFilters extends PaginatedFilters {
+  workflow_type?: WorkflowType;
+  status?: WorkflowStatus;
   client_id?: string;
   assigned_to?: string;
-  priority?: string;
-  page?: number;
-  limit?: number;
-  include?: string[];
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  priority?: PriorityLevel;
 }
 
 interface WorkflowStats {
@@ -117,7 +114,7 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
     workflows,
     stats,
     loading,
-    error: error ? String(error) : null,
+    error: error ? formatErrorMessage(error) : null,
     pagination,
     refetch,
     createWorkflow: createWorkflowMutation.mutate,
@@ -157,7 +154,7 @@ export function useWorkflow(id: string) {
   } = useQuery({
     queryKey: ['tasks', { workflow_id: id }],
     queryFn: () => api.tasks.list({
-      workflowId: workflow?.id || id, // Use actual UUID for task filtering
+      workflowId: (workflow as WorkflowData)?.id || id, // Use actual UUID for task filtering
       include: ['assigned_user', 'agent']
     }),
     enabled: !!id && !!workflow,
@@ -166,7 +163,7 @@ export function useWorkflow(id: string) {
 
   const tasks = tasksResult?.data || [];
   const loading = workflowLoading || tasksLoading;
-  const error = workflowError ? String(workflowError) : tasksError ? String(tasksError) : null;
+  const error = workflowError ? formatErrorMessage(workflowError) : tasksError ? formatErrorMessage(tasksError) : null;
 
   const refetch = () => {
     refetchWorkflow();
@@ -249,7 +246,7 @@ export function useWorkflowN8n(id: string) {
   return {
     n8nStatus,
     loading: isLoading,
-    error: error ? String(error) : null,
+    error: error ? formatErrorMessage(error) : null,
     refetch,
     cancelN8nExecution: cancelN8nMutation.mutate,
     cancelN8nExecutionAsync: cancelN8nMutation.mutateAsync,

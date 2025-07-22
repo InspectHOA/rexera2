@@ -173,41 +173,25 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
   };
 
   const validateForm = (): boolean => {
-    console.log('🔍 Starting form validation...');
     const newErrors: Record<string, string> = {};
     const workflowInfo = WORKFLOW_TYPES[formData.workflow_type];
-
-    console.log('📋 Validating required fields:');
-    console.log('  - Client ID:', formData.client_id);
-    console.log('  - Due Date:', formData.due_date);
 
     // Required fields
     if (!formData.client_id) {
       newErrors.client_id = 'Client is required';
-      console.log('❌ Client is missing');
     }
     if (!formData.due_date) {
       newErrors.due_date = 'Due date is required';
-      console.log('❌ Due date is missing');
     }
-
-    console.log('📋 Validating workflow-specific metadata:');
-    console.log('  - Workflow type:', formData.workflow_type);
-    console.log('  - Workflow fields:', workflowInfo.fields);
-    console.log('  - Current metadata:', formData.metadata);
 
     // Validate workflow-specific metadata (property_address and closing_date are required)
     workflowInfo.fields.forEach(field => {
       const value = formData.metadata[field.key];
-      console.log(`  - ${field.label} (${field.key}): "${value}" (required: ${field.required})`);
       
       if (field.required && !value?.trim()) {
         newErrors[`metadata.${field.key}`] = `${field.label} is required`;
-        console.log(`❌ ${field.label} is missing`);
       }
     });
-
-    console.log('🔍 Validation complete. Errors found:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -215,36 +199,22 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🚀 Form submission started');
-    console.log('📝 Current form data:', formData);
-    console.log('👤 Current user:', user);
-    console.log('❌ Current errors before validation:', errors);
-    
     const isFormValid = validateForm();
-    console.log('✅ Form validation result:', isFormValid);
-    console.log('❌ Validation errors:', errors);
     
     if (!isFormValid) {
-      console.log('❌ Form validation failed, stopping submission');
       return;
     }
     
     // Handle SKIP_AUTH mode - use hardcoded user if no user is available
     let userId = user?.id;
     if (!userId && SKIP_AUTH) {
-      console.log('🔧 No user in auth context, but SKIP_AUTH is enabled. Using SKIP_AUTH_USER');
       userId = SKIP_AUTH_USER.id;
     }
     
     if (!userId) {
-      console.log('❌ No user ID found and not in SKIP_AUTH mode, stopping submission');
-      console.log('🔧 SKIP_AUTH enabled:', SKIP_AUTH);
-      console.log('👤 Auth user:', user);
       setErrors({ submit: 'User not authenticated. Please refresh and try again.' });
       return;
     }
-    
-    console.log('✅ Using user ID:', userId);
 
     try {
       // Convert date string to ISO datetime format
@@ -271,11 +241,7 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
         created_by: userId
       };
 
-      console.log('📦 Prepared workflow data:', workflowData);
-      console.log('🔄 Calling createWorkflowAsync...');
-      
       const result = await createWorkflowAsync(workflowData);
-      console.log('✅ Workflow created successfully:', result);
       
       onSuccess?.();
       onClose();
@@ -499,12 +465,6 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                 type="submit"
                 disabled={isCreating || loadingClients}
                 className="flex items-center gap-2"
-                onClick={() => {
-                  console.log('🖱️ Create Workflow button clicked');
-                  console.log('🔄 isCreating:', isCreating);
-                  console.log('⏳ loadingClients:', loadingClients);
-                  console.log('🚫 Button disabled:', isCreating || loadingClients);
-                }}
               >
                 {isCreating ? (
                   <>

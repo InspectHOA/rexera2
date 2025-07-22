@@ -38,7 +38,8 @@ const mockFromResult = {
 describe('/api/user/preferences', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (createClient as jest.Mock).mockReturnValue(mockSupabase);
+    const mockedCreateClient = createClient as any;
+    mockedCreateClient.mockReturnValue(mockSupabase);
     mockSupabase.from.mockReturnValue(mockFromResult);
     
     // Setup default chaining
