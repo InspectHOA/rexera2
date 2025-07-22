@@ -53,24 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Use a more robust double-mount protection with global tracking
-    const authInitKey = 'rexera_auth_init';
-    const isAlreadyInitialized = typeof window !== 'undefined' && 
-      window.sessionStorage.getItem(authInitKey) === 'true';
-    
-    if (initialized || isAlreadyInitialized) {
-      console.log('⚠️ Auth provider already initialized, skipping...', { 
-        initialized, 
-        isAlreadyInitialized 
-      });
-      return;
-    }
-    
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem(authInitKey, 'true');
-    }
-    setInitialized(true);
-    
     if (SKIP_AUTH) {
       console.log('🔧 Using SKIP_AUTH mode');
       
@@ -307,6 +289,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Start session check (immediate, no async work)
     getSession();
 
+    // Use initialization protection only for auth state listener to prevent duplicate subscriptions
+    const authListenerKey = 'rexera_auth_listener_init';
+    const listenerAlreadyInitialized = typeof window !== 'undefined' && 
+      window.sessionStorage.getItem(authListenerKey) === 'true';
+    
+    if (initialized || listenerAlreadyInitialized) {
+      console.log('⚠️ Auth state listener already initialized, skipping listener setup');
+      return;
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(authListenerKey, 'true');
+    }
+    setInitialized(true);
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -361,7 +358,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clean up init flag only if this is a real unmount (not React StrictMode)
       setTimeout(() => {
         if (typeof window !== 'undefined') {
-          window.sessionStorage.removeItem('rexera_auth_init');
+          window.sessionStorage.removeItem('rexera_auth_listener_init');
         }
       }, 500);
     };

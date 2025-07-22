@@ -205,7 +205,7 @@ hilNotes.post('/', async (c) => {
 
     // Create notifications for mentioned users
     if (result.data.mentions && result.data.mentions.length > 0) {
-      const notifications = result.data.mentions.map(mentionedUserId => ({
+      const notifications = result.data.mentions.map((mentionedUserId: string) => ({
         user_id: mentionedUserId,
         notification_type: 'HIL_MENTION' as const,
         title: 'You were mentioned in a note',
@@ -318,11 +318,11 @@ hilNotes.patch('/:id', async (c) => {
     // Handle new mentions if they changed
     if (result.data.mentions && result.data.mentions.length > 0) {
       const newMentions = result.data.mentions.filter(
-        userId => !existingNote.mentions.includes(userId)
+        (userId: string) => !existingNote.mentions.includes(userId)
       );
 
       if (newMentions.length > 0) {
-        const notifications = newMentions.map(mentionedUserId => ({
+        const notifications = newMentions.map((mentionedUserId: string) => ({
           user_id: mentionedUserId,
           notification_type: 'HIL_MENTION' as const,
           title: 'You were mentioned in an updated note',
@@ -429,7 +429,7 @@ hilNotes.post('/:id/reply', async (c) => {
 
     // Create notifications for mentions in reply
     if (result.data.mentions && result.data.mentions.length > 0) {
-      const notifications = result.data.mentions.map(mentionedUserId => ({
+      const notifications = result.data.mentions.map((mentionedUserId: string) => ({
         user_id: mentionedUserId,
         notification_type: 'HIL_MENTION' as const,
         title: 'You were mentioned in a note reply',
