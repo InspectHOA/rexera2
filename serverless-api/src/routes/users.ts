@@ -80,7 +80,7 @@ users.get('/', async (c) => {
     }
 
     // Transform data to match expected format for mentions
-    const transformedUsers = (users || []).map(user => ({
+    const transformedUsers = (users || []).map((user: any) => ({
       id: user.id,
       name: user.full_name || user.email, // Fallback to email if no full_name
       email: user.email,

@@ -328,12 +328,12 @@ auditEvents.get('/stats', async (c) => {
     }
 
     // Calculate statistics
-    const eventTypeStats = stats?.reduce((acc, event) => {
+    const eventTypeStats = stats?.reduce((acc: Record<string, number>, event: any) => {
       acc[event.event_type] = (acc[event.event_type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>) || {};
 
-    const actorTypeStats = stats?.reduce((acc, event) => {
+    const actorTypeStats = stats?.reduce((acc: Record<string, number>, event: any) => {
       acc[event.actor_type] = (acc[event.actor_type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>) || {};

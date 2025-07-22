@@ -83,7 +83,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
     }
 
     // Verify the JWT token with Supabase
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await (supabase.auth as any).getUser(token);
 
     if (authError || !user) {
       return c.json({ success: false, error: { message: 'Invalid or expired token' } }, 401);

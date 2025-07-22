@@ -222,7 +222,7 @@ communications.get('/threads', async (c) => {
     // Group communications into threads
     const threadsMap = new Map<string, any>();
     
-    communications?.forEach(comm => {
+    communications?.forEach((comm: any) => {
       const threadKey = comm.thread_id || comm.id;
       
       if (!threadsMap.has(threadKey)) {
