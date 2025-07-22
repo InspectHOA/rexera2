@@ -21,7 +21,6 @@ const requiredVars = {
   
   // Auth
   'NEXT_PUBLIC_SKIP_AUTH': process.env.NEXT_PUBLIC_SKIP_AUTH,
-  'SKIP_AUTH': process.env.SKIP_AUTH,
   
   // Environment
   'NODE_ENV': process.env.NODE_ENV

@@ -46,7 +46,13 @@ export function NotesTab({ workflowId }: NotesTabProps) {
         is_resolved: filterResolved,
         include: 'author,replies'
       });
-      setNotes(fetchedNotes);
+      
+      // Sort notes by newest date first
+      const sortedNotes = fetchedNotes.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setNotes(sortedNotes);
       setError(null);
     } catch (err) {
       console.error('Failed to load notes:', err);

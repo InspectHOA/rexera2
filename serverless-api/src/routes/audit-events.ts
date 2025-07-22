@@ -25,10 +25,16 @@ const auditEvents = new Hono();
 
 /**
  * Query schema for listing audit events with pagination and filters
+ * Overrides numeric fields to handle string query parameters
  */
-const listAuditEventsSchema = AuditEventQuerySchema.extend({
+const listAuditEventsSchema = AuditEventQuerySchema.omit({ 
+  limit: true, 
+  offset: true 
+}).extend({
   page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
   per_page: z.string().optional().transform(val => val ? parseInt(val, 10) : 50),
+  limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 50),
+  offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
 });
 
 /**
@@ -88,8 +94,13 @@ auditEvents.get('/', async (c) => {
     const queryResult = listAuditEventsSchema.safeParse(rawQuery);
     if (!queryResult.success) {
       return c.json({
-        error: 'Invalid query parameters',
-        details: queryResult.error.issues
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid query parameters',
+          details: JSON.stringify(queryResult.error.issues),
+          timestamp: new Date().toISOString()
+        }
       }, 400);
     }
 
@@ -147,27 +158,42 @@ auditEvents.get('/', async (c) => {
 
     if (error) {
       console.error('Failed to fetch audit events:', error);
-      return c.json({ error: 'Failed to fetch audit events' }, 500);
+      return c.json({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to fetch audit events',
+          timestamp: new Date().toISOString()
+        }
+      }, 500);
     }
 
     // Calculate pagination metadata
     const totalPages = Math.ceil((count || 0) / per_page);
 
     return c.json({
-      data: auditEvents || [],
-      pagination: {
-        page,
-        per_page,
-        total: count || 0,
-        total_pages: totalPages,
-        has_next: page < totalPages,
-        has_prev: page > 1
+      success: true,
+      data: {
+        data: auditEvents || [],
+        pagination: {
+          page,
+          limit: per_page,
+          total: count || 0,
+          totalPages: totalPages
+        }
       }
     });
 
   } catch (error) {
     console.error('Audit events list error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    return c.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      }
+    }, 500);
   }
 });
 
@@ -184,8 +210,13 @@ auditEvents.post('/', async (c) => {
     const eventResult = CreateAuditEventSchema.safeParse(body);
     if (!eventResult.success) {
       return c.json({
-        error: 'Invalid audit event data',
-        details: eventResult.error.issues
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid audit event data',
+          details: JSON.stringify(eventResult.error.issues),
+          timestamp: new Date().toISOString()
+        }
       }, 400);
     }
 
@@ -195,13 +226,21 @@ auditEvents.post('/', async (c) => {
     await auditLogger.log(auditEvent);
 
     return c.json({
-      message: 'Audit event created successfully',
-      event: auditEvent
+      success: true,
+      data: auditEvent,
+      message: 'Audit event created successfully'
     }, 201);
 
   } catch (error) {
     console.error('Audit event creation error:', error);
-    return c.json({ error: 'Failed to create audit event' }, 500);
+    return c.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to create audit event',
+        timestamp: new Date().toISOString()
+      }
+    }, 500);
   }
 });
 
@@ -217,7 +256,12 @@ auditEvents.post('/batch', async (c) => {
     // Validate that body is an array
     if (!Array.isArray(body)) {
       return c.json({
-        error: 'Request body must be an array of audit events'
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Request body must be an array of audit events',
+          timestamp: new Date().toISOString()
+        }
       }, 400);
     }
 
@@ -230,11 +274,16 @@ auditEvents.post('/batch', async (c) => {
     const invalidEvents = validationResults.filter(v => !v.result.success);
     if (invalidEvents.length > 0) {
       return c.json({
-        error: 'Invalid audit events in batch',
-        details: invalidEvents.map(v => ({
-          index: v.index,
-          errors: v.result.error?.issues
-        }))
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid audit events in batch',
+          details: JSON.stringify(invalidEvents.map(v => ({
+            index: v.index,
+            errors: v.result.error?.issues
+          }))),
+          timestamp: new Date().toISOString()
+        }
       }, 400);
     }
 
@@ -244,13 +293,24 @@ auditEvents.post('/batch', async (c) => {
     await auditLogger.logBatch(auditEvents);
 
     return c.json({
-      message: 'Audit events batch created successfully',
-      count: auditEvents.length
+      success: true,
+      data: {
+        count: auditEvents.length,
+        events: auditEvents
+      },
+      message: 'Audit events batch created successfully'
     }, 201);
 
   } catch (error) {
     console.error('Audit events batch creation error:', error);
-    return c.json({ error: 'Failed to create audit events batch' }, 500);
+    return c.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to create audit events batch',
+        timestamp: new Date().toISOString()
+      }
+    }, 500);
   }
 });
 
@@ -266,7 +326,14 @@ auditEvents.get('/workflow/:id', async (c) => {
 
     // Validate workflow ID format
     if (!workflowId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      return c.json({ error: 'Invalid workflow ID format' }, 400);
+      return c.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid workflow ID format',
+          timestamp: new Date().toISOString()
+        }
+      }, 400);
     }
 
     const { data: auditEvents, error } = await supabase
@@ -291,17 +358,34 @@ auditEvents.get('/workflow/:id', async (c) => {
 
     if (error) {
       console.error('Failed to fetch workflow audit events:', error);
-      return c.json({ error: 'Failed to fetch workflow audit events' }, 500);
+      return c.json({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to fetch workflow audit events',
+          timestamp: new Date().toISOString()
+        }
+      }, 500);
     }
 
     return c.json({
-      workflow_id: workflowId,
-      audit_trail: auditEvents || []
+      success: true,
+      data: {
+        workflow_id: workflowId,
+        audit_trail: auditEvents || []
+      }
     });
 
   } catch (error) {
     console.error('Workflow audit trail error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    return c.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      }
+    }, 500);
   }
 });
 
@@ -324,7 +408,14 @@ auditEvents.get('/stats', async (c) => {
 
     if (error) {
       console.error('Failed to fetch audit stats:', error);
-      return c.json({ error: 'Failed to fetch audit statistics' }, 500);
+      return c.json({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to fetch audit statistics',
+          timestamp: new Date().toISOString()
+        }
+      }, 500);
     }
 
     // Calculate statistics
@@ -339,16 +430,26 @@ auditEvents.get('/stats', async (c) => {
     }, {} as Record<string, number>) || {};
 
     return c.json({
-      period: '24_hours',
-      total_events: stats?.length || 0,
-      events_by_type: eventTypeStats,
-      events_by_actor: actorTypeStats,
-      generated_at: new Date().toISOString()
+      success: true,
+      data: {
+        period: '24_hours',
+        total_events: stats?.length || 0,
+        events_by_type: eventTypeStats,
+        events_by_actor: actorTypeStats,
+        generated_at: new Date().toISOString()
+      }
     });
 
   } catch (error) {
     console.error('Audit stats error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    return c.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      }
+    }, 500);
   }
 });
 

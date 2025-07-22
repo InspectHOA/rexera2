@@ -19,6 +19,10 @@ const customJestConfig = {
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
   ],
+  // Use Babel config specifically for Jest
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
+  },
   projects: [
     {
       displayName: 'components',
@@ -28,6 +32,9 @@ const customJestConfig = {
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
       },
+      transform: {
+        '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
+      },
     },
     {
       displayName: 'api',
@@ -36,6 +43,9 @@ const customJestConfig = {
       setupFilesAfterEnv: ['<rootDir>/jest.api.setup.js'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
+      },
+      transform: {
+        '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
       },
     },
   ],
