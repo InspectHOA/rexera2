@@ -55,8 +55,8 @@ jobs:
       - name: Build shared packages
         run: pnpm --filter=@rexera/shared build
 
-      # - name: Run linting
-      #   run: pnpm lint
+      - name: Run linting
+        run: pnpm lint
 
       - name: Run type checking
         run: pnpm type-check

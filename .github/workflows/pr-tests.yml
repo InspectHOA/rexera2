@@ -36,9 +36,9 @@ jobs:
           cache: 'npm'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
 
       - name: Install dependencies
         run: pnpm install
@@ -73,9 +73,9 @@ jobs:
           cache: 'npm'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
 
       - name: Install dependencies
         run: pnpm install
@@ -152,9 +152,9 @@ jobs:
           cache: 'npm'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
 
       - name: Install dependencies
         run: pnpm install
@@ -177,12 +177,15 @@ jobs:
           cache: 'npm'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
 
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build shared packages first
+        run: pnpm --filter=@rexera/shared build
+        
       - name: Lint all packages
         run: pnpm lint

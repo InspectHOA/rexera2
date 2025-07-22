@@ -641,7 +641,7 @@ function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask:
               </p>
               <div className="bg-muted border border-border rounded-lg p-4">
                 <div className="text-sm text-muted-foreground">
-                  Interface not available for agent "{task.agent}".
+                  Interface not available for agent &quot;{task.agent}&quot;.
                   <br />
                   Available agents: Mia, Nina, Iris
                 </div>

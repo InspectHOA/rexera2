@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AgentLayout } from '../shared/agent-layout';
-import { Upload, FileText, Image, Download, Eye, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Image as ImageIcon, Download, Eye, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface DocumentExtractorProps {
   workflowId?: string;
@@ -60,7 +60,7 @@ export function DocumentExtractor({ workflowId, agentId }: DocumentExtractorProp
   };
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <Image className="w-8 h-8 text-blue-600" />;
+    if (type.startsWith('image/')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
     return <FileText className="w-8 h-8 text-red-600" />;
   };
 

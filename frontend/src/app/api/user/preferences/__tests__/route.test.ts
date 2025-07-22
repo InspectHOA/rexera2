@@ -1,11 +1,19 @@
 import { NextRequest } from 'next/server';
 import { GET, POST } from '../route';
-import { createClient } from '@/lib/supabase/server';
 import { SKIP_AUTH, SKIP_AUTH_USER } from '@/lib/auth/config';
 
-// Mock the Supabase client
-jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn(),
+// Mock the Supabase SSR client
+jest.mock('@supabase/ssr', () => ({
+  createServerClient: jest.fn(),
+}));
+
+// Mock Next.js cookies
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(() => ({
+    get: jest.fn(() => ({ value: 'test-cookie-value' })),
+    set: jest.fn(),
+    remove: jest.fn(),
+  })),
 }));
 
 // Mock auth config
@@ -35,19 +43,26 @@ const mockFromResult = {
   single: jest.fn(),
 };
 
+const { createServerClient } = require('@supabase/ssr');
+
 describe('/api/user/preferences', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const mockedCreateClient = createClient as any;
-    mockedCreateClient.mockReturnValue(mockSupabase);
+    (createServerClient as any).mockReturnValue(mockSupabase);
     mockSupabase.from.mockReturnValue(mockFromResult);
     
-    // Setup default chaining
+    // Setup default chaining - all methods return mockFromResult to allow chaining
     mockFromResult.select.mockReturnValue(mockFromResult);
     mockFromResult.update.mockReturnValue(mockFromResult);
     mockFromResult.insert.mockReturnValue(mockFromResult);
     mockFromResult.eq.mockReturnValue(mockFromResult);
-    mockFromResult.single.mockReturnValue(mockFromResult);
+    mockFromResult.single.mockReturnValue(Promise.resolve({ data: null, error: null }));
+    
+    // Default successful update/insert operations
+    mockFromResult.update.mockImplementation(() => ({
+      eq: jest.fn().mockResolvedValue({ error: null })
+    }));
+    mockFromResult.insert.mockResolvedValue({ error: null });
   });
 
   describe('GET /api/user/preferences', () => {
@@ -120,9 +135,11 @@ describe('/api/user/preferences', () => {
     it('updates existing theme preference', async () => {
       const request = createMockRequest('dark');
       
-      mockFromResult.update.mockResolvedValue({
-        error: null,
-      });
+      // Mock the update chain properly
+      const mockEq = jest.fn().mockResolvedValue({ error: null });
+      mockFromResult.update.mockImplementation(() => ({
+        eq: mockEq
+      }));
 
       const response = await POST(request);
       const data = await response.json();
@@ -133,7 +150,7 @@ describe('/api/user/preferences', () => {
         theme: 'dark',
         updated_at: expect.any(String),
       });
-      expect(mockFromResult.eq).toHaveBeenCalledWith('user_id', SKIP_AUTH_USER.id);
+      expect(mockEq).toHaveBeenCalledWith('user_id', SKIP_AUTH_USER.id);
     });
 
     it('validates theme value', async () => {
@@ -149,9 +166,12 @@ describe('/api/user/preferences', () => {
     it('handles database errors during update', async () => {
       const request = createMockRequest('dark');
       
-      mockFromResult.update.mockResolvedValue({
-        error: { code: 'OTHER_ERROR', message: 'Database error' },
-      });
+      // Mock the update chain with error
+      mockFromResult.update.mockImplementation(() => ({
+        eq: jest.fn().mockResolvedValue({ 
+          error: { code: 'OTHER_ERROR', message: 'Database error' } 
+        })
+      }));
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 

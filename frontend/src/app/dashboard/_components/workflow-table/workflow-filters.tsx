@@ -145,7 +145,7 @@ export function WorkflowFilters({
           
           {searchQuery && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-muted text-muted-foreground rounded-full">
-              Search: "{searchQuery}"
+              Search: &quot;{searchQuery}&quot;
               <button
                 onClick={() => onSearchChange('')}
                 className="hover:text-muted-foreground/80"
