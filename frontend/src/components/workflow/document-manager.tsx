@@ -185,35 +185,35 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'PROCESSING': return 'bg-blue-100 text-blue-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'FAILED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'COMPLETED': return 'bg-green-500/10 text-green-600 dark:text-green-400';
+      case 'PROCESSING': return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+      case 'PENDING': return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
+      case 'FAILED': return 'bg-red-500/10 text-red-600 dark:text-red-400';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'DELIVERABLE' 
-      ? 'bg-purple-100 text-purple-800'
-      : 'bg-gray-100 text-gray-800';
+    return type === 'DELIVERABLE'
+      ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+      : 'bg-muted text-muted-foreground';
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-        <p className="text-sm text-gray-600">Loading documents...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading documents...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
         <div className="flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600" />
-          <p className="text-sm text-red-700">Error loading documents: {error}</p>
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <p className="text-sm text-destructive">Error loading documents: {error}</p>
         </div>
       </div>
     );
@@ -226,7 +226,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               value={searchTerm}
@@ -235,7 +235,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                 resetToFirstPage();
               }}
               placeholder="Search documents by name or tags..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
             />
           </div>
           
@@ -246,7 +246,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                 setFilterType(e.target.value as any);
                 resetToFirstPage();
               }}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="ALL">All Types</option>
               <option value="WORKING">Working</option>
@@ -259,7 +259,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                 setFilterStatus(e.target.value as any);
                 resetToFirstPage();
               }}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="ALL">All Status</option>
               <option value="PENDING">Pending</option>
@@ -272,16 +272,16 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
 
         {/* Bulk Actions */}
         {selectedDocuments.size > 0 && (
-          <div className="flex items-center justify-between p-3 bg-primary-50 border border-primary-200 rounded-md">
+          <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-md">
             <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-primary-700">
+              <span className="text-sm font-medium text-primary">
                 {selectedDocuments.size} document(s) selected
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleBulkDownload}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary-600 bg-white border border-primary-200 rounded hover:bg-primary-50 transition-colors duration-200"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary bg-background border border-primary/20 rounded hover:bg-primary/5 transition-colors duration-200"
               >
                 <Download className="h-4 w-4" />
                 Download All
@@ -289,7 +289,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
               <button
                 onClick={handleBulkDelete}
                 disabled={deleteDocument.isPending}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded hover:bg-red-50 transition-colors duration-200 disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-destructive bg-background border border-destructive/20 rounded hover:bg-destructive/5 transition-colors duration-200 disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete All
@@ -303,7 +303,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
           <div className="flex items-center space-x-4">
             <button
               onClick={selectAllDocuments}
-              className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900"
+              className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground"
             >
               {selectedDocuments.size === paginatedDocuments.length && paginatedDocuments.length > 0 ? (
                 <CheckSquare className="h-4 w-4" />
@@ -316,18 +316,18 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
             {totalPages > 1 && selectedDocuments.size < filteredDocuments.length && (
               <button
                 onClick={selectAllPages}
-                className="text-sm text-primary-600 hover:text-primary-900"
+                className="text-sm text-primary hover:text-primary/80"
               >
                 Select All {totalCount} Documents
               </button>
             )}
             
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
             </div>
           </div>
           
-          <div className="flex items-center space-x-4 text-sm text-gray-600">
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <div className="flex items-center space-x-2">
               <span>Per page:</span>
               <select
@@ -336,7 +336,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="text-sm border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                className="text-sm bg-background border border-border rounded text-foreground focus:ring-ring focus:border-ring"
               >
                 <option value="10">10</option>
                 <option value="20">20</option>
@@ -350,7 +350,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="text-sm border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                className="text-sm bg-background border border-border rounded text-foreground focus:ring-ring focus:border-ring"
               >
                 <option value="created_at">Date Created</option>
                 <option value="filename">Name</option>
@@ -358,7 +358,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
               </select>
               <button
                 onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-muted rounded text-foreground"
               >
                 {sortDirection === 'asc' ? '↑' : '↓'}
               </button>
@@ -370,10 +370,10 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
       {/* Documents List */}
       {filteredDocuments.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-sm text-gray-500">
-            {searchTerm || filterType !== 'ALL' || filterStatus !== 'ALL' 
-              ? 'No documents match your filters.' 
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">
+            {searchTerm || filterType !== 'ALL' || filterStatus !== 'ALL'
+              ? 'No documents match your filters.'
               : 'No documents uploaded yet.'}
           </p>
         </div>
@@ -382,15 +382,15 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
           <div className="space-y-3">
             {paginatedDocuments.map((document) => (
             <div key={document.id} className="space-y-3">
-              <div className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors duration-200">
                 <button
                   onClick={() => toggleDocumentSelection(document.id)}
                   className="flex-shrink-0"
                 >
                   {selectedDocuments.has(document.id) ? (
-                    <CheckSquare className="h-5 w-5 text-primary-600" />
+                    <CheckSquare className="h-5 w-5 text-primary" />
                   ) : (
-                    <Square className="h-5 w-5 text-gray-400" />
+                    <Square className="h-5 w-5 text-muted-foreground" />
                   )}
                 </button>
                 
@@ -400,7 +400,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {document.filename}
                     </p>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(document.document_type)}`}>
@@ -416,7 +416,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {new Date(document.created_at).toLocaleDateString()}
@@ -444,7 +444,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => setExpandedDocument(expandedDocument === document.id ? null : document.id)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors duration-200"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-muted border border-border rounded hover:bg-muted/80 transition-colors duration-200"
                     title="Version history"
                   >
                     <MoreHorizontal className="h-3 w-3" />
@@ -452,7 +452,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                   </button>
                   <button
                     onClick={() => downloadDocument(document)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded hover:bg-primary-100 transition-colors duration-200"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded hover:bg-primary/20 transition-colors duration-200"
                     title="Download document"
                   >
                     <Download className="h-3 w-3" />
@@ -464,7 +464,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                         deleteDocument.mutate(document.id);
                       }
                     }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors duration-200"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded hover:bg-destructive/20 transition-colors duration-200"
                     title="Delete document"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -489,26 +489,26 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <div className="flex items-center justify-between border-t border-border bg-card px-4 py-3 sm:px-6">
               <div className="flex flex-1 justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative ml-3 inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
               </div>
               <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-foreground">
                     Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
                     <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of{' '}
                     <span className="font-medium">{totalCount}</span> documents
@@ -519,7 +519,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center rounded-l-md px-2 py-2 text-muted-foreground ring-1 ring-inset ring-border hover:bg-muted focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Previous</span>
                       <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -529,8 +529,8 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                     {Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter(page => {
                         // Show first page, last page, current page, and 2 pages on each side of current
-                        return page === 1 || 
-                               page === totalPages || 
+                        return page === 1 ||
+                               page === totalPages ||
                                Math.abs(page - currentPage) <= 2;
                       })
                       .map((page, index, array) => {
@@ -540,16 +540,16 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                         return (
                           <div key={page} className="flex items-center">
                             {showEllipsisBefore && (
-                              <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
+                              <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-inset ring-border">
                                 ...
                               </span>
                             )}
                             <button
                               onClick={() => setCurrentPage(page)}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-border hover:bg-muted focus:z-20 focus:outline-offset-0 ${
                                 page === currentPage
-                                  ? 'z-10 bg-primary-600 text-white focus:ring-primary-600'
-                                  : 'text-gray-900'
+                                  ? 'z-10 bg-primary text-primary-foreground focus:ring-primary'
+                                  : 'text-foreground'
                               }`}
                             >
                               {page}
@@ -561,7 +561,7 @@ export function DocumentManager({ workflowId, onDocumentDeleted }: DocumentManag
                     <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center rounded-r-md px-2 py-2 text-muted-foreground ring-1 ring-inset ring-border hover:bg-muted focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Next</span>
                       <ChevronRight className="h-5 w-5" aria-hidden="true" />

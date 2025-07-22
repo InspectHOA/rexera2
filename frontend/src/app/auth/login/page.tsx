@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { SKIP_AUTH } from '@/lib/auth/config';
+import { RexeraLogo } from '@/components/ui/rexera-logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,23 +21,19 @@ export default function LoginPage() {
   // Don't render the login form if we're in skip_auth mode
   if (SKIP_AUTH) {
     return (
-      <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
+      <div className="bg-card py-8 px-6 shadow rounded-lg sm:px-10 border border-border">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="text-center">
             <div className="mb-6 flex justify-center">
-              <img
-                src="/rexera-logo.svg"
-                alt="Rexera Logo"
-                className="h-12 w-auto"
-              />
+              <RexeraLogo className="h-12 w-auto" />
             </div>
-            <h2 className="text-3xl font-extrabold text-gray-900">
+            <h2 className="text-3xl font-extrabold text-foreground">
               Skip Auth Mode
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-muted-foreground">
               Redirecting to dashboard...
             </p>
-            <div className="mt-4 animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <div className="mt-4 animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           </div>
         </div>
       </div>
@@ -80,27 +77,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm py-8 px-6 shadow-2xl rounded-2xl sm:px-10 border border-gray-200/50">
+    <div className="bg-card/80 backdrop-blur-sm py-8 px-6 shadow-2xl rounded-2xl sm:px-10 border border-border/50">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <div className="mb-8 flex justify-center">
-            <img
-              src="/rexera-logo.svg"
-              alt="Rexera Logo"
-              className="h-10 w-auto"
-            />
+            <RexeraLogo className="h-10 w-auto" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
+          <h2 className="text-3xl font-bold text-foreground tracking-tight">
             Making Real Estate Effortless
           </h2>
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-sm text-muted-foreground">
             Sign in with your Google account to continue
           </p>
         </div>
 
         <div className="mt-10">
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="mb-4 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
@@ -108,10 +101,10 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm bg-black text-base font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm bg-primary text-base font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">

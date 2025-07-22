@@ -64,18 +64,18 @@ export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProp
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-        <p className="text-sm text-gray-600">Loading documents...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading documents...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
         <div className="flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600" />
-          <p className="text-sm text-red-700">Error loading documents: {error}</p>
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <p className="text-sm text-destructive">Error loading documents: {error}</p>
         </div>
       </div>
     );
@@ -84,8 +84,8 @@ export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProp
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
-        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-sm text-gray-500">No documents uploaded yet.</p>
+        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
       </div>
     );
   }
@@ -93,19 +93,19 @@ export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProp
   return (
     <div className="space-y-3">
       {documents.map((document) => (
-        <div 
-          key={document.id} 
-          className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        <div
+          key={document.id}
+          className="flex items-center gap-4 p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors duration-200"
         >
           <div className="text-2xl flex-shrink-0">
             {getFileIcon(document.mime_type || '')}
           </div>
           
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-foreground truncate">
               {document.filename}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {formatFileSize(document.file_size_bytes || 0)} • {new Date(document.created_at).toLocaleDateString()}
             </p>
             <div className="mt-2">
@@ -122,7 +122,7 @@ export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProp
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => handleDownload(document)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded hover:bg-primary-100 transition-colors duration-200"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded hover:bg-primary/20 transition-colors duration-200"
               title="Download document"
             >
               <Download className="h-3 w-3" />
@@ -130,7 +130,7 @@ export function DocumentList({ workflowId, onDocumentDeleted }: DocumentListProp
             </button>
             <button
               onClick={() => handleDelete(document)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors duration-200"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded hover:bg-destructive/20 transition-colors duration-200"
               title="Delete document"
             >
               <Trash2 className="h-3 w-3" />
