@@ -11,7 +11,11 @@ import { resolveWorkflowId, getWorkflowByHumanId, isUUID } from '../utils/workfl
 import { 
   WorkflowFiltersSchema, 
   CreateWorkflowSchema,
-  AuditHelpers
+  WorkflowCounterpartyFiltersSchema,
+  CreateWorkflowCounterpartySchema,
+  UpdateWorkflowCounterpartySchema,
+  AuditHelpers,
+  isCounterpartyAllowedForWorkflow
 } from '@rexera/shared';
 import { auditLogger } from './audit-events';
 
@@ -403,6 +407,304 @@ workflows.get('/:id', async (c) => {
       error: 'Failed to fetch workflow',
       details: error instanceof Error ? error.message : 'Unknown error',
     }, 500 as any);
+  }
+});
+
+// ============================================================================
+// WORKFLOW COUNTERPARTY ROUTES
+// ============================================================================
+
+// GET /api/workflows/:workflowId/counterparties - Get counterparties for a workflow
+workflows.get('/:workflowId/counterparties', async (c) => {
+  try {
+    const workflowIdParam = c.req.param('workflowId');
+    const queryParams = c.req.query();
+    
+    const filters = WorkflowCounterpartyFiltersSchema.parse(queryParams);
+    const { status, include } = filters;
+    
+    const supabase = createServerClient();
+    
+    // Resolve workflow ID (supports both UUID and human-readable IDs)
+    let workflowId: string;
+    try {
+      workflowId = await resolveWorkflowId(supabase, workflowIdParam);
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found'
+      }, 404);
+    }
+    
+    // Build base query
+    let selectFields = 'id, workflow_id, counterparty_id, status, created_at, updated_at';
+    if (include === 'counterparty') {
+      selectFields += ', counterparties(id, name, type, email, phone, address, contact_info)';
+    }
+    
+    let query = supabase
+      .from('workflow_counterparties')
+      .select(selectFields)
+      .eq('workflow_id', workflowId);
+    
+    // Apply status filter if provided
+    if (status) {
+      query = query.eq('status', status);
+    }
+    
+    // Order by creation date
+    query = query.order('created_at', { ascending: false });
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching workflow counterparties:', error);
+      return c.json({
+        success: false,
+        error: 'Failed to fetch workflow counterparties',
+        details: error.message
+      }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      data: data || []
+    });
+    
+  } catch (error) {
+    console.error('Error in GET /workflows/:workflowId/counterparties:', error);
+    return c.json({
+      success: false,
+      error: 'Invalid request parameters',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 400);
+  }
+});
+
+// POST /api/workflows/:workflowId/counterparties - Add counterparty to workflow
+workflows.post('/:workflowId/counterparties', async (c) => {
+  try {
+    const workflowIdParam = c.req.param('workflowId');
+    const body = await c.req.json();
+    
+    const validatedData = CreateWorkflowCounterpartySchema.parse(body);
+    
+    const supabase = createServerClient();
+    
+    // Resolve workflow ID (supports both UUID and human-readable IDs)
+    let workflowId: string;
+    try {
+      workflowId = await resolveWorkflowId(supabase, workflowIdParam);
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found'
+      }, 404);
+    }
+    
+    // Fetch workflow and counterparty info for validation
+    const [workflowResult, counterpartyResult] = await Promise.all([
+      supabase
+        .from('workflows')
+        .select('id, workflow_type')
+        .eq('id', workflowId)
+        .single(),
+      supabase
+        .from('counterparties')
+        .select('id, type')
+        .eq('id', validatedData.counterparty_id)
+        .single()
+    ]);
+    
+    if (workflowResult.error || !workflowResult.data) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found'
+      }, 404);
+    }
+    
+    if (counterpartyResult.error || !counterpartyResult.data) {
+      return c.json({
+        success: false,
+        error: 'Counterparty not found'
+      }, 404);
+    }
+    
+    // Validate workflow-counterparty type compatibility
+    const workflow = workflowResult.data;
+    const counterparty = counterpartyResult.data;
+    
+    if (!isCounterpartyAllowedForWorkflow(workflow.workflow_type, counterparty.type)) {
+      return c.json({
+        success: false,
+        error: `Counterparty type '${counterparty.type}' is not allowed for workflow type '${workflow.workflow_type}'`
+      }, 400);
+    }
+    
+    // Check if relationship already exists
+    const { data: existing, error: existingError } = await supabase
+      .from('workflow_counterparties')
+      .select('id')
+      .eq('workflow_id', workflowId)
+      .eq('counterparty_id', validatedData.counterparty_id)
+      .single();
+    
+    if (existing && !existingError) {
+      return c.json({
+        success: false,
+        error: 'Counterparty already associated with this workflow'
+      }, 409);
+    }
+    
+    // Create the relationship
+    const insertData = {
+      workflow_id: workflowId,
+      ...validatedData
+    };
+    
+    const { data, error } = await supabase
+      .from('workflow_counterparties')
+      .insert([insertData])
+      .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
+      .single();
+    
+    if (error) {
+      console.error('Error creating workflow counterparty relationship:', error);
+      return c.json({
+        success: false,
+        error: 'Failed to add counterparty to workflow',
+        details: error.message
+      }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      data
+    }, 201);
+    
+  } catch (error) {
+    console.error('Error in POST /workflows/:workflowId/counterparties:', error);
+    return c.json({
+      success: false,
+      error: 'Invalid request data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 400);
+  }
+});
+
+// PATCH /api/workflows/:workflowId/counterparties/:id - Update workflow counterparty status
+workflows.patch('/:workflowId/counterparties/:id', async (c) => {
+  try {
+    const workflowIdParam = c.req.param('workflowId');
+    const relationshipId = c.req.param('id');
+    const body = await c.req.json();
+    
+    const validatedData = UpdateWorkflowCounterpartySchema.parse(body);
+    
+    const supabase = createServerClient();
+    
+    // Resolve workflow ID (supports both UUID and human-readable IDs)
+    let workflowId: string;
+    try {
+      workflowId = await resolveWorkflowId(supabase, workflowIdParam);
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found'
+      }, 404);
+    }
+    
+    // Add updated_at timestamp
+    const updateData = {
+      ...validatedData,
+      updated_at: new Date().toISOString()
+    };
+    
+    const { data, error } = await supabase
+      .from('workflow_counterparties')
+      .update(updateData)
+      .eq('id', relationshipId)
+      .eq('workflow_id', workflowId)  // Ensure it belongs to the correct workflow
+      .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return c.json({
+          success: false,
+          error: 'Workflow counterparty relationship not found'
+        }, 404);
+      }
+      
+      console.error('Error updating workflow counterparty:', error);
+      return c.json({
+        success: false,
+        error: 'Failed to update workflow counterparty',
+        details: error.message
+      }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      data
+    });
+    
+  } catch (error) {
+    console.error('Error in PATCH /workflows/:workflowId/counterparties/:id:', error);
+    return c.json({
+      success: false,
+      error: 'Invalid request data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 400);
+  }
+});
+
+// DELETE /api/workflows/:workflowId/counterparties/:id - Remove counterparty from workflow
+workflows.delete('/:workflowId/counterparties/:id', async (c) => {
+  try {
+    const workflowIdParam = c.req.param('workflowId');
+    const relationshipId = c.req.param('id');
+    
+    const supabase = createServerClient();
+    
+    // Resolve workflow ID (supports both UUID and human-readable IDs)
+    let workflowId: string;
+    try {
+      workflowId = await resolveWorkflowId(supabase, workflowIdParam);
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found'
+      }, 404);
+    }
+    
+    const { error } = await supabase
+      .from('workflow_counterparties')
+      .delete()
+      .eq('id', relationshipId)
+      .eq('workflow_id', workflowId);  // Ensure it belongs to the correct workflow
+    
+    if (error) {
+      console.error('Error removing workflow counterparty:', error);
+      return c.json({
+        success: false,
+        error: 'Failed to remove counterparty from workflow',
+        details: error.message
+      }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Counterparty removed from workflow successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error in DELETE /workflows/:workflowId/counterparties/:id:', error);
+    return c.json({
+      success: false,
+      error: 'Invalid request',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 400);
   }
 });
 

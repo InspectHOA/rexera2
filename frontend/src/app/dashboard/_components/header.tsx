@@ -132,7 +132,7 @@ export function DashboardHeader() {
       <header className="bg-background/80 backdrop-blur-sm p-4 mb-5 flex justify-between items-center shadow-2xl rounded-lg border border-border/50">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/dashboard' as any)}
             className="transition-opacity hover:opacity-80"
             title="Go to Dashboard"
           >
@@ -142,7 +142,7 @@ export function DashboardHeader() {
           {/* Navigation breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
             <button 
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/dashboard' as any)}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Workflows
@@ -271,7 +271,7 @@ export function DashboardHeader() {
                 <div className="p-3 border-t border-border text-center">
                   <button 
                     onClick={() => {
-                      router.push('/notifications');
+                      router.push('/notifications' as any);
                       setShowNotifications(false);
                     }}
                     className="text-sm text-primary hover:text-primary/80"

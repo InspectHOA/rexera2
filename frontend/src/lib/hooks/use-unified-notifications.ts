@@ -1,35 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSupabase } from '@/lib/supabase/provider';
 import { useAuth } from '@/lib/auth/provider';
-import { SKIP_AUTH } from '@/lib/auth/config';
+import { api } from '@/lib/api';
 import { toast } from '@/lib/hooks/use-toast';
-
-interface UnifiedNotification {
-  id: string;
-  user_id: string;
-  type: string;
-  priority: string;
-  title: string;
-  message: string;
-  action_url: string | null;
-  metadata: any;
-  read: boolean;
-  read_at: string | null;
-  created_at: string;
-}
-
-interface NotificationSettings {
-  showPopupsForUrgent: boolean;
-  showPopupsForHigh: boolean;
-  showPopupsForNormal: boolean;
-  showPopupsForLow: boolean;
-  enableTaskInterrupts: boolean;
-  enableWorkflowFailures: boolean;
-  enableTaskCompletions: boolean;
-  enableSlaWarnings: boolean;
-}
+import type { 
+  UnifiedNotification, 
+  NotificationSettings, 
+  UseUnifiedNotificationsReturn,
+  PriorityLevel 
+} from '@rexera/shared';
 
 const DEFAULT_SETTINGS: NotificationSettings = {
   showPopupsForUrgent: true,
@@ -42,277 +24,185 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   enableSlaWarnings: true,
 };
 
-export function useUnifiedNotifications() {
+export function useUnifiedNotifications(): UseUnifiedNotificationsReturn {
   const { user, loading: authLoading } = useAuth();
-  const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { supabase } = useSupabase();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
 
-  // Fetch notifications function
-  const fetchNotifications = async () => {
-    // Wait for auth to complete before fetching
-    if (authLoading) {
-      console.log('🔄 Auth still loading, waiting...');
-      return;
-    }
-    
-    if (!user) {
-      console.log('❌ No user found, clearing notifications');
-      setNotifications([]);
-      setLoading(false);
-      return;
-    }
+  // Fetch notifications using React Query
+  const {
+    data: notificationsData,
+    isLoading: loading,
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: () => api.notifications.list({ limit: 100 }),
+    enabled: !!user && !authLoading,
+    staleTime: 30000, // 30 seconds
+    retry: 2,
+    retryDelay: 1000,
+  });
 
-    console.log('🔍 Fetching notifications for user:', user.id, SKIP_AUTH ? '(using API endpoint)' : '(using Supabase client)');
+  const notifications = notificationsData?.notifications || [];
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const error = queryError ? (queryError as Error).message : null;
 
-    try {
-      setError(null);
+  // Mark notification as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: (notificationId: string) => api.notifications.markAsRead(notificationId),
+    onSuccess: (data, notificationId) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['notifications', user?.id], (oldData: any) => {
+        if (!oldData) return oldData;
+        
+        return {
+          ...oldData,
+          notifications: oldData.notifications.map((n: UnifiedNotification) =>
+            n.id === notificationId ? { ...n, read: true, read_at: new Date().toISOString() } : n
+          ),
+        };
+      });
       
-      if (SKIP_AUTH) {
-        // Use API endpoint to bypass RLS in development
-        const response = await fetch(`/api/notifications?user_id=${user.id}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
-        console.log('✅ Notifications fetched via API:', result.notifications?.length || 0);
-        setNotifications(result.notifications || []);
-      } else {
-        // Use direct Supabase client for production
-        const { data, error: fetchError } = await supabase
-          .from('hil_notifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(100);
-
-        if (fetchError) {
-          console.error('❌ Supabase fetch error:', fetchError);
-          throw fetchError;
-        }
-
-        console.log('✅ Notifications fetched via Supabase:', data?.length || 0);
-        setNotifications(data || []);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
-      console.error('❌ Notification fetch error:', err);
-      setError(errorMessage);
-      } finally {
-      setLoading(false);
-    }
-  };
-
-  // Mark notification as read
-  const markAsRead = async (notificationId: string) => {
-    try {
-      if (SKIP_AUTH) {
-        // Use API endpoint for skip_auth mode
-        const response = await fetch(`/api/notifications/${notificationId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ read: true, read_at: new Date().toISOString() })
+      // Show toast for urgent/high priority notifications when marked as read
+      const notification = notifications.find(n => n.id === notificationId);
+      if (notification && (notification.priority === 'URGENT' || notification.priority === 'HIGH')) {
+        toast({
+          title: 'Notification marked as read',
+          description: notification.title,
         });
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to mark notification as read:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to mark notification as read',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mark all notifications as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => api.notifications.markAllAsRead(),
+    onSuccess: (data) => {
+      // Update the cache to mark all notifications as read
+      queryClient.setQueryData(['notifications', user?.id], (oldData: any) => {
+        if (!oldData) return oldData;
         
-        if (!response.ok) {
-          throw new Error(`Failed to mark as read: ${response.statusText}`);
-        }
-      } else {
-        // Use Supabase client for production
-        const { error } = await supabase
-          .from('hil_notifications')
-          .update({ 
-            read: true, 
-            read_at: new Date().toISOString() 
-          })
-          .eq('id', notificationId);
-
-        if (error) {
-          throw error;
-        }
-      }
-
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif.id === notificationId 
-            ? { ...notif, read: true, read_at: new Date().toISOString() }
-            : notif
-        )
-      );
-    } catch (err) {
-      console.error('Error marking notification as read:', err);
-    }
-  };
-
-  // Mark all notifications as read
-  const markAllAsRead = async () => {
-    if (!user) return;
-
-    try {
-      const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+        const now = new Date().toISOString();
+        return {
+          ...oldData,
+          notifications: oldData.notifications.map((n: UnifiedNotification) => ({
+            ...n,
+            read: true,
+            read_at: n.read_at || now,
+          })),
+        };
+      });
       
-      if (unreadIds.length === 0) return;
+      toast({
+        title: 'All notifications marked as read',
+        description: `Marked ${data.updated_count} notifications as read`,
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to mark all notifications as read:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to mark all notifications as read',
+        variant: 'destructive',
+      });
+    },
+  });
 
-      if (SKIP_AUTH) {
-        // For now, mark all as read by calling markAsRead for each
-        await Promise.all(unreadIds.map(id => markAsRead(id)));
-        return;
-      } else {
-        const { error } = await supabase
-          .from('hil_notifications')
-          .update({ 
-            read: true, 
-            read_at: new Date().toISOString() 
-          })
-          .in('id', unreadIds);
-
-        if (error) {
-          throw error;
-        }
-      }
-
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notif => ({ 
-          ...notif, 
-          read: true, 
-          read_at: new Date().toISOString() 
-        }))
-      );
-    } catch (err) {
-      }
-  };
-
-  // Dismiss notification (hide it permanently) - Currently disabled
-  const dismissNotification = async (notificationId: string) => {
-    try {
-      // TODO: Implement when dismissed_at column is added to database
-      console.log('Dismiss functionality disabled - database column missing');
-      
-      // For now, just mark as read
-      await markAsRead(notificationId);
-      
-      // Optionally remove from local state for immediate UI feedback
-      // setNotifications(prev => 
-      //   prev.filter(notif => notif.id !== notificationId)
-      // );
-    } catch (err) {
-      console.error('Error dismissing notification:', err);
-    }
-  };
-
-  // Determine if notification should show popup
-  const shouldShowPopup = (notification: UnifiedNotification): boolean => {
-    // Check priority settings
-    const priorityCheck = 
+  // Show toast for new urgent/high priority notifications
+  const showNotificationToast = useCallback((notification: UnifiedNotification) => {
+    const shouldShow = 
       (notification.priority === 'URGENT' && settings.showPopupsForUrgent) ||
       (notification.priority === 'HIGH' && settings.showPopupsForHigh) ||
       (notification.priority === 'NORMAL' && settings.showPopupsForNormal) ||
       (notification.priority === 'LOW' && settings.showPopupsForLow);
 
-    if (!priorityCheck) return false;
-
-    // Check type settings
-    const typeCheck = 
-      (notification.type === 'TASK_INTERRUPT' && settings.enableTaskInterrupts) ||
-      (notification.type === 'WORKFLOW_UPDATE' && settings.enableWorkflowFailures) ||
-      (notification.type === 'SLA_WARNING' && settings.enableSlaWarnings) ||
-      (notification.type === 'AGENT_FAILURE' && settings.enableWorkflowFailures) ||
-      (notification.type === 'HIL_MENTION') || // Always show mention notifications
-      settings.enableTaskCompletions; // For task completions
-
-    return typeCheck;
-  };
-
-  // Get toast variant based on priority
-  const getToastVariant = (priority: string) => {
-    switch (priority) {
-      case 'URGENT':
-      case 'HIGH':
-        return 'destructive';
-      default:
-        return 'default';
-    }
-  };
-
-  // Handle new notification
-  const handleNewNotification = (notification: UnifiedNotification) => {
-    // Add to state
-    setNotifications(prev => [notification, ...prev]);
-
-    // Show popup if settings allow
-    if (shouldShowPopup(notification)) {
+    if (shouldShow && !notification.read) {
       toast({
-        variant: getToastVariant(notification.priority),
         title: notification.title,
         description: notification.message,
+        duration: notification.priority === 'URGENT' ? 0 : 5000, // Urgent notifications stay until dismissed
+        variant: notification.priority === 'URGENT' ? 'destructive' : 'default',
       });
     }
-  };
+  }, [settings]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchNotifications();
-  }, [user, authLoading]);
-
-  // Real-time subscription for new notifications (disabled in skip_auth mode)
-  useEffect(() => {
-    if (!user || SKIP_AUTH) return; // Skip real-time in development mode
+  // Set up real-time subscription for new notifications
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!user || !supabase) return;
 
     const subscription = supabase
-      .channel('unified_notifications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'hil_notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        handleNewNotification(payload.new as UnifiedNotification);
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'hil_notifications',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        // Refetch notifications when they're updated (e.g., marked as read)
-        fetchNotifications();
-      })
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'hil_notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newNotification = payload.new as UnifiedNotification;
+          
+          // Add to cache
+          queryClient.setQueryData(['notifications', user?.id], (oldData: any) => {
+            if (!oldData) return { notifications: [newNotification] };
+            
+            return {
+              ...oldData,
+              notifications: [newNotification, ...oldData.notifications],
+            };
+          });
+          
+          // Show toast notification
+          showNotificationToast(newNotification);
+        }
+      )
       .subscribe();
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [user, settings]);
+  }, [user, supabase, queryClient, showNotificationToast]);
 
-  // Get unread count
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // API functions
+  const markAsRead = useCallback(async (notificationId: string) => {
+    markAsReadMutation.mutate(notificationId);
+  }, [markAsReadMutation]);
 
-  // Get interrupt notifications (for interrupt queue)
-  const interruptNotifications = notifications.filter(notif => 
-    notif.type === 'TASK_INTERRUPT' || notif.type === 'SLA_WARNING'
-  );
+  const markAllAsRead = useCallback(async () => {
+    markAllAsReadMutation.mutate();
+  }, [markAllAsReadMutation]);
+
+  const dismissNotification = useCallback(async (notificationId: string) => {
+    // For now, dismissing is the same as marking as read
+    // In the future, we could add a separate "dismissed" field
+    markAsReadMutation.mutate(notificationId);
+  }, [markAsReadMutation]);
+
+  const updateSettings = useCallback((newSettings: Partial<NotificationSettings>) => {
+    setSettings(prev => ({ ...prev, ...newSettings }));
+    // In a real app, we'd save these settings to the backend
+  }, []);
 
   return {
     notifications,
-    interruptNotifications,
     unreadCount,
-    loading,
+    loading: loading || authLoading,
     error,
     settings,
     markAsRead,
     markAllAsRead,
     dismissNotification,
-    setSettings,
-    refetch: fetchNotifications
+    updateSettings,
   };
 }

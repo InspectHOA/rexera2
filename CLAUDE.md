@@ -148,6 +148,87 @@ await api.hilNotes.create({
 <NotesTab workflowId={workflowId} />
 ```
 
+## Counterparties System
+
+### Overview
+The counterparties system manages external entities that workflows interact with, including HOAs, lenders, municipalities, utilities, and tax authorities. The system enforces workflow-type restrictions to ensure only appropriate counterparty types can be assigned to specific workflows.
+
+### Architecture
+- **Shared Schemas**: Type-safe validation and business logic in `@rexera/shared`
+- **Backend API**: RESTful endpoints with Zod validation and relationship management
+- **Frontend Components**: Modal-based CRUD operations with workflow integration
+- **Type Safety**: Full TypeScript coverage with runtime validation
+
+### Database Schema
+- `counterparties` table: Core counterparty information
+- `workflow_counterparties` table: Many-to-many relationship with status tracking
+- Foreign keys maintain referential integrity
+- Soft delete prevention for counterparties with active relationships
+
+### Counterparty Types & Workflow Restrictions
+```typescript
+// Allowed counterparty types per workflow type
+const WORKFLOW_COUNTERPARTY_RULES = {
+  'hoa_lien_resolution': ['hoa', 'lender'],
+  'municipal_lien_resolution': ['municipality', 'tax_authority'],
+  'utility_lien_resolution': ['utility'],
+  'property_research': ['hoa', 'lender', 'municipality', 'utility', 'tax_authority']
+};
+```
+
+### API Endpoints
+- `GET /api/counterparties` - List with filtering and pagination
+- `POST /api/counterparties` - Create new counterparty
+- `PATCH /api/counterparties/:id` - Update counterparty
+- `DELETE /api/counterparties/:id` - Delete (with relationship validation)
+- `GET /api/counterparties/types` - Get available types
+- `GET /api/workflows/:id/counterparties` - List workflow assignments
+- `POST /api/workflows/:id/counterparties` - Assign counterparty to workflow
+- `PATCH /api/workflows/:id/counterparties/:relationshipId` - Update assignment status
+- `DELETE /api/workflows/:id/counterparties/:relationshipId` - Remove assignment
+
+### Status Tracking
+Workflow counterparty assignments progress through status states:
+- `PENDING` → Initial assignment
+- `CONTACTED` → Outreach initiated
+- `RESPONDED` → Response received
+- `COMPLETED` → Interaction completed
+
+### Frontend Components
+- `counterparty-selector.tsx`: Main interface for assignment and management
+- `add-counterparty-modal.tsx`: New counterparty creation
+- `edit-counterparty-modal.tsx`: Counterparty editing
+- Real-time updates via direct API state management
+
+### Known Architecture Issues (Improvement Needed)
+1. **File Organization**: API client not in `/endpoints/` directory
+2. **State Management**: Manual state instead of React Query patterns
+3. **Component Architecture**: Large monolithic selector component
+4. **Missing Features**: No audit logging, limited access control
+5. **Error Handling**: Inconsistent patterns compared to workflows
+
+### Usage Examples
+```typescript
+// Create counterparty
+const counterparty = await counterpartiesApi.create({
+  name: 'ABC HOA',
+  type: 'hoa',
+  email: 'contact@abchoa.com',
+  phone: '555-1234'
+});
+
+// Assign to workflow
+await workflowCounterpartiesApi.add(workflowId, {
+  counterparty_id: counterparty.id,
+  status: 'PENDING'
+});
+
+// Update status
+await workflowCounterpartiesApi.updateStatus(workflowId, relationshipId, {
+  status: 'CONTACTED'
+});
+```
+
 ## Quality Standards
 1. Run `pnpm lint` and `pnpm type-check` before commits
 2. Write tests for new features

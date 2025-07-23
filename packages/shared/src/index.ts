@@ -20,12 +20,14 @@ export * from './types/workflows';
 export * from './types/database';
 export * from './types/api';
 export * from './types/errors';
+export * from './types/notifications';
 
 // Zod validation schemas
 export * from './schemas/task-executions';
 export * from './schemas/workflows';
 export * from './schemas/communications';
 export * from './schemas/documents';
+export * from './schemas/counterparties';
 export * from './schemas/audit-events';
 export * from './schemas/hil-notes';
 export * from './schemas/users';
@@ -43,6 +45,20 @@ export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './type
 
 // Core workflow types
 export type { Workflow, WorkflowTask, WorkflowFilters, WorkflowPagination } from './types/workflows';
+
+// Notification types
+export type { 
+  HilNotification, 
+  HilNotificationInsert, 
+  HilNotificationUpdate,
+  UnifiedNotification, 
+  NotificationSettings, 
+  NotificationFilters,
+  NotificationType,
+  NotificationSortField,
+  UseUnifiedNotificationsReturn,
+  UseNotificationsTableStateReturn
+} from './types/notifications';
 
 // API types (most commonly used)
 export type { 
@@ -180,6 +196,33 @@ export type {
   ReplyHilNote,
   PriorityLevel
 } from './schemas/hil-notes';
+
+// Counterparties schemas
+export {
+  CounterpartySchema,
+  CreateCounterpartySchema,
+  UpdateCounterpartySchema,
+  CounterpartyFiltersSchema,
+  WorkflowCounterpartySchema,
+  CreateWorkflowCounterpartySchema,
+  UpdateWorkflowCounterpartySchema,
+  WorkflowCounterpartyFiltersSchema,
+  CounterpartyTypeSchema,
+  WorkflowCounterpartyStatusSchema
+} from './schemas/counterparties';
+
+export type {
+  Counterparty,
+  CreateCounterpartyRequest,
+  UpdateCounterpartyRequest,
+  CounterpartyFilters,
+  WorkflowCounterparty,
+  CreateWorkflowCounterpartyRequest,
+  UpdateWorkflowCounterpartyRequest,
+  WorkflowCounterpartyFilters,
+  CounterpartyType,
+  WorkflowCounterpartyStatus
+} from './schemas/counterparties';
 
 // Audit logger utilities
 export {

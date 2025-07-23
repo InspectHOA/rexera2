@@ -18,7 +18,7 @@ import {
   errorHandlerMiddleware,
   corsMiddleware,
 } from './middleware';
-import { agents, workflows, taskExecutions, communications, documents, tags, clients, auditEvents, hilNotes, users } from './routes';
+import { agents, workflows, taskExecutions, communications, documents, counterparties, tags, clients, auditEvents, hilNotes, users, notifications } from './routes';
 
 const app = new Hono();
 
@@ -75,6 +75,7 @@ app.use('/api/workflows/*', authMiddleware);
 app.use('/api/taskExecutions/*', authMiddleware);
 app.use('/api/communications/*', authMiddleware);
 app.use('/api/documents/*', authMiddleware);
+app.use('/api/counterparties/*', authMiddleware);
 app.use('/api/tags/*', authMiddleware);
 app.use('/api/clients/*', authMiddleware);
 app.use('/api/audit-events/*', authMiddleware);
@@ -87,11 +88,15 @@ app.route('/api/workflows', workflows);
 app.route('/api/taskExecutions', taskExecutions);
 app.route('/api/communications', communications);
 app.route('/api/documents', documents);
+app.route('/api/counterparties', counterparties);
 app.route('/api/tags', tags);
 app.route('/api/clients', clients);
 app.route('/api/audit-events', auditEvents);
 app.route('/api/hil-notes', hilNotes);
 app.route('/api/users', users);
+app.route('/api/notifications', notifications);
+
+// Note: workflow-counterparty routes (/api/workflows/:id/counterparties) are handled within the workflows module
 
 // ============================================================================
 // ERROR HANDLING

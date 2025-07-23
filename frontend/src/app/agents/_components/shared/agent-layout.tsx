@@ -16,13 +16,13 @@ export function AgentLayout({
   actions 
 }: AgentLayoutProps) {
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-background">
       {/* Agent Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
+      <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{agentName}</h1>
-            <p className="text-sm text-gray-600 mt-1">{agentDescription}</p>
+            <h1 className="text-2xl font-semibold text-foreground">{agentName}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{agentDescription}</p>
           </div>
           {actions && (
             <div className="flex items-center gap-2">
@@ -33,7 +33,7 @@ export function AgentLayout({
       </div>
 
       {/* Agent Interface Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-background">
         {children}
       </div>
     </div>

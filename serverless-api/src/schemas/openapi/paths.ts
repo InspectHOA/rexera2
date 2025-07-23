@@ -1873,5 +1873,511 @@ export const openApiPaths = {
         }
       }
     }
+  },
+  '/api/counterparties': {
+    get: {
+      tags: ['Counterparties'],
+      summary: 'List counterparties',
+      description: 'Retrieve a paginated list of counterparties with optional filters',
+      parameters: [
+        {
+          name: 'type',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority']
+          },
+          description: 'Filter by counterparty type'
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search in counterparty name and email'
+        },
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, default: 1 },
+          description: 'Page number'
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          description: 'Items per page'
+        },
+        {
+          name: 'sort',
+          in: 'query',
+          schema: { type: 'string', enum: ['name', 'type', 'created_at'], default: 'name' },
+          description: 'Field to sort by'
+        },
+        {
+          name: 'order',
+          in: 'query',
+          schema: { type: 'string', enum: ['asc', 'desc'], default: 'asc' },
+          description: 'Sort order'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string', enum: ['workflows'] },
+          description: 'Include related workflow relationships'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of counterparties',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartiesResponse' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid query parameters',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['Counterparties'],
+      summary: 'Create counterparty',
+      description: 'Create a new counterparty',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateCounterparty' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Counterparty created successfully',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyResponse' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/{id}': {
+    get: {
+      tags: ['Counterparties'],
+      summary: 'Get counterparty',
+      description: 'Retrieve a single counterparty by ID',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string', enum: ['workflows'] },
+          description: 'Include related workflow relationships'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Counterparty details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyResponse' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    patch: {
+      tags: ['Counterparties'],
+      summary: 'Update counterparty',
+      description: 'Update an existing counterparty',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateCounterparty' }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Counterparty updated successfully',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyResponse' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    delete: {
+      tags: ['Counterparties'],
+      summary: 'Delete counterparty',
+      description: 'Delete a counterparty (only if no active workflow relationships exist)',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Counterparty deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Counterparty deleted successfully' }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '409': {
+          description: 'Cannot delete counterparty with active workflow relationships',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/search': {
+    get: {
+      tags: ['Counterparties'],
+      summary: 'Search counterparties',
+      description: 'Search counterparties by query string with type filtering and relevance ranking',
+      parameters: [
+        {
+          name: 'q',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', minLength: 1 },
+          description: 'Search query string (searches name, email, and address)'
+        },
+        {
+          name: 'type',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority']
+          },
+          description: 'Filter results by counterparty type'
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+          description: 'Maximum number of results to return'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Search results with relevance ranking',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartySearchResponse' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid search parameters',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/types': {
+    get: {
+      tags: ['Counterparties'],
+      summary: 'Get counterparty types',
+      description: 'Retrieve available counterparty types and their labels',
+      responses: {
+        '200': {
+          description: 'List of counterparty types',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyTypesResponse' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/workflows/{workflowId}/counterparties': {
+    get: {
+      tags: ['Workflow Counterparties'],
+      summary: 'Get workflow counterparties',
+      description: 'Retrieve counterparties associated with a specific workflow',
+      parameters: [
+        {
+          name: 'workflowId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Workflow UUID or human-readable ID'
+        },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: ['PENDING', 'CONTACTED', 'RESPONDED', 'COMPLETED'] 
+          },
+          description: 'Filter by relationship status'
+        },
+        {
+          name: 'include',
+          in: 'query',
+          schema: { type: 'string', enum: ['counterparty'] },
+          description: 'Include counterparty details'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of workflow counterparties',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/WorkflowCounterpartiesResponse' }
+            }
+          }
+        },
+        '404': {
+          description: 'Workflow not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['Workflow Counterparties'],
+      summary: 'Add counterparty to workflow',
+      description: 'Associate a counterparty with a workflow',
+      parameters: [
+        {
+          name: 'workflowId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Workflow UUID or human-readable ID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateWorkflowCounterparty' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Counterparty added to workflow successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/WorkflowCounterparty' }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Workflow or counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '409': {
+          description: 'Counterparty already associated with this workflow',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/workflows/{workflowId}/counterparties/{id}': {
+    patch: {
+      tags: ['Workflow Counterparties'],
+      summary: 'Update workflow counterparty status',
+      description: 'Update the status of a counterparty relationship within a workflow',
+      parameters: [
+        {
+          name: 'workflowId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Workflow UUID or human-readable ID'
+        },
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Workflow counterparty relationship UUID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateWorkflowCounterparty' }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Workflow counterparty status updated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/WorkflowCounterparty' }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Workflow counterparty relationship not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    delete: {
+      tags: ['Workflow Counterparties'],
+      summary: 'Remove counterparty from workflow',
+      description: 'Remove the association between a counterparty and a workflow',
+      parameters: [
+        {
+          name: 'workflowId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Workflow UUID or human-readable ID'
+        },
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Workflow counterparty relationship UUID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Counterparty removed from workflow successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Counterparty removed from workflow successfully' }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Workflow counterparty relationship not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
   }
 } as const;

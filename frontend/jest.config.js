@@ -48,6 +48,18 @@ const customJestConfig = {
         '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
       },
     },
+    {
+      displayName: 'lib',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/src/lib/**/*.test.{ts,tsx}'],
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+      transform: {
+        '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
+      },
+    },
   ],
 }
 

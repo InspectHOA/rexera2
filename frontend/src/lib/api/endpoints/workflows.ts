@@ -3,12 +3,12 @@
  * Handles workflow management and task execution operations.
  */
 
-import type { WorkflowType, PriorityLevel } from '@rexera/shared';
+import type { WorkflowType, PriorityLevel, WorkflowData } from '@rexera/shared';
 import type { 
   WorkflowApiResponse,
   TaskExecutionApiResponse
 } from '@/types/api';
-import type { WorkflowData, TaskExecution } from '@/types/workflow';
+import type { TaskExecution } from '@/types/workflow';
 import { apiRequest, getAuthToken, getApiBaseUrl } from '../core/request';
 import { ApiError } from '../core/api-error';
 import type { ApiResponse, ApiErrorResponse } from '../core/types';
@@ -79,14 +79,14 @@ export const workflowsApi = {
   /**
    * Get workflow by ID
    */
-  async byId(id: string, include: string[] = []) {
+  async byId(id: string, include: string[] = []): Promise<WorkflowData> {
     const params = new URLSearchParams();
     if (include.length > 0) {
       params.append('include', include.join(','));
     }
     
     const url = `/workflows/${id}?${params}`;
-    return apiRequest(url);
+    return apiRequest<WorkflowData>(url);
   },
 
   /**

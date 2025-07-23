@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Mail, Plus, Reply, Forward, Archive, Trash2, Send } from 'lucide-react';
+import { Mail, Plus, Reply, Forward, Archive, Trash2, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api/client';
 
 interface EmailInterfaceProps {
@@ -35,6 +35,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
   const [composeOpen, setComposeOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [forwardOpen, setForwardOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [emails, setEmails] = useState<Email[]>([]);
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +139,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'read': return 'dm-status-read';
+      case 'READ': return 'dm-status-read';
       case 'sent': return 'dm-status-sent';
       case 'delivered': return 'dm-status-delivered';
       case 'failed': return 'dm-status-failed';
@@ -159,22 +160,56 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       {/* Thread List - Left Side */}
-      <div className="w-80 bg-card border-r border-border flex flex-col">
-        {/* Compact Header */}
-        <div className="p-3 border-b border-border flex items-center justify-between">
-          <h3 className="font-semibold text-foreground">Email Threads ({threads.length})</h3>
-          <div className="flex gap-2">
+      <div className={`${
+        sidebarCollapsed ? 'w-12' : 'w-64 lg:w-72 xl:w-80'
+      } bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out relative`}>
+        {/* Collapse/Expand Button */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute -right-3 top-4 z-10 bg-card border border-border rounded-full p-1 hover:bg-muted transition-colors"
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
+        </button>
+
+        {!sidebarCollapsed && (
+          <>
+            {/* Compact Header */}
+            <div className="p-3 border-b border-border flex items-center justify-between">
+              <h3 className="font-semibold text-foreground">Threads ({threads.length})</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setComposeOpen(true)}
+                  className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-primary/90"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {sidebarCollapsed && (
+          <div className="p-2 border-b border-border flex flex-col items-center gap-2">
             <button
               onClick={() => setComposeOpen(true)}
-              className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-primary/90"
+              className="bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90"
+              title="New email"
             >
-              <Plus className="w-3.5 h-3.5" />
-              New
+              <Plus className="w-4 h-4" />
             </button>
+            <div className="text-xs text-muted-foreground font-medium">
+              {threads.length}
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Thread List */}
         <div className="flex-1 overflow-y-auto">
@@ -188,32 +223,55 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
               <div
                 key={thread.thread_id}
                 onClick={() => setSelectedThread(thread.thread_id)}
-                className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 ${
+                className={`${
+                  sidebarCollapsed ? 'p-2' : 'p-3'
+                } border-b border-border cursor-pointer hover:bg-muted/50 ${
                   selectedThread === thread.thread_id ? 'bg-primary/10 border-primary/20' : ''
                 }`}
+                title={sidebarCollapsed ? `${thread.subject} - ${thread.participants.filter(p => p !== 'mia@rexera.com').join(', ')}` : undefined}
               >
-                <div className="flex items-start justify-between mb-1">
-                  <h4 className="text-sm font-medium text-foreground truncate flex-1 mr-2">
-                    {thread.subject}
-                  </h4>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {formatTimestamp(thread.lastActivity)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-muted-foreground truncate flex-1">
-                    {thread.participants.filter(p => p !== 'mia@rexera.com').join(', ')}
+                {sidebarCollapsed ? (
+                  // Collapsed view: Avatar + email count + unread indicator
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium mb-1">
+                      {thread.participants.filter(p => p !== 'mia@rexera.com')[0]?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">
+                        {thread.emails.length}
+                      </span>
+                      {thread.emails.some(e => e.direction === 'INBOUND' && e.status !== 'READ') && (
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    <span className="text-xs px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">
-                      {thread.emails.length}
-                    </span>
-                    {thread.emails.some(e => e.direction === 'INBOUND' && e.status !== 'READ') && (
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    )}
-                  </div>
-                </div>
+                ) : (
+                  // Expanded view: Full thread information
+                  <>
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="text-sm font-medium text-foreground truncate flex-1 mr-2">
+                        {thread.subject}
+                      </h4>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        {formatTimestamp(thread.lastActivity)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-muted-foreground truncate flex-1">
+                        {thread.participants.filter(p => p !== 'mia@rexera.com').join(', ')}
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        <span className="text-xs px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">
+                          {thread.emails.length}
+                        </span>
+                        {thread.emails.some(e => e.direction === 'INBOUND' && e.status !== 'READ') && (
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ))
           )}

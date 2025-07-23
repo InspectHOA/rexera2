@@ -85,20 +85,19 @@ export interface WorkflowPagination {
 export interface WorkflowData {
   id: string;
   workflow_type: WorkflowType;
+  client_id: string;
   title: string;
+  description?: string;
   status: WorkflowStatus;
   priority: PriorityLevel;
+  metadata: Record<string, any>;
+  created_by: string;
+  assigned_to?: string;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
   due_date: string | null;
-  human_readable_id: string;
-  metadata?: {
-    property_address?: string;
-    borrower_name?: string;
-    loan_number?: string;
-    closing_date?: string;
-    [key: string]: string | number | boolean | null | undefined;
-  };
+  n8n_execution_id?: string;
   client?: {
     id: string;
     name: string;

@@ -1409,6 +1409,47 @@ async function seedDatabase() {
   } else {
     console.log(`✅ Created ${docData?.length || 0} documents`);
   }
+
+  // Create diverse counterparties for testing workflow restrictions
+  console.log('🏢 Creating counterparties...');
+  const counterpartyData = [
+    // HOAs
+    { name: 'Sunset Hills HOA', type: 'hoa', email: 'contact@sunsethills.com', phone: '(555) 123-4567', address: '123 Sunset Drive, Beverly Hills, CA 90210' },
+    { name: 'Oceanview Estates HOA', type: 'hoa', email: 'admin@oceanviewestates.org', phone: '(555) 234-5678', address: '456 Ocean View Blvd, Malibu, CA 90265' },
+    { name: 'Pine Valley Community Association', type: 'hoa', email: 'office@pinevalley.com', phone: '(555) 345-6789', address: '789 Pine Valley Road, Pasadena, CA 91101' },
+    
+    // Lenders
+    { name: 'First National Bank', type: 'lender', email: 'payoffs@firstnational.com', phone: '(555) 456-7890', address: '100 Financial Plaza, Los Angeles, CA 90071' },
+    { name: 'California Credit Union', type: 'lender', email: 'loanservicing@calcreditunion.org', phone: '(555) 567-8901', address: '200 Credit Union Way, San Diego, CA 92101' },
+    { name: 'Pacific Mortgage Services', type: 'lender', email: 'payoffs@pacificmortgage.com', phone: '(555) 678-9012', address: '300 Pacific Coast Hwy, Santa Monica, CA 90405' },
+    
+    // Municipalities
+    { name: 'City of Los Angeles', type: 'municipality', email: 'liens@lacity.org', phone: '(213) 555-0123', address: '200 N Spring St, Los Angeles, CA 90012' },
+    { name: 'City of Beverly Hills', type: 'municipality', email: 'finance@beverlyhills.org', phone: '(310) 555-0234', address: '455 N Rexford Dr, Beverly Hills, CA 90210' },
+    { name: 'County of Orange', type: 'municipality', email: 'liens@ocgov.com', phone: '(714) 555-0345', address: '10 Civic Center Plaza, Santa Ana, CA 92701' },
+    
+    // Tax Authorities
+    { name: 'Los Angeles County Tax Collector', type: 'tax_authority', email: 'taxinfo@lacounty.gov', phone: '(213) 555-0456', address: '500 W Temple St, Los Angeles, CA 90012' },
+    { name: 'Orange County Tax Collector', type: 'tax_authority', email: 'propertytax@octax.com', phone: '(714) 555-0567', address: '12 Civic Center Plaza, Santa Ana, CA 92701' },
+    { name: 'Riverside County Tax Collector', type: 'tax_authority', email: 'taxes@rivco.org', phone: '(951) 555-0678', address: '4080 Lemon St, Riverside, CA 92501' },
+    
+    // Utilities
+    { name: 'Los Angeles Department of Water and Power', type: 'utility', email: 'liens@ladwp.com', phone: '(800) 555-0789', address: '111 N Hope St, Los Angeles, CA 90012' },
+    { name: 'Southern California Edison', type: 'utility', email: 'businessservices@sce.com', phone: '(800) 555-0890', address: '2244 Walnut Grove Ave, Rosemead, CA 91770' },
+    { name: 'SoCalGas', type: 'utility', email: 'customerservice@socalgas.com', phone: '(800) 555-0901', address: '555 W 5th St, Los Angeles, CA 90013' },
+    { name: 'San Diego Gas & Electric', type: 'utility', email: 'business@sdge.com', phone: '(800) 555-1012', address: '8330 Century Park Ct, San Diego, CA 92123' }
+  ];
+  
+  const { data: counterpartyResult, error: counterpartyError } = await supabase
+    .from('counterparties')
+    .insert(counterpartyData)
+    .select();
+    
+  if (counterpartyError) {
+    console.error('❌ Failed to create counterparties:', counterpartyError);
+    throw counterpartyError;
+  }
+  console.log(`✅ Created ${counterpartyResult?.length || 0} counterparties`);
 }
 
 async function verifyData() {

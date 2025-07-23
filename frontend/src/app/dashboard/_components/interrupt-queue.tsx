@@ -4,7 +4,12 @@ import { AlertTriangle, Clock, User, ArrowRight } from 'lucide-react';
 import { useUnifiedNotifications } from '@/lib/hooks/use-unified-notifications';
 
 export function InterruptQueue() {
-  const { interruptNotifications, loading, error } = useUnifiedNotifications();
+  const { notifications, loading, error } = useUnifiedNotifications();
+  
+  // Filter notifications for task interrupts
+  const interruptNotifications = notifications.filter(
+    notification => notification.type === 'TASK_INTERRUPT'
+  );
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
@@ -127,7 +132,7 @@ export function InterruptQueue() {
               <p>No pending interrupts</p>
             </div>
           ) : (
-            interruptNotifications.map((interrupt) => (
+            interruptNotifications.map((interrupt: any) => (
               <div key={interrupt.id} className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${getPriorityStyle('HIGH')}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3 flex-1">

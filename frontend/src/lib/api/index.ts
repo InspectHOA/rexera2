@@ -12,6 +12,8 @@ export type * from './core/types';
 import { workflowsApi, tasksApi } from './endpoints/workflows';
 import { documentsApi, tagsApi } from './endpoints/documents';
 import { communicationsApi, hilNotesApi } from './endpoints/communications';
+import { counterpartiesApi } from './endpoints/counterparties';
+import { workflowCounterpartiesApi } from './counterparties';
 import { 
   healthApi, 
   activitiesApi, 
@@ -22,11 +24,14 @@ import {
   auditEventsApi, 
   clientsApi 
 } from './endpoints/system';
+import { notificationsApi } from './endpoints/notifications';
 
 // Re-export individual APIs
 export { workflowsApi, tasksApi } from './endpoints/workflows';
 export { documentsApi, tagsApi } from './endpoints/documents';
 export { communicationsApi, hilNotesApi } from './endpoints/communications';
+export { counterpartiesApi } from './endpoints/counterparties';
+export { workflowCounterpartiesApi } from './counterparties';
 export { 
   healthApi, 
   activitiesApi, 
@@ -37,6 +42,7 @@ export {
   auditEventsApi, 
   clientsApi 
 } from './endpoints/system';
+export { notificationsApi } from './endpoints/notifications';
 
 // Main API object for backward compatibility
 export const api = {
@@ -52,6 +58,10 @@ export const api = {
   communications: communicationsApi,
   hilNotes: hilNotesApi,
   
+  // Counterparties
+  counterparties: counterpartiesApi,
+  workflowCounterparties: workflowCounterpartiesApi,
+  
   // System operations
   health: healthApi,
   activities: activitiesApi,
@@ -61,4 +71,7 @@ export const api = {
   users: usersApi,
   auditEvents: auditEventsApi,
   clients: clientsApi,
+  
+  // Notifications
+  notifications: notificationsApi,
 };

@@ -749,6 +749,276 @@ export const openApiComponents = {
           description: 'Array of user IDs to mention in reply'
         }
       }
+    },
+    Counterparty: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid', description: 'Unique identifier' },
+        name: { type: 'string', description: 'Counterparty name' },
+        type: {
+          type: 'string',
+          enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority'],
+          description: 'Type of counterparty'
+        },
+        email: { type: 'string', format: 'email', nullable: true, description: 'Contact email' },
+        phone: { type: 'string', nullable: true, description: 'Contact phone number' },
+        address: { type: 'string', nullable: true, description: 'Physical address' },
+        contact_info: { 
+          type: 'object', 
+          description: 'Additional contact information and metadata',
+          additionalProperties: true,
+          default: {}
+        },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' },
+        workflows: {
+          type: 'array',
+          nullable: true,
+          description: 'Associated workflow relationships (when included with ?include=workflows)',
+          items: { $ref: '#/components/schemas/WorkflowRelationship' }
+        }
+      },
+      required: ['id', 'name', 'type', 'created_at', 'updated_at']
+    },
+    CreateCounterparty: {
+      type: 'object',
+      required: ['name', 'type'],
+      properties: {
+        name: { 
+          type: 'string', 
+          minLength: 1, 
+          maxLength: 255,
+          description: 'Counterparty name' 
+        },
+        type: {
+          type: 'string',
+          enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority'],
+          description: 'Type of counterparty'
+        },
+        email: { 
+          type: 'string', 
+          format: 'email', 
+          description: 'Contact email address' 
+        },
+        phone: { 
+          type: 'string', 
+          minLength: 1,
+          description: 'Contact phone number' 
+        },
+        address: { 
+          type: 'string', 
+          minLength: 1,
+          description: 'Physical address' 
+        },
+        contact_info: { 
+          type: 'object', 
+          description: 'Additional contact information',
+          additionalProperties: true,
+          default: {}
+        }
+      }
+    },
+    UpdateCounterparty: {
+      type: 'object',
+      properties: {
+        name: { 
+          type: 'string', 
+          minLength: 1, 
+          maxLength: 255,
+          description: 'Updated counterparty name' 
+        },
+        type: {
+          type: 'string',
+          enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority'],
+          description: 'Updated counterparty type'
+        },
+        email: { 
+          type: 'string', 
+          format: 'email', 
+          description: 'Updated contact email' 
+        },
+        phone: { 
+          type: 'string', 
+          minLength: 1,
+          description: 'Updated contact phone number' 
+        },
+        address: { 
+          type: 'string', 
+          minLength: 1,
+          description: 'Updated physical address' 
+        },
+        contact_info: { 
+          type: 'object', 
+          description: 'Updated additional contact information',
+          additionalProperties: true
+        }
+      }
+    },
+    WorkflowCounterparty: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid', description: 'Unique relationship identifier' },
+        workflow_id: { type: 'string', format: 'uuid', description: 'Associated workflow ID' },
+        counterparty_id: { type: 'string', format: 'uuid', description: 'Associated counterparty ID' },
+        status: {
+          type: 'string',
+          enum: ['PENDING', 'CONTACTED', 'RESPONDED', 'COMPLETED'],
+          description: 'Status of the counterparty relationship in this workflow'
+        },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' },
+        counterparty: {
+          $ref: '#/components/schemas/Counterparty',
+          nullable: true,
+          description: 'Counterparty details (when included)'
+        },
+        workflow: {
+          type: 'object',
+          nullable: true,
+          description: 'Workflow details (when included)',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            title: { type: 'string' },
+            status: { type: 'string' }
+          }
+        }
+      },
+      required: ['id', 'workflow_id', 'counterparty_id', 'status', 'created_at', 'updated_at']
+    },
+    WorkflowRelationship: {
+      type: 'object',
+      description: 'Lean workflow relationship for counterparty responses',
+      properties: {
+        workflow_id: { type: 'string', format: 'uuid', description: 'Associated workflow ID' },
+        status: {
+          type: 'string',
+          enum: ['PENDING', 'CONTACTED', 'RESPONDED', 'COMPLETED'],
+          description: 'Status of the counterparty relationship in this workflow'
+        },
+        created_at: { type: 'string', format: 'date-time', description: 'When relationship was created' },
+        updated_at: { type: 'string', format: 'date-time', description: 'When relationship status was last updated' }
+      },
+      required: ['workflow_id', 'status', 'created_at', 'updated_at']
+    },
+    CreateWorkflowCounterparty: {
+      type: 'object',
+      required: ['counterparty_id'],
+      properties: {
+        counterparty_id: { 
+          type: 'string', 
+          format: 'uuid',
+          description: 'ID of counterparty to associate with workflow'
+        },
+        status: {
+          type: 'string',
+          enum: ['PENDING', 'CONTACTED', 'RESPONDED', 'COMPLETED'],
+          default: 'PENDING',
+          description: 'Initial status of the relationship'
+        }
+      }
+    },
+    UpdateWorkflowCounterparty: {
+      type: 'object',
+      required: ['status'],
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['PENDING', 'CONTACTED', 'RESPONDED', 'COMPLETED'],
+          description: 'Updated status of the counterparty relationship'
+        }
+      }
+    },
+    CounterpartiesResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Counterparty' }
+        },
+        pagination: { $ref: '#/components/schemas/Pagination' }
+      },
+      required: ['success', 'data', 'pagination']
+    },
+    CounterpartyResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { $ref: '#/components/schemas/Counterparty' }
+      },
+      required: ['success', 'data']
+    },
+    WorkflowCounterpartiesResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/WorkflowCounterparty' }
+        }
+      },
+      required: ['success', 'data']
+    },
+    CounterpartySearchResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              name: { type: 'string' },
+              type: {
+                type: 'string',
+                enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority']
+              },
+              email: { type: 'string', format: 'email', nullable: true },
+              phone: { type: 'string', nullable: true },
+              address: { type: 'string', nullable: true }
+            },
+            required: ['id', 'name', 'type']
+          }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'The search query used' },
+            type: { 
+              type: 'string', 
+              enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority'],
+              nullable: true,
+              description: 'Type filter applied (if any)'
+            },
+            total: { type: 'integer', description: 'Total number of results found' },
+            limit: { type: 'integer', description: 'Maximum results requested' }
+          },
+          required: ['query', 'type', 'total', 'limit']
+        }
+      },
+      required: ['success', 'data', 'meta']
+    },
+    CounterpartyTypesResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              value: {
+                type: 'string',
+                enum: ['hoa', 'lender', 'municipality', 'utility', 'tax_authority']
+              },
+              label: { type: 'string' }
+            },
+            required: ['value', 'label']
+          }
+        }
+      },
+      required: ['success', 'data']
     }
   }
 } as const;

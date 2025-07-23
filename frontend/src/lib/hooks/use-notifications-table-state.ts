@@ -3,9 +3,16 @@
  * Follows the same pattern as use-workflow-table-state
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import type { 
+  UnifiedNotification, 
+  UseNotificationsTableStateReturn, 
+  NotificationSortField, 
+  SortDirection,
+  PriorityLevel 
+} from '@rexera/shared';
 
-export function useNotificationsTableState() {
+export function useNotificationsTableState(): UseNotificationsTableStateReturn {
   // Filter states
   const [filterType, setFilterType] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
@@ -17,11 +24,11 @@ export function useNotificationsTableState() {
   const [itemsPerPage] = useState(50); // Show more notifications per page
   
   // Sorting
-  const [sortField, setSortField] = useState<'created_at' | 'priority' | 'type'>('created_at');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<NotificationSortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  // Filter and search logic
-  const getFilteredNotifications = (notifications: any[]) => {
+  // Filter and search logic - memoized for performance
+  const getFilteredNotifications = useCallback((notifications: UnifiedNotification[]) => {
     return notifications.filter(notification => {
       // Type filter
       if (filterType && notification.type !== filterType) {
@@ -52,12 +59,12 @@ export function useNotificationsTableState() {
       
       return true;
     });
-  };
+  }, [filterType, filterPriority, filterReadStatus, searchQuery]);
 
-  // Sorting logic
-  const getSortedNotifications = (notifications: any[]) => {
+  // Sorting logic - memoized for performance
+  const getSortedNotifications = useCallback((notifications: UnifiedNotification[]) => {
     return [...notifications].sort((a, b) => {
-      let aVal, bVal;
+      let aVal: string | number, bVal: string | number;
       
       switch (sortField) {
         case 'created_at':
@@ -65,9 +72,11 @@ export function useNotificationsTableState() {
           bVal = new Date(b.created_at).getTime();
           break;
         case 'priority':
-          const priorityOrder = { 'URGENT': 4, 'HIGH': 3, 'NORMAL': 2, 'LOW': 1 };
-          aVal = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-          bVal = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+          const priorityOrder: Record<PriorityLevel, number> = { 
+            'URGENT': 4, 'HIGH': 3, 'NORMAL': 2, 'LOW': 1 
+          };
+          aVal = priorityOrder[a.priority as PriorityLevel] || 0;
+          bVal = priorityOrder[b.priority as PriorityLevel] || 0;
           break;
         case 'type':
           aVal = a.type;
@@ -83,14 +92,14 @@ export function useNotificationsTableState() {
         return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
       }
     });
-  };
+  }, [sortField, sortDirection]);
 
-  // Pagination logic
-  const getPaginatedNotifications = (notifications: any[]) => {
+  // Pagination logic - memoized for performance
+  const getPaginatedNotifications = useCallback((notifications: UnifiedNotification[]) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return notifications.slice(startIndex, endIndex);
-  };
+  }, [currentPage, itemsPerPage]);
 
   // Get sort indicator for UI
   const getSortIndicator = (field: string) => {
@@ -99,7 +108,7 @@ export function useNotificationsTableState() {
   };
 
   // Action handlers
-  const handleSort = (field: 'created_at' | 'priority' | 'type') => {
+  const handleSort = (field: NotificationSortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {

@@ -111,6 +111,37 @@ export const TASK_STATUSES = [
 ] as const;
 
 // =====================================================
+// WORKFLOW-COUNTERPARTY TYPE RESTRICTIONS
+// =====================================================
+
+/**
+ * Maps workflow types to allowed counterparty types
+ * Used to enforce business rules about which counterparties can be assigned to which workflows
+ */
+export const WORKFLOW_COUNTERPARTY_RESTRICTIONS: Record<WorkflowType, CounterpartyType[]> = {
+  'MUNI_LIEN_SEARCH': ['utility', 'tax_authority', 'hoa', 'municipality'],
+  'HOA_ACQUISITION': ['hoa'],
+  'PAYOFF_REQUEST': ['lender']
+} as const;
+
+/**
+ * Validates if a counterparty type can be assigned to a workflow type
+ */
+export function isCounterpartyAllowedForWorkflow(
+  workflowType: WorkflowType, 
+  counterpartyType: CounterpartyType
+): boolean {
+  return WORKFLOW_COUNTERPARTY_RESTRICTIONS[workflowType].includes(counterpartyType);
+}
+
+/**
+ * Gets the allowed counterparty types for a specific workflow type
+ */
+export function getAllowedCounterpartyTypes(workflowType: WorkflowType): CounterpartyType[] {
+  return WORKFLOW_COUNTERPARTY_RESTRICTIONS[workflowType];
+}
+
+// =====================================================
 // AUDIT SYSTEM ENUMS
 // =====================================================
 
