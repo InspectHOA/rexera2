@@ -203,11 +203,23 @@ export const corsMiddleware = async (c: Context, next: Next) => {
     c.header('Access-Control-Allow-Origin', origin);
     console.log('[CORS] Allowed origin:', origin);
   } else if (origin) {
-    console.log('[CORS] Origin not allowed:', origin);
-    // In development, be more permissive
-    if (process.env.NODE_ENV === 'development' || process.env.VERCEL) {
+    console.log('[CORS] Origin not in allowed list:', origin);
+    // Be more permissive for Vercel deployments and development
+    const isVercelContext = !!(process.env.VERCEL || process.env.VERCEL_ENV || process.env.VERCEL_URL);
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    if (isDevelopment || isVercelContext) {
       c.header('Access-Control-Allow-Origin', origin);
-      console.log('[CORS] Development mode - allowing origin:', origin);
+      console.log('[CORS] Permissive mode - allowing origin:', origin, { isDevelopment, isVercelContext });
+    } else {
+      console.log('[CORS] Origin blocked:', origin);
+    }
+  } else {
+    // No origin header (e.g., test environment or some API clients)
+    // For OPTIONS preflight requests, we still need to set CORS headers
+    if (c.req.method === 'OPTIONS' || process.env.NODE_ENV === 'test') {
+      c.header('Access-Control-Allow-Origin', '*');
+      console.log('[CORS] No origin header - setting wildcard for preflight/test');
     }
   }
   
