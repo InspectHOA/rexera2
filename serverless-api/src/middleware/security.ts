@@ -178,24 +178,48 @@ export const requestValidationMiddleware = async (c: Context, next: Next) => {
  */
 export const corsMiddleware = async (c: Context, next: Next) => {
   const origin = c.req.header('origin');
-  console.log('[CORS] Incoming Origin:', origin);
+  console.log('[CORS] Incoming request - Origin:', origin, 'Method:', c.req.method, 'Path:', c.req.path);
+  
+  // Get allowed origins from environment variables or use defaults
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
     'https://rexera.vercel.app',
-    'https://rexera2-frontend.vercel.app'
-  ];
+    'https://rexera2-frontend.vercel.app',
+    // Add environment variable for frontend URL
+    process.env.FRONTEND_URL,
+    // Allow Vercel preview deployments
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ].filter(Boolean); // Remove undefined values
 
-  if (origin && allowedOrigins.includes(origin)) {
+  // Set CORS headers for all requests
+  const isVercelDomain = origin && (
+    origin.includes('.vercel.app') || 
+    origin.includes('localhost') ||
+    allowedOrigins.includes(origin)
+  );
+
+  if (origin && isVercelDomain) {
     c.header('Access-Control-Allow-Origin', origin);
+    console.log('[CORS] Allowed origin:', origin);
+  } else if (origin) {
+    console.log('[CORS] Origin not allowed:', origin);
+    // In development, be more permissive
+    if (process.env.NODE_ENV === 'development' || process.env.VERCEL) {
+      c.header('Access-Control-Allow-Origin', origin);
+      console.log('[CORS] Development mode - allowing origin:', origin);
+    }
   }
+  
   c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   c.header('Access-Control-Allow-Credentials', 'true');
   c.header('Access-Control-Max-Age', '86400');
 
+  // Handle preflight OPTIONS requests
   if (c.req.method === 'OPTIONS') {
-    return c.body(null, 204 as any);
+    console.log('[CORS] Handling OPTIONS preflight request');
+    return c.body(null, 204);
   }
 
   await next();
