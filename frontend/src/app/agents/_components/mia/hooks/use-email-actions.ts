@@ -102,6 +102,7 @@ export function useEmailActions({
         body: compose.text,
         communication_type: 'email',
         direction: 'OUTBOUND',
+        metadata: {},
       });
 
       closeCompose();
@@ -172,6 +173,7 @@ export function useEmailActions({
         body: reply.text,
         communication_type: 'email',
         direction: 'OUTBOUND',
+        metadata: {},
       });
 
       closeReply();
@@ -244,6 +246,7 @@ export function useEmailActions({
         body: forward.text,
         communication_type: 'email',
         direction: 'OUTBOUND',
+        metadata: {},
       });
 
       closeForward();

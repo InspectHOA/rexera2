@@ -4,7 +4,7 @@ import { useWorkflows } from '@/lib/hooks/use-workflows';
 
 export function DashboardStats() {
   const { stats, loading, error, pagination } = useWorkflows({ 
-    include: ['tasks'], 
+    include: ['task_executions'], 
     limit: 100  // Use max allowed limit for stats calculation
   });
   return (

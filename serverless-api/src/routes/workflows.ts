@@ -84,7 +84,7 @@ workflows.get('/', async (c) => {
       selectString += `, client:clients(id, name, domain)`;
     }
     
-    if (includeArray.includes('tasks')) {
+    if (includeArray.includes('task_executions')) {
       selectString += `, task_executions!workflow_id(*, agents!agent_id(id, name, type))`;
     }
 
@@ -290,6 +290,13 @@ workflows.patch('/:id', async (c) => {
       }, 404 as any);
     }
 
+    // Get existing workflow details for audit logging
+    const { data: existingWorkflowDetails } = await supabase
+      .from('workflows')
+      .select('status, workflow_type')
+      .eq('id', id)
+      .single();
+
     // Update the workflow
     const { data: workflow, error } = await supabase
       .from('workflows')
@@ -300,6 +307,29 @@ workflows.patch('/:id', async (c) => {
 
     if (error) {
       throw new Error(`Failed to update workflow: ${error.message}`);
+    }
+
+    // Log audit event for workflow update
+    try {
+      await auditLogger.log(
+        AuditHelpers.workflowEvent(
+          user.id,
+          user.email,
+          'update',
+          workflow.id,
+          workflow.client_id,
+          {
+            workflow_type: workflow.workflow_type,
+            old_status: existingWorkflowDetails?.status,
+            new_status: workflow.status,
+            updated_fields: Object.keys(body),
+            user_agent: c.req.header('user-agent')
+          }
+        )
+      );
+    } catch (auditError) {
+      console.warn('Failed to log audit event for workflow update:', auditError);
+      // Don't fail the request if audit logging fails
     }
 
     return c.json({
@@ -576,6 +606,38 @@ workflows.post('/:workflowId/counterparties', async (c) => {
         details: error.message
       }, 500);
     }
+
+    // Log audit event for counterparty assignment
+    try {
+      const user = c.get('user') as AuthUser || { 
+        id: 'test-user', 
+        email: 'test@example.com', 
+        user_type: 'hil_user' as const, 
+        role: 'HIL', 
+        company_id: undefined 
+      };
+      
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'counterparty_management',
+        action: 'create',
+        resource_type: 'counterparty',
+        resource_id: data.id,
+        workflow_id: workflowId,
+        event_data: {
+          counterparty_id: data.counterparty_id,
+          counterparty_type: counterparty.type,
+          status: data.status,
+          workflow_type: workflow.workflow_type,
+          operation: 'assign_to_workflow'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for workflow counterparty creation:', auditError);
+      // Don't fail the request if audit logging fails
+    }
     
     return c.json({
       success: true,
@@ -614,6 +676,14 @@ workflows.patch('/:workflowId/counterparties/:id', async (c) => {
       }, 404);
     }
     
+    // Get existing counterparty relationship for audit logging
+    const { data: existingRelationship } = await supabase
+      .from('workflow_counterparties')
+      .select('status')
+      .eq('id', relationshipId)
+      .eq('workflow_id', workflowId)
+      .single();
+
     // Add updated_at timestamp
     const updateData = {
       ...validatedData,
@@ -642,6 +712,38 @@ workflows.patch('/:workflowId/counterparties/:id', async (c) => {
         error: 'Failed to update workflow counterparty',
         details: error.message
       }, 500);
+    }
+
+    // Log audit event for counterparty update
+    try {
+      const user = c.get('user') as AuthUser || { 
+        id: 'test-user', 
+        email: 'test@example.com', 
+        user_type: 'hil_user' as const, 
+        role: 'HIL', 
+        company_id: undefined 
+      };
+      
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'counterparty_management',
+        action: 'update',
+        resource_type: 'counterparty',
+        resource_id: data.id,
+        workflow_id: workflowId,
+        event_data: {
+          counterparty_id: data.counterparty_id,
+          old_status: existingRelationship?.status,
+          new_status: data.status,
+          updated_fields: Object.keys(validatedData),
+          operation: 'update_workflow_assignment'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for workflow counterparty update:', auditError);
+      // Don't fail the request if audit logging fails
     }
     
     return c.json({
@@ -678,6 +780,14 @@ workflows.delete('/:workflowId/counterparties/:id', async (c) => {
       }, 404);
     }
     
+    // Get existing counterparty relationship for audit logging
+    const { data: existingRelationship } = await supabase
+      .from('workflow_counterparties')
+      .select('counterparty_id, status, counterparties(type)')
+      .eq('id', relationshipId)
+      .eq('workflow_id', workflowId)
+      .single();
+
     const { error } = await supabase
       .from('workflow_counterparties')
       .delete()
@@ -691,6 +801,39 @@ workflows.delete('/:workflowId/counterparties/:id', async (c) => {
         error: 'Failed to remove counterparty from workflow',
         details: error.message
       }, 500);
+    }
+
+    // Log audit event for counterparty removal
+    try {
+      const user = c.get('user') as AuthUser || { 
+        id: 'test-user', 
+        email: 'test@example.com', 
+        user_type: 'hil_user' as const, 
+        role: 'HIL', 
+        company_id: undefined 
+      };
+      
+      if (existingRelationship) {
+        await auditLogger.log({
+          actor_type: 'human',
+          actor_id: user.id,
+          actor_name: user.email,
+          event_type: 'counterparty_management',
+          action: 'delete',
+          resource_type: 'counterparty',
+          resource_id: relationshipId,
+          workflow_id: workflowId,
+          event_data: {
+            counterparty_id: existingRelationship.counterparty_id,
+            counterparty_type: (existingRelationship.counterparties as any)?.type,
+            final_status: existingRelationship.status,
+            operation: 'remove_from_workflow'
+          }
+        });
+      }
+    } catch (auditError) {
+      console.warn('Failed to log audit event for workflow counterparty deletion:', auditError);
+      // Don't fail the request if audit logging fails
     }
     
     return c.json({

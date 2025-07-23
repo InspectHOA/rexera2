@@ -13,9 +13,9 @@ export function useWorkflowTransformation(
 ) {
   const transformedWorkflows = useMemo(() => {
     return workflowData.map((workflow: WorkflowData) => {
-      const tasks: TaskExecution[] = workflow.task_executions || workflow.tasks || [];
+      const taskExecutions: TaskExecution[] = workflow.task_executions || [];
       const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
-      const interruptCount = tasks.filter((t: TaskExecution) => t.status === INTERRUPT_STATUS)?.length || 0;
+      const interruptCount = taskExecutions.filter((t: TaskExecution) => t.status === INTERRUPT_STATUS)?.length || 0;
       const hasInterrupts = interruptCount > 0;
       
       // Use simple UUID-based display ID
@@ -36,7 +36,7 @@ export function useWorkflowTransformation(
         interrupts: hasInterrupts ? {
           type: workflow.priority === 'URGENT' ? 'critical' as const : 'standard' as const,
           count: interruptCount,
-          icons: getInterruptIcons(tasks.filter((t: TaskExecution) => t.status === INTERRUPT_STATUS) || [])
+          icons: getInterruptIcons(taskExecutions.filter((t: TaskExecution) => t.status === INTERRUPT_STATUS) || [])
         } : null,
         interruptCount: interruptCount, // For sorting
         due: formatDate(workflow.due_date),
@@ -133,16 +133,31 @@ function getStatusClass(status: string) {
   return statusClasses[status as WorkflowStatus] || 'bg-gray-100 text-gray-700';
 }
 
-function getInterruptIcons(tasks: TaskExecution[]): { icon: string; agent: string; }[] {
+function getInterruptIcons(taskExecutions: TaskExecution[]): { icon: string; agent: string; }[] {
   const icons: { icon: string; agent: string; }[] = [];
   const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
-  const hasDocumentIssue = tasks.some(t => t.status === INTERRUPT_STATUS && (t as any).agents?.name === 'iris');
-  const hasEmailIssue = tasks.some(t => t.status === INTERRUPT_STATUS && (t as any).agents?.name === 'mia');
-  const hasNinaIssue = tasks.some(t => t.status === INTERRUPT_STATUS && (t as any).agents?.name === 'nina');
-
-  if (hasDocumentIssue) icons.push({ icon: '📄', agent: 'iris' });
-  if (hasEmailIssue) icons.push({ icon: '✉️', agent: 'mia' });
-  if (hasNinaIssue) icons.push({ icon: '🔍', agent: 'nina' });
+  
+  // Agent icon mapping
+  const agentIconMap: Record<string, string> = {
+    'iris': '📄',
+    'mia': '✉️', 
+    'nina': '🔍',
+    'ria': '🔧',
+    'cassy': '✅',
+    'corey': '⚡'
+  };
+  
+  // Create one icon for each interrupted task
+  taskExecutions.forEach(task => {
+    if (task.status === INTERRUPT_STATUS) {
+      const agentName = (task as any).agents?.name?.toLowerCase();
+      const icon = agentIconMap[agentName] || '🔸'; // Default icon for unknown agents
+      icons.push({ 
+        icon, 
+        agent: agentName || 'unknown' 
+      });
+    }
+  });
 
   return icons;
 }
@@ -173,14 +188,14 @@ function formatDate(dateString: string | null): string {
 }
 
 function getDueColor(status: string, dueDate: string | null): string {
-  if (!dueDate || status === 'COMPLETED') return 'text-gray-500';
+  if (!dueDate || status === 'COMPLETED') return 'text-muted-foreground';
   
   const due = new Date(dueDate);
   const now = new Date();
   const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   
-  if (diffDays < 0) return 'text-red-600 font-medium'; // Overdue
-  if (diffDays <= 1) return 'text-amber-600 font-medium'; // Due soon
-  if (diffDays <= 3) return 'text-gray-900'; // Coming up
-  return 'text-gray-500'; // Normal
+  if (diffDays < 0) return 'text-red-600 dark:text-red-400 font-medium'; // Overdue
+  if (diffDays <= 1) return 'text-amber-600 dark:text-amber-400 font-medium'; // Due soon
+  if (diffDays <= 3) return 'text-foreground font-medium'; // Coming up
+  return 'text-muted-foreground'; // Normal
 }

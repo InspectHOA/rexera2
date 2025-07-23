@@ -30,6 +30,7 @@ export * from './schemas/documents';
 export * from './schemas/counterparties';
 export * from './schemas/audit-events';
 export * from './schemas/hil-notes';
+export * from './schemas/notifications';
 export * from './schemas/users';
 
 // Utility functions
@@ -223,6 +224,20 @@ export type {
   CounterpartyType,
   WorkflowCounterpartyStatus
 } from './schemas/counterparties';
+
+// Notifications schemas
+export {
+  NotificationSchema,
+  NotificationFiltersSchema,
+  CreateNotificationSchema,
+  UpdateNotificationSchema
+} from './schemas/notifications';
+
+export type {
+  Notification,
+  CreateNotification,
+  UpdateNotification
+} from './schemas/notifications';
 
 // Audit logger utilities
 export {

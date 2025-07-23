@@ -9,7 +9,8 @@ export { apiRequest, getAuthToken, getApiBaseUrl } from './core/request';
 export type * from './core/types';
 
 // Import and export individual API modules
-import { workflowsApi, tasksApi } from './endpoints/workflows';
+import { workflowsApi } from './endpoints/workflows';
+import { taskExecutionsApi } from './endpoints/task-executions';
 import { documentsApi, tagsApi } from './endpoints/documents';
 import { communicationsApi, hilNotesApi } from './endpoints/communications';
 import { counterpartiesApi } from './endpoints/counterparties';
@@ -27,7 +28,8 @@ import {
 import { notificationsApi } from './endpoints/notifications';
 
 // Re-export individual APIs
-export { workflowsApi, tasksApi } from './endpoints/workflows';
+export { workflowsApi } from './endpoints/workflows';
+export { taskExecutionsApi } from './endpoints/task-executions';
 export { documentsApi, tagsApi } from './endpoints/documents';
 export { communicationsApi, hilNotesApi } from './endpoints/communications';
 export { counterpartiesApi } from './endpoints/counterparties';
@@ -48,7 +50,7 @@ export { notificationsApi } from './endpoints/notifications';
 export const api = {
   // Workflow operations
   workflows: workflowsApi,
-  tasks: tasksApi,
+  taskExecutions: taskExecutionsApi,
   
   // Content management
   documents: documentsApi,

@@ -1,14 +1,10 @@
 /**
- * Workflows and Tasks API endpoints for Rexera 2.0 frontend.
- * Handles workflow management and task execution operations.
+ * Workflows API endpoints for Rexera 2.0 frontend.
+ * Handles workflow management operations.
  */
 
 import type { WorkflowType, PriorityLevel, WorkflowData } from '@rexera/shared';
-import type { 
-  WorkflowApiResponse,
-  TaskExecutionApiResponse
-} from '@/types/api';
-import type { TaskExecution } from '@/types/workflow';
+import type { WorkflowApiResponse } from '@/types/api';
 import { apiRequest, getAuthToken, getApiBaseUrl } from '../core/request';
 import { ApiError } from '../core/api-error';
 import type { ApiResponse, ApiErrorResponse } from '../core/types';
@@ -168,7 +164,7 @@ export const workflowsApi = {
   /**
    * Update workflow
    */
-  async updateWorkflow(id: string, data: {
+  async update(id: string, data: {
     status?: string;
     n8n_execution_id?: string;
     n8n_started_at?: string;
@@ -180,116 +176,27 @@ export const workflowsApi = {
       body: JSON.stringify(data),
     });
   },
-};
 
-// Task Executions API functions
-export const tasksApi = {
   /**
-   * List task executions with filtering
+   * Update workflow (legacy method name for backward compatibility)
    */
-  async list(filters: {
-    workflowId?: string;
-    workflow_id?: string;
+  async updateWorkflow(id: string, data: {
     status?: string;
-    executor_type?: string;
-    assigned_to?: string;
-    priority?: string;
-    page?: number;
-    limit?: number;
-    include?: string[];
-  } = {}): Promise<TaskExecutionApiResponse> {
-    // Use workflowId if provided, otherwise fall back to workflow_id
-    const workflowId = filters.workflowId || filters.workflow_id;
-    
-    if (workflowId) {
-      const params = new URLSearchParams();
-      params.append('workflow_id', workflowId); // Backend expects workflow_id, not workflowId
-      
-      // Add include parameter if provided
-      if (filters.include && filters.include.length > 0) {
-        params.append('include', filters.include.join(','));
-      }
-      
-      // We need the full response including pagination for consistency
-      const authToken = await getAuthToken();
-      const headers: Record<string, string> = {};
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-      
-      const response = await fetch(`${getApiBaseUrl()}/taskExecutions?${params}`, {
-        headers
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new ApiError(
-          data.error || `HTTP ${response.status}`,
-          response.status,
-          data.details
-        );
-      }
-
-      return {
-        data: data.success ? data.data : data, // Handle both formats
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: Array.isArray(data.success ? data.data : data) ? (data.success ? data.data : data).length : 0,
-          totalPages: 1
-        }
-      };
-    }
-
-    // If no workflow ID, return empty
-    return {
-      data: [],
-      pagination: {
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0
-      }
-    };
+    n8n_execution_id?: string;
+    n8n_started_at?: string;
+    n8n_status?: string;
+    metadata?: Record<string, any>;
+  }) {
+    return this.update(id, data);
   },
 
   /**
-   * Create a new task execution
+   * Delete workflow (if deletion is supported in the future)
    */
-  async create(data: {
-    workflow_id: string;
-    agent_id?: string;
-    title: string;
-    description?: string;
-    sequence_order: number;
-    task_type: string;
-    executor_type: 'AI' | 'HIL';
-    priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-    input_data?: Record<string, any>;
-  }) {
-    return apiRequest('/taskExecutions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Update task execution
-   */
-  async update(id: string, data: {
-    status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'COMPLETED' | 'FAILED';
-    output_data?: Record<string, any>;
-    completed_at?: string;
-    started_at?: string;
-    error_message?: string;
-    execution_time_ms?: number;
-    retry_count?: number;
-  }) {
-    return apiRequest(`/taskExecutions/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    return apiRequest<{ success: boolean; message: string }>(`/workflows/${id}`, {
+      method: 'DELETE'
     });
   },
 };
+

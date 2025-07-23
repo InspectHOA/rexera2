@@ -9,6 +9,13 @@ import type { WorkflowData, TaskExecution } from '@/types/workflow';
 import type { PaginatedFilters } from '@/types/api';
 import { formatErrorMessage } from '@/lib/utils/formatting';
 
+// Query key factory for task executions
+export const taskExecutionKeys = {
+  all: ['taskExecutions'] as const,
+  lists: () => [...taskExecutionKeys.all, 'list'] as const,
+  list: (filters: { workflow_id?: string; [key: string]: any }) => [...taskExecutionKeys.lists(), filters] as const,
+};
+
 interface WorkflowFilters extends PaginatedFilters {
   workflow_type?: WorkflowType;
   status?: WorkflowStatus;
@@ -44,7 +51,7 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
   } = useQuery({
     queryKey: ['workflows', filters],
     queryFn: () => api.workflows.list(filters),
-    staleTime: 30000, // 30 seconds
+    staleTime: 0, // Force fresh data
     retry: 2,
     retryDelay: 1000
     // Temporarily removed placeholderData to see real errors
@@ -71,9 +78,8 @@ export function useWorkflows(filters: WorkflowFilters = {}) {
         }).length,
         interrupts: workflows.filter((w: WorkflowData) => {
           const INTERRUPT_STATUS: TaskStatus = 'INTERRUPT';
-          return (w.tasks || w.task_executions || []).some((t: TaskExecution) => t.status === INTERRUPT_STATUS);
-        }
-        ).length,
+          return (w.task_executions || []).some((t: TaskExecution) => t.status === INTERRUPT_STATUS);
+        }).length,
         completedToday: workflows.filter((w: WorkflowData) => {
           const COMPLETED_STATUS: WorkflowStatus = 'COMPLETED';
           return w.status === COMPLETED_STATUS && 
@@ -142,32 +148,33 @@ export function useWorkflow(id: string) {
       ? api.workflows.byHumanId(id, ['client'])
       : api.workflows.byId(id, ['client']),
     enabled: !!id,
-    staleTime: 30000,
+    staleTime: 0, // Force fresh data
   });
 
-  // Fetch tasks for the workflow
+  // Fetch task executions for the workflow
   const {
-    data: tasksResult,
-    isLoading: tasksLoading,
-    error: tasksError,
-    refetch: refetchTasks
+    data: taskExecutionsResult,
+    isLoading: taskExecutionsLoading,
+    error: taskExecutionsError,
+    refetch: refetchTaskExecutions
   } = useQuery({
-    queryKey: ['tasks', { workflow_id: id }],
-    queryFn: () => api.tasks.list({
-      workflowId: (workflow as WorkflowData)?.id || id, // Use actual UUID for task filtering
-      include: ['assigned_user', 'agent']
+    queryKey: taskExecutionKeys.list({ workflow_id: id }),
+    queryFn: () => api.taskExecutions.list({
+      workflow_id: id,
+      include: ['assigned_user', 'agents']
     }),
-    enabled: !!id && !!workflow,
-    staleTime: 30000,
+    enabled: !!id,
+    staleTime: 0, // Force fresh data
   });
 
-  const tasks = tasksResult?.data || [];
-  const loading = workflowLoading || tasksLoading;
-  const error = workflowError ? formatErrorMessage(workflowError) : tasksError ? formatErrorMessage(tasksError) : null;
+  const taskExecutions = taskExecutionsResult?.data || [];
+  
+  const loading = workflowLoading || taskExecutionsLoading;
+  const error = workflowError ? formatErrorMessage(workflowError) : taskExecutionsError ? formatErrorMessage(taskExecutionsError) : null;
 
   const refetch = () => {
     refetchWorkflow();
-    refetchTasks();
+    refetchTaskExecutions();
   };
 
   // Real-time subscription for this specific workflow
@@ -190,7 +197,7 @@ export function useWorkflow(id: string) {
         table: 'task_executions',
         filter: `workflow_id=eq.${id}`
       }, () => {
-        queryClient.invalidateQueries({ queryKey: ['tasks', { workflow_id: id }] });
+        queryClient.invalidateQueries({ queryKey: taskExecutionKeys.list({ workflow_id: id }) });
       })
       .subscribe();
 
@@ -199,23 +206,23 @@ export function useWorkflow(id: string) {
     };
   }, [id, queryClient, supabase]);
 
-  // Create task mutation
-  const createTaskMutation = useMutation({
-    mutationFn: api.tasks.create,
+  // Create task execution mutation
+  const createTaskExecutionMutation = useMutation({
+    mutationFn: api.taskExecutions.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', { workflow_id: id }] });
+      queryClient.invalidateQueries({ queryKey: ['taskExecutions', { workflow_id: id }] });
     },
   });
 
   return {
     workflow,
-    tasks,
+    taskExecutions,
     loading,
     error,
     refetch,
-    createTask: createTaskMutation.mutate,
-    createTaskAsync: createTaskMutation.mutateAsync,
-    isCreatingTask: createTaskMutation.isPending,
+    createTaskExecution: createTaskExecutionMutation.mutate,
+    createTaskExecutionAsync: createTaskExecutionMutation.mutateAsync,
+    isCreatingTaskExecution: createTaskExecutionMutation.isPending,
   };
 }
 

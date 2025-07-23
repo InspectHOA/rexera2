@@ -44,7 +44,9 @@ export function NotesTab({ workflowId }: NotesTabProps) {
       const fetchedNotes = await api.hilNotes.list({
         workflow_id: workflowId,
         is_resolved: filterResolved,
-        include: 'author,replies'
+        include: 'author,replies',
+        page: 1,
+        limit: 50
       });
       
       // Sort notes by newest date first

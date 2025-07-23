@@ -110,6 +110,11 @@ module.exports = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.8" },
         },
+        shimmer: {
+          "100%": {
+            transform: "translateX(100%)",
+          },
+        },
       },
       backgroundImage: {
         'rexera-gradient': 'linear-gradient(to bottom right, hsl(var(--background)), hsl(var(--muted)/0.5), hsl(var(--muted)))',
@@ -118,10 +123,11 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
+        "fade-in": "fade-in 0.5s ease-in-out",
         "fade-out": "fade-out 0.2s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
         "pulse-gentle": "pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        shimmer: "shimmer 2s infinite",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

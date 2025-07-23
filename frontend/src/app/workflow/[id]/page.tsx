@@ -52,7 +52,7 @@ export default function WorkflowDetailPage() {
   const [n8nError, setN8nError] = useState<string | null>(null);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
-  const { workflow: workflowData, tasks: tasksData, loading, error } = useWorkflow(params.id as string);
+  const { workflow: workflowData, taskExecutions: taskExecutionsData, loading, error } = useWorkflow(params.id as string);
   
   // Track when we've initially loaded to prevent flashing
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function WorkflowDetailPage() {
     eta: formatDateTime(workflowTyped.due_date),
     due: formatDate(workflowTyped.due_date),
     closing: formatDate(workflowTyped.metadata?.closing_date || null),
-    progress: `${tasksData?.filter((t: any) => t.status === 'COMPLETED').length || 0} of ${tasksData?.length || 0} tasks`
+    progress: `${taskExecutionsData?.filter((t: any) => t.status === 'COMPLETED').length || 0} of ${taskExecutionsData?.length || 0} task executions${taskExecutionsData ? '' : ' (loading...)'}`
   } : null;
 
   // Update browser tab title with workflow address
@@ -92,7 +92,7 @@ export default function WorkflowDetailPage() {
     };
   }, [workflow?.title, workflowTyped?.id]);
 
-  const tasks: Task[] = tasksData && tasksData.length > 0 ? tasksData.map((task: any) => ({
+  const tasks: Task[] = taskExecutionsData && taskExecutionsData.length > 0 ? taskExecutionsData.map((task: any) => ({
     id: task.id,
     name: task.title,
     agent: getAgentDisplay(task),
@@ -208,61 +208,19 @@ export default function WorkflowDetailPage() {
 
   if (loading || !hasInitiallyLoaded) {
     return (
-      <div className="min-h-[600px] flex items-center justify-center">
-        <div className="text-center space-y-6">
-          {/* Animated workflow icon */}
-          <div className="relative">
-            <div className="w-16 h-16 mx-auto relative">
-              {/* Outer spinning ring */}
-              <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin"></div>
-              <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
-              
-              {/* Inner pulsing circle */}
-              <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse"></div>
-              
-              {/* Center icon */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Play className="w-6 h-6 text-primary animate-pulse" />
-              </div>
+      <div className="min-h-[600px] flex items-center justify-center bg-background">
+        <div className="text-center space-y-6 animate-fade-in">
+          <div className="w-16 h-16 mx-auto relative">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" style={{ animationDuration: '1s' }}></div>
+            <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Play className="w-6 h-6 text-primary animate-pulse" />
             </div>
           </div>
-          
-          {/* Loading text with typewriter effect */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-foreground animate-pulse">
-              Loading Workflow
-            </h3>
-            <div className="flex items-center justify-center space-x-1">
-              <span className="text-sm text-muted-foreground">Preparing workflow details</span>
-              <div className="flex space-x-0.5">
-                <div className="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
-                <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Progress indicators */}
-          <div className="space-y-3 w-64">
-            {[
-              { label: 'Loading workflow data', delay: '0s' },
-              { label: 'Fetching task details', delay: '0.5s' },
-              { label: 'Preparing interface', delay: '1s' }
-            ].map((item, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                <div 
-                  className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
-                  style={{ animationDelay: item.delay }}
-                ></div>
-                <span 
-                  className="text-xs text-muted-foreground animate-fade-in"
-                  style={{ animationDelay: item.delay }}
-                >
-                  {item.label}
-                </span>
-              </div>
-            ))}
-          </div>
+          <h3 className="text-lg font-medium text-foreground animate-pulse">
+            Loading Workflow...
+          </h3>
         </div>
       </div>
     );

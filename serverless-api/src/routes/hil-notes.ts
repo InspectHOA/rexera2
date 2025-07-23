@@ -13,6 +13,7 @@ import {
   UpdateHilNoteSchema,
   ReplyHilNoteSchema
 } from '@rexera/shared';
+import { auditLogger } from './audit-events';
 
 const hilNotes = new Hono();
 
@@ -57,8 +58,13 @@ hilNotes.get('/', async (c) => {
       priority,
       author_id,
       parent_note_id,
-      include
+      include,
+      page = 1,
+      limit = 50
     } = result.data;
+
+    // Calculate pagination
+    const offset = (page - 1) * limit;
 
     // Build the select query dynamically
     let selectQuery = '*';
@@ -69,7 +75,7 @@ hilNotes.get('/', async (c) => {
 
     let query = supabase
       .from('hil_notes')
-      .select(selectQuery)
+      .select(selectQuery, { count: 'exact' })
       .eq('workflow_id', workflow_id)
       .order('created_at', { ascending: true });
 
@@ -93,7 +99,10 @@ hilNotes.get('/', async (c) => {
       query = query.is('parent_note_id', null);
     }
 
-    const { data: notes, error } = await query;
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data: notes, error, count } = await query;
 
     if (error) {
       console.error('Error fetching HIL notes:', error);
@@ -139,12 +148,84 @@ hilNotes.get('/', async (c) => {
       }
     }
 
+    // Calculate pagination metadata
+    const totalPages = Math.ceil((count || 0) / limit);
+
     return c.json({
       success: true,
-      data: processedNotes
+      data: processedNotes,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages,
+      },
     });
   } catch (error) {
     console.error('Unexpected error in HIL notes list:', error);
+    return c.json({
+      success: false,
+      error: 'Internal server error'
+    }, 500);
+  }
+});
+
+// GET /api/hil-notes/:id - Get a single note by ID
+hilNotes.get('/:id', async (c) => {
+  try {
+    const supabase = createServerClient();
+    const user = c.get('user') as AuthUser || { 
+      id: 'test-user', 
+      email: 'test@example.com', 
+      user_type: 'hil_user' as const, 
+      role: 'HIL', 
+      company_id: undefined 
+    };
+
+    const noteId = c.req.param('id');
+    const include = c.req.query('include');
+
+    // Build the select query dynamically
+    let selectQuery = '*';
+    
+    if (include?.includes('author')) {
+      selectQuery += ', author:user_profiles!hil_notes_author_id_fkey (id, full_name, email)';
+    }
+
+    const { data: note, error } = await supabase
+      .from('hil_notes')
+      .select(selectQuery)
+      .eq('id', noteId)
+      .single();
+
+    if (error || !note) {
+      return c.json({
+        success: false,
+        error: 'Note not found'
+      }, 404);
+    }
+
+    // If replies are requested, fetch them separately
+    if (include?.includes('replies')) {
+      let repliesQuery = supabase
+        .from('hil_notes')
+        .select('*' + (include?.includes('author') ? ', author:user_profiles!hil_notes_author_id_fkey (id, full_name, email)' : ''))
+        .eq('parent_note_id', noteId)
+        .order('created_at', { ascending: true });
+
+      const { data: replies, error: repliesError } = await repliesQuery;
+
+      if (!repliesError && replies) {
+        (note as any).replies = replies;
+      }
+    }
+
+    return c.json({
+      success: true,
+      data: note
+    });
+  } catch (error) {
+    console.error('Unexpected error in HIL note byId:', error);
     return c.json({
       success: false,
       error: 'Internal server error'
@@ -228,6 +309,31 @@ hilNotes.post('/', async (c) => {
       }
     }
 
+    // Log audit event for HIL note creation
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'create',
+        resource_type: 'communication',
+        resource_id: note.id,
+        workflow_id: result.data.workflow_id,
+        event_data: {
+          note_type: 'hil_note',
+          priority: result.data.priority,
+          content_length: result.data.content.length,
+          mentions_count: result.data.mentions?.length || 0,
+          is_resolved: false, // New notes are always unresolved
+          operation: 'create_hil_note'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for HIL note creation:', auditError);
+      // Don't fail the request for audit errors
+    }
+
     return c.json({
       success: true,
       data: note
@@ -268,7 +374,7 @@ hilNotes.patch('/:id', async (c) => {
     // Check if note exists and user can edit it
     const { data: existingNote, error: fetchError } = await supabase
       .from('hil_notes')
-      .select('author_id, mentions')
+      .select('author_id, mentions, priority, is_resolved, workflow_id')
       .eq('id', noteId)
       .single();
 
@@ -343,6 +449,34 @@ hilNotes.patch('/:id', async (c) => {
           console.error('Error creating mention notifications:', notificationError);
         }
       }
+    }
+
+    // Log audit event for HIL note update
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'update',
+        resource_type: 'communication',
+        resource_id: noteId,
+        workflow_id: existingNote.workflow_id,
+        event_data: {
+          note_type: 'hil_note',
+          old_priority: existingNote.priority,
+          new_priority: updatedNote.priority,
+          old_resolved: existingNote.is_resolved,
+          new_resolved: (result.data as any).is_resolved !== undefined ? (result.data as any).is_resolved : existingNote.is_resolved,
+          content_length: result.data.content?.length,
+          mentions_count: result.data.mentions?.length || 0,
+          updated_fields: Object.keys(result.data),
+          operation: 'update_hil_note'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for HIL note update:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({
@@ -452,6 +586,31 @@ hilNotes.post('/:id/reply', async (c) => {
       }
     }
 
+    // Log audit event for HIL note reply
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'create',
+        resource_type: 'communication',
+        resource_id: reply.id,
+        workflow_id: parentNote.workflow_id,
+        event_data: {
+          note_type: 'hil_note_reply',
+          parent_note_id: parentId,
+          priority: parentNote.priority,
+          content_length: result.data.content.length,
+          mentions_count: result.data.mentions?.length || 0,
+          operation: 'create_hil_note_reply'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for HIL note reply:', auditError);
+      // Don't fail the request for audit errors
+    }
+
     return c.json({
       success: true,
       data: reply
@@ -482,7 +641,7 @@ hilNotes.delete('/:id', async (c) => {
     // Check if note exists and user can delete it
     const { data: existingNote, error: fetchError } = await supabase
       .from('hil_notes')
-      .select('author_id')
+      .select('author_id, workflow_id, priority, content, mentions')
       .eq('id', noteId)
       .single();
 
@@ -513,6 +672,30 @@ hilNotes.delete('/:id', async (c) => {
         error: 'Failed to delete note',
         details: deleteError
       }, 500);
+    }
+
+    // Log audit event for HIL note deletion
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'delete',
+        resource_type: 'communication',
+        resource_id: noteId,
+        workflow_id: existingNote.workflow_id,
+        event_data: {
+          note_type: 'hil_note',
+          priority: existingNote.priority,
+          content_length: existingNote.content.length,
+          mentions_count: existingNote.mentions?.length || 0,
+          operation: 'delete_hil_note'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for HIL note deletion:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({

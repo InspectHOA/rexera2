@@ -43,14 +43,17 @@ export type WorkflowCounterpartyStatus = 'PENDING' | 'CONTACTED' | 'RESPONDED' |
 export type InvoiceStatus = 'DRAFT' | 'FINALIZED' | 'PAID' | 'VOID';
 
 export type PriorityLevel = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-export type NotificationType = 
-  | 'WORKFLOW_UPDATE' 
-  | 'TASK_INTERRUPT' 
-  | 'HIL_MENTION' 
-  | 'CLIENT_MESSAGE_RECEIVED' 
-  | 'COUNTERPARTY_MESSAGE_RECEIVED' 
-  | 'SLA_WARNING' 
-  | 'AGENT_FAILURE';
+export const NOTIFICATION_TYPES = [
+  'WORKFLOW_UPDATE',
+  'TASK_INTERRUPT', 
+  'HIL_MENTION',
+  'CLIENT_MESSAGE_RECEIVED',
+  'COUNTERPARTY_MESSAGE_RECEIVED',
+  'SLA_WARNING',
+  'AGENT_FAILURE'
+] as const;
+
+export type NotificationType = typeof NOTIFICATION_TYPES[number];
 export type SenderType = 'CLIENT' | 'INTERNAL';
 
 export type SlaTrackingStatus = 'ACTIVE' | 'COMPLETED' | 'BREACHED' | 'PAUSED';

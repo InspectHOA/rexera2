@@ -45,8 +45,8 @@ export function useUnifiedNotifications(): UseUnifiedNotificationsReturn {
     retryDelay: 1000,
   });
 
-  const notifications = notificationsData?.notifications || [];
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const notifications = notificationsData?.data || [];
+  const unreadCount = notifications.filter((n: any) => !n.read).length;
   const error = queryError ? (queryError as Error).message : null;
 
   // Mark notification as read mutation
@@ -54,19 +54,19 @@ export function useUnifiedNotifications(): UseUnifiedNotificationsReturn {
     mutationFn: (notificationId: string) => api.notifications.markAsRead(notificationId),
     onSuccess: (data, notificationId) => {
       // Optimistically update the cache
-      queryClient.setQueryData(['notifications', user?.id], (oldData: any) => {
-        if (!oldData) return oldData;
+      queryClient.setQueryData(['notifications', user?.id], (previousNotificationsResult: any) => {
+        if (!previousNotificationsResult) return previousNotificationsResult;
         
         return {
-          ...oldData,
-          notifications: oldData.notifications.map((n: UnifiedNotification) =>
-            n.id === notificationId ? { ...n, read: true, read_at: new Date().toISOString() } : n
+          ...previousNotificationsResult,
+          data: previousNotificationsResult.data.map((notification: UnifiedNotification) =>
+            notification.id === notificationId ? { ...notification, read: true, read_at: new Date().toISOString() } : notification
           ),
         };
       });
       
       // Show toast for urgent/high priority notifications when marked as read
-      const notification = notifications.find(n => n.id === notificationId);
+      const notification = notifications.find((n: any) => n.id === notificationId);
       if (notification && (notification.priority === 'URGENT' || notification.priority === 'HIGH')) {
         toast({
           title: 'Notification marked as read',
@@ -89,16 +89,16 @@ export function useUnifiedNotifications(): UseUnifiedNotificationsReturn {
     mutationFn: () => api.notifications.markAllAsRead(),
     onSuccess: (data) => {
       // Update the cache to mark all notifications as read
-      queryClient.setQueryData(['notifications', user?.id], (oldData: any) => {
-        if (!oldData) return oldData;
+      queryClient.setQueryData(['notifications', user?.id], (previousNotificationsResult: any) => {
+        if (!previousNotificationsResult) return previousNotificationsResult;
         
         const now = new Date().toISOString();
         return {
-          ...oldData,
-          notifications: oldData.notifications.map((n: UnifiedNotification) => ({
-            ...n,
+          ...previousNotificationsResult,
+          data: previousNotificationsResult.data.map((notification: UnifiedNotification) => ({
+            ...notification,
             read: true,
-            read_at: n.read_at || now,
+            read_at: notification.read_at || now,
           })),
         };
       });

@@ -16,6 +16,7 @@ import {
   type Document,
   type DocumentWithRelations
 } from '@rexera/shared';
+import { auditLogger } from './audit-events';
 
 const documents = new Hono();
 
@@ -222,6 +223,30 @@ documents.post('/', async (c) => {
       }, 500 as any);
     }
 
+    // Log audit event for document creation
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'document_management',
+        action: 'create',
+        resource_type: 'document',
+        resource_id: document.id,
+        workflow_id: document.workflow_id,
+        event_data: {
+          document_type: document.document_type,
+          filename: document.filename,
+          file_size_bytes: document.file_size_bytes,
+          upload_source: document.upload_source,
+          operation: 'create_document'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for document creation:', auditError);
+      // Don't fail the request for audit errors
+    }
+
     return c.json({
       success: true,
       data: document as Document,
@@ -334,6 +359,13 @@ documents.patch('/:id', async (c) => {
 
     const updateData = result.data;
 
+    // Get existing document for audit logging
+    const { data: existingDocumentForAudit } = await supabase
+      .from('documents')
+      .select('status, document_type, filename')
+      .eq('id', id)
+      .single();
+
     // First, verify document exists and user has access
     let documentQuery = supabase
       .from('documents')
@@ -384,6 +416,31 @@ documents.patch('/:id', async (c) => {
       }, 500 as any);
     }
 
+    // Log audit event for document update
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'document_management',
+        action: 'update',
+        resource_type: 'document',
+        resource_id: document.id,
+        workflow_id: document.workflow_id,
+        event_data: {
+          document_type: document.document_type,
+          filename: document.filename,
+          old_status: existingDocumentForAudit?.status,
+          new_status: document.status,
+          updated_fields: Object.keys(updateData),
+          operation: 'update_document'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for document update:', auditError);
+      // Don't fail the request for audit errors
+    }
+
     return c.json({
       success: true,
       data: document as Document,
@@ -418,7 +475,7 @@ documents.delete('/:id', async (c) => {
     // First, verify document exists and user has access
     let documentQuery = supabase
       .from('documents')
-      .select('id, workflow_id, url, metadata, workflows!workflow_id(client_id)')
+      .select('id, workflow_id, url, metadata, document_type, filename, file_size_bytes, workflows!workflow_id(client_id)')
       .eq('id', id)
       .single();
 
@@ -426,7 +483,7 @@ documents.delete('/:id', async (c) => {
     if (companyFilter) {
       documentQuery = supabase
         .from('documents')
-        .select('id, workflow_id, url, metadata, workflows!workflow_id(client_id)')
+        .select('id, workflow_id, url, metadata, document_type, filename, file_size_bytes, workflows!workflow_id(client_id)')
         .eq('id', id)
         .eq('workflows.client_id', companyFilter)
         .single();
@@ -472,6 +529,30 @@ documents.delete('/:id', async (c) => {
         error: 'Failed to delete document',
         details: error.message,
       }, 500 as any);
+    }
+
+    // Log audit event for document deletion
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'document_management',
+        action: 'delete',
+        resource_type: 'document',
+        resource_id: id,
+        workflow_id: document.workflow_id,
+        event_data: {
+          document_type: document.document_type || 'unknown',
+          filename: document.filename,
+          file_size_bytes: document.file_size_bytes,
+          storage_path: storagePath,
+          operation: 'delete_document'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for document deletion:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({
@@ -568,6 +649,31 @@ documents.post('/:id/versions', async (c) => {
         error: 'Failed to create document version',
         details: error.message,
       }, 500 as any);
+    }
+
+    // Log audit event for document version creation
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'document_management',
+        action: 'update',
+        resource_type: 'document',
+        resource_id: document.id,
+        workflow_id: document.workflow_id,
+        event_data: {
+          document_type: document.document_type,
+          filename: document.filename,
+          old_version: existingDocument.version,
+          new_version: document.version,
+          change_summary: versionData.change_summary,
+          operation: 'create_version'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for document version creation:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({
@@ -691,6 +797,32 @@ documents.post('/upload', async (c) => {
         error: 'Failed to create document record',
         details: dbError.message,
       }, 500 as any);
+    }
+
+    // Log audit event for file upload
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'document_management',
+        action: 'create',
+        resource_type: 'document',
+        resource_id: document.id,
+        workflow_id: document.workflow_id,
+        event_data: {
+          document_type: document.document_type,
+          filename: document.filename,
+          file_size_bytes: document.file_size_bytes,
+          mime_type: document.mime_type,
+          upload_source: document.upload_source,
+          storage_path: storagePath,
+          operation: 'upload_file'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for file upload:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({

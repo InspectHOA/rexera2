@@ -35,7 +35,7 @@ export function WorkflowRow({ workflow, isEven }: WorkflowRowProps) {
       </td>
 
       {/* Type */}
-      <td className="px-3 py-2 text-xs w-32">
+      <td className="px-3 py-2 text-xs w-40">
         <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
           {workflow.type}
         </span>
@@ -56,8 +56,8 @@ export function WorkflowRow({ workflow, isEven }: WorkflowRowProps) {
       </td>
 
       {/* Status */}
-      <td className="px-3 py-2 text-xs">
-        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${workflow.statusClass}`}>
+      <td className="px-3 py-2 text-xs w-32">
+        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap ${workflow.statusClass}`}>
           {workflow.status}
         </span>
       </td>

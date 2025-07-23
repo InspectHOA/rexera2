@@ -17,8 +17,8 @@ export interface WorkflowTableSorting {
 }
 
 export function useWorkflowTableState() {
-  const [sortField, setSortField] = useState<string>('created_at');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<string>('due');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterInterrupts, setFilterInterrupts] = useState<string>('');
@@ -43,7 +43,7 @@ export function useWorkflowTableState() {
   // Map frontend filters to backend API parameters
   const getBackendFilters = () => {
     const filters: Record<string, unknown> = {
-      include: ['client', 'tasks'],
+      include: ['client', 'task_executions'],
       limit: 20,
       page: currentPage,
       sortBy: getBackendSortField(sortField),
@@ -58,7 +58,7 @@ export function useWorkflowTableState() {
     // Status filter - map frontend values to backend values
     if (filterStatus) {
       const statusMap: Record<string, string> = {
-        'urgent': 'BLOCKED,INTERRUPT', // Map to multiple statuses (note: workflows don't have INTERRUPT, but tasks do)
+        'urgent': 'BLOCKED,INTERRUPT', // Map to multiple statuses (note: workflows don't have INTERRUPT, but task executions do)
         'progress': 'IN_PROGRESS',
         'completed': 'COMPLETED'
       };

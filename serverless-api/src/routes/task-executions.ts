@@ -11,6 +11,7 @@ import {
   CreateTaskExecutionSchema,
   UpdateTaskExecutionSchema 
 } from '@rexera/shared';
+import { auditLogger } from './audit-events';
 import { z } from 'zod';
 
 const taskExecutions = new Hono();
@@ -22,6 +23,7 @@ const getTaskExecutionsSchema = z.object({
   status: z.string().optional(),
   page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
   limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
+  include: z.string().optional().transform(val => val ? val.split(',').map(s => s.trim()) : []),
 });
 
 const bulkCreateSchema = z.object({
@@ -55,15 +57,20 @@ taskExecutions.get('/', async (c) => {
       }, 400 as any);
     }
 
-    const { workflow_id, agent_id, status, page, limit } = result.data;
+    const { workflow_id, agent_id, status, page, limit, include } = result.data;
+
+    // Build dynamic select based on include parameter
+    let selectFields = '*';
+    if (include.includes('workflows')) {
+      selectFields += ', workflows!workflow_id(id, title, client_id)';
+    }
+    if (include.includes('agents')) {
+      selectFields += ', agents!agent_id(id, name, type)';
+    }
 
     let query = supabase
       .from('task_executions')
-      .select(`
-        *,
-        workflows!workflow_id(id, title, client_id),
-        agents!agent_id(id, name, type)
-      `, { count: 'exact' });
+      .select(selectFields, { count: 'exact' });
 
     // Apply filters
     if (workflow_id) query = query.eq('workflow_id', workflow_id);
@@ -164,6 +171,33 @@ taskExecutions.post('/bulk', async (c) => {
 
     if (error) {
       throw new Error(`Failed to create task executions: ${error.message}`);
+    }
+
+    // Log audit events for bulk creation
+    try {
+      const auditEvents = taskExecutions?.map(te => ({
+        actor_type: 'human' as const,
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'task_execution' as const,
+        action: 'create' as const,
+        resource_type: 'task_execution' as const,
+        resource_id: te.id,
+        workflow_id: te.workflow_id,
+        event_data: {
+          task_type: te.task_type,
+          status: te.status,
+          executor_type: te.executor_type,
+          priority: te.priority
+        }
+      })) || [];
+      
+      if (auditEvents.length > 0) {
+        await auditLogger.logBatch(auditEvents);
+      }
+    } catch (auditError) {
+      console.error('Failed to log audit events for task creation:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({
@@ -283,6 +317,14 @@ taskExecutions.patch('/by-workflow-and-type', async (c) => {
       }
     }
 
+    // Get the current task for audit logging
+    const { data: existingTask } = await supabase
+      .from('task_executions')
+      .select('id, status, task_type')
+      .eq('workflow_id', workflow_id)
+      .eq('task_type', task_type)
+      .single();
+
     // Find and update the task by workflow_id and task_type
     const { data: taskExecution, error } = await supabase
       .from('task_executions')
@@ -304,6 +346,30 @@ taskExecutions.patch('/by-workflow-and-type', async (c) => {
         }, 404 as any);
       }
       throw new Error(`Failed to update task execution: ${error.message}`);
+    }
+
+    // Log audit event for task update
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'task_execution',
+        action: 'update',
+        resource_type: 'task_execution',
+        resource_id: taskExecution.id,
+        workflow_id: taskExecution.workflow_id,
+        event_data: {
+          task_type: taskExecution.task_type,
+          old_status: existingTask?.status,
+          new_status: taskExecution.status,
+          updated_fields: Object.keys(result.data),
+          update_method: 'by_workflow_and_type'
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log audit event for task update:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({
@@ -369,6 +435,13 @@ taskExecutions.patch('/:id', async (c) => {
 
     const updateData = result.data;
 
+    // Get existing task for audit logging
+    const { data: existingTask } = await supabase
+      .from('task_executions')
+      .select('status, task_type')
+      .eq('id', id)
+      .single();
+
     const { data: taskExecution, error } = await supabase
       .from('task_executions')
       .update(updateData)
@@ -388,6 +461,30 @@ taskExecutions.patch('/:id', async (c) => {
         }, 404 as any);
       }
       throw new Error(`Failed to update task execution: ${error.message}`);
+    }
+
+    // Log audit event for task update
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'task_execution',
+        action: 'update',
+        resource_type: 'task_execution',
+        resource_id: taskExecution.id,
+        workflow_id: taskExecution.workflow_id,
+        event_data: {
+          task_type: taskExecution.task_type,
+          old_status: existingTask?.status,
+          new_status: taskExecution.status,
+          updated_fields: Object.keys(updateData),
+          update_method: 'by_id'
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to log audit event for task update:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({

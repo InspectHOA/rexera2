@@ -49,6 +49,8 @@ export const HilNoteFiltersSchema = z.object({
   author_id: z.string().uuid().optional(),
   parent_note_id: z.string().uuid().optional(),
   include: z.string().optional(), // 'author,replies'
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(50),
 });
 
 export const CreateHilNoteSchema = z.object({

@@ -340,7 +340,7 @@
   
   /* Loading states */
   .skeleton {
-    @apply animate-pulse bg-muted rounded;
+    @apply bg-muted rounded;
   }
   
   .shimmer {
@@ -351,12 +351,6 @@
     @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-background/60 to-transparent;
     content: '';
     animation: shimmer 2s infinite;
-  }
-  
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
   }
   
   /* Custom scrollbars */

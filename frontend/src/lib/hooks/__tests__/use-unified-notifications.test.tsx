@@ -137,12 +137,12 @@ describe('useUnifiedNotifications', () => {
 
   it('should fetch and display notifications', async () => {
     mockApi.notifications.list.mockResolvedValue({
-      notifications: mockNotifications,
+      data: mockNotifications,
       pagination: {
-        total: 2,
+        page: 1,
         limit: 100,
-        offset: 0,
-        hasMore: false,
+        total: 2,
+        totalPages: 1,
       },
     });
 
@@ -167,12 +167,12 @@ describe('useUnifiedNotifications', () => {
 
   it('should handle empty notifications list', async () => {
     mockApi.notifications.list.mockResolvedValue({
-      notifications: [],
+      data: [],
       pagination: {
-        total: 0,
+        page: 1,
         limit: 100,
-        offset: 0,
-        hasMore: false,
+        total: 0,
+        totalPages: 0,
       },
     });
 
@@ -209,12 +209,12 @@ describe('useUnifiedNotifications', () => {
 
   it('should mark notification as read', async () => {
     mockApi.notifications.list.mockResolvedValue({
-      notifications: mockNotifications,
+      data: mockNotifications,
       pagination: {
-        total: 2,
+        page: 1,
         limit: 100,
-        offset: 0,
-        hasMore: false,
+        total: 2,
+        totalPages: 1,
       },
     });
 
@@ -242,12 +242,12 @@ describe('useUnifiedNotifications', () => {
 
   it('should mark all notifications as read', async () => {
     mockApi.notifications.list.mockResolvedValue({
-      notifications: mockNotifications,
+      data: mockNotifications,
       pagination: {
-        total: 2,
+        page: 1,
         limit: 100,
-        offset: 0,
-        hasMore: false,
+        total: 2,
+        totalPages: 1,
       },
     });
 
@@ -282,12 +282,12 @@ describe('useUnifiedNotifications', () => {
     ];
 
     mockApi.notifications.list.mockResolvedValue({
-      notifications: mixedNotifications,
+      data: mixedNotifications,
       pagination: {
-        total: 3,
+        page: 1,
         limit: 100,
-        offset: 0,
-        hasMore: false,
+        total: 3,
+        totalPages: 1,
       },
     });
 
@@ -307,12 +307,12 @@ describe('useUnifiedNotifications', () => {
 
   it('should handle dismiss notification', async () => {
     mockApi.notifications.list.mockResolvedValue({
-      notifications: mockNotifications,
+      data: mockNotifications,
       pagination: {
-        total: 2,
+        page: 1,
         limit: 100,
-        offset: 0,
-        hasMore: false,
+        total: 2,
+        totalPages: 1,
       },
     });
 

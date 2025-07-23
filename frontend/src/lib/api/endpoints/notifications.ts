@@ -15,15 +15,17 @@ export interface NotificationFilters {
   read?: boolean;
   limit?: number;
   offset?: number;
+  page?: number;
+  include?: string[];
 }
 
 export interface NotificationsPaginatedResponse {
-  notifications: UnifiedNotification[];
+  data: UnifiedNotification[];
   pagination: {
-    total: number;
+    page: number;
     limit: number;
-    offset: number;
-    hasMore: boolean;
+    total: number;
+    totalPages: number;
   };
 }
 
@@ -42,11 +44,24 @@ export const notificationsApi = {
     if (filters.read !== undefined) params.append('read', filters.read.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.include) params.append('include', filters.include.join(','));
 
     const queryString = params.toString();
     const url = queryString ? `/notifications?${queryString}` : '/notifications';
     
     return apiRequest(url);
+  },
+
+  /**
+   * Get notification by ID
+   */
+  async byId(id: string, include?: string[]): Promise<UnifiedNotification> {
+    const params = new URLSearchParams();
+    if (include) params.append('include', include.join(','));
+    
+    const url = `/notifications/${id}${params.toString() ? `?${params.toString()}` : ''}`;
+    return apiRequest<UnifiedNotification>(url);
   },
 
   /**
@@ -71,6 +86,45 @@ export const notificationsApi = {
   async markAllAsRead(): Promise<{ message: string; updated_count: number }> {
     return apiRequest('/notifications/mark-all-read', {
       method: 'PATCH',
+    });
+  },
+
+  /**
+   * Create a new notification (typically used by system/HIL users)
+   */
+  async create(data: {
+    user_id: string;
+    type: string;
+    priority: string;
+    title: string;
+    message: string;
+    metadata?: Record<string, any>;
+  }): Promise<UnifiedNotification> {
+    return apiRequest('/notifications', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update notification
+   */
+  async update(id: string, data: {
+    read?: boolean;
+    read_at?: string;
+  }): Promise<UnifiedNotification> {
+    return apiRequest(`/notifications/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete notification
+   */
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    return apiRequest<{ success: boolean; message: string }>(`/notifications/${id}`, {
+      method: 'DELETE'
     });
   },
 };

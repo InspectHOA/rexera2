@@ -15,6 +15,7 @@ import {
   ForwardCommunicationSchema,
   EmailThreadSchema
 } from '@rexera/shared';
+import { auditLogger } from './audit-events';
 
 const communications = new Hono();
 
@@ -60,16 +61,26 @@ communications.get('/', async (c) => {
       sortDirection
     } = result.data;
 
+    // Build the select query dynamically
+    let selectQuery = '*';
+    
+    if (include.includes('email_metadata')) {
+      selectQuery += ', email_metadata (*)';
+    }
+    if (include.includes('phone_metadata')) {
+      selectQuery += ', phone_metadata (*)';
+    }
+    if (include.includes('sender')) {
+      selectQuery += ', user_profiles!sender_id (id, full_name, email)';
+    }
+    if (include.includes('workflow')) {
+      selectQuery += ', workflows!workflow_id (id, title, workflow_type)';
+    }
+
     // Build the query
     let query = supabase
       .from('communications')
-      .select(`
-        *,
-        ${include.includes('email_metadata') ? 'email_metadata (*),' : ''}
-        ${include.includes('phone_metadata') ? 'phone_metadata (*),' : ''}
-        ${include.includes('sender') ? 'user_profiles!sender_id (id, full_name, email),' : ''}
-        ${include.includes('workflow') ? 'workflows!workflow_id (id, title, workflow_type)' : ''}
-      `.replace(/,\s*$/, '')) // Remove trailing comma
+      .select(selectQuery, { count: 'exact' })
       .order(sortBy, { ascending: sortDirection === 'asc' });
 
     // Apply filters
@@ -118,26 +129,11 @@ communications.get('/', async (c) => {
       // but kept for future compatibility
     }
 
-    // Get total count for pagination
-    let countQuery = supabase
-      .from('communications')
-      .select('*', { count: 'exact', head: true });
-      
-    // Apply same filters to count query
-    if (workflow_id) countQuery = countQuery.eq('workflow_id', workflow_id);
-    if (thread_id) countQuery = countQuery.eq('thread_id', thread_id);
-    if (communication_type) countQuery = countQuery.eq('communication_type', communication_type);
-    if (direction) countQuery = countQuery.eq('direction', direction);
-    if (status) countQuery = countQuery.eq('status', status);
-    if (sender_id) countQuery = countQuery.eq('sender_id', sender_id);
-
-    const { count } = await countQuery;
-
     // Apply pagination
     const offset = (page - 1) * limit;
     query = query.range(offset, offset + limit - 1);
 
-    const { data: communications, error } = await query;
+    const { data: communications, error, count } = await query;
 
     if (error) {
       console.error('Database error:', error);
@@ -378,6 +374,33 @@ communications.post('/', async (c) => {
       }
     }
 
+    // Log audit event for communication creation
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'create',
+        resource_type: 'communication',
+        resource_id: communication.id,
+        workflow_id: communication.workflow_id,
+        event_data: {
+          communication_type: communication.communication_type,
+          direction: communication.direction,
+          thread_id: communication.thread_id,
+          recipient_email: communication.recipient_email,
+          subject: communication.subject,
+          has_email_metadata: !!data.email_metadata,
+          has_phone_metadata: !!data.phone_metadata,
+          operation: 'create_communication'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for communication creation:', auditError);
+      // Don't fail the request for audit errors
+    }
+
     return c.json({
       success: true,
       data: communication,
@@ -397,16 +420,27 @@ communications.get('/:id', async (c) => {
   try {
     const supabase = createServerClient();
     const id = c.req.param('id');
+    const include = c.req.query('include')?.split(',') || [];
+    
+    // Build the select query dynamically
+    let selectQuery = '*';
+    
+    if (include.includes('email_metadata')) {
+      selectQuery += ', email_metadata (*)';
+    }
+    if (include.includes('phone_metadata')) {
+      selectQuery += ', phone_metadata (*)';
+    }
+    if (include.includes('sender')) {
+      selectQuery += ', user_profiles!sender_id (id, full_name, email)';
+    }
+    if (include.includes('workflow')) {
+      selectQuery += ', workflows!workflow_id (id, title, workflow_type)';
+    }
     
     const { data: communication, error } = await supabase
       .from('communications')
-      .select(`
-        *,
-        email_metadata (*),
-        phone_metadata (*),
-        user_profiles!sender_id (id, full_name, email),
-        workflows!workflow_id (id, title, workflow_type)
-      `)
+      .select(selectQuery)
       .eq('id', id)
       .single();
 
@@ -435,6 +469,14 @@ communications.get('/:id', async (c) => {
 communications.patch('/:id', async (c) => {
   try {
     const supabase = createServerClient();
+    const user = c.get('user') as AuthUser || { 
+      id: 'test-user', 
+      email: 'test@example.com', 
+      user_type: 'hil_user' as const, 
+      role: 'HIL', 
+      company_id: undefined 
+    };
+    
     const id = c.req.param('id');
     const body = await c.req.json();
     
@@ -449,6 +491,13 @@ communications.patch('/:id', async (c) => {
     }
     
     const data = result.data;
+
+    // Get existing communication for audit logging
+    const { data: existingCommunication } = await supabase
+      .from('communications')
+      .select('status, communication_type, workflow_id, direction')
+      .eq('id', id)
+      .single();
 
     // Update communication record
     const { data: communication, error: commError } = await supabase
@@ -471,6 +520,31 @@ communications.patch('/:id', async (c) => {
       }, 500 as any);
     }
 
+    // Log audit event for communication update
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'update',
+        resource_type: 'communication',
+        resource_id: id,
+        workflow_id: existingCommunication?.workflow_id || communication.workflow_id,
+        event_data: {
+          communication_type: existingCommunication?.communication_type || communication.communication_type,
+          direction: existingCommunication?.direction || communication.direction,
+          old_status: existingCommunication?.status,
+          new_status: communication.status,
+          updated_fields: Object.keys(data),
+          operation: 'update_communication'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for communication update:', auditError);
+      // Don't fail the request for audit errors
+    }
+
     return c.json({
       success: true,
       data: communication,
@@ -478,6 +552,87 @@ communications.patch('/:id', async (c) => {
 
   } catch (error) {
     console.error('Update communication error:', error);
+    return c.json({
+      success: false,
+      error: 'Internal server error',
+    }, 500 as any);
+  }
+});
+
+// DELETE /api/communications/:id - Delete communication
+communications.delete('/:id', async (c) => {
+  try {
+    const supabase = createServerClient();
+    const user = c.get('user') as AuthUser || { 
+      id: 'test-user', 
+      email: 'test@example.com', 
+      user_type: 'hil_user' as const, 
+      role: 'HIL', 
+      company_id: undefined 
+    };
+    
+    const id = c.req.param('id');
+
+    // Get existing communication for audit logging
+    const { data: existingCommunication, error: fetchError } = await supabase
+      .from('communications')
+      .select('workflow_id, communication_type, direction, subject, thread_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingCommunication) {
+      return c.json({
+        success: false,
+        error: 'Communication not found'
+      }, 404);
+    }
+
+    // Delete the communication record
+    const { error: deleteError } = await supabase
+      .from('communications')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('Database error:', deleteError);
+      return c.json({
+        success: false,
+        error: 'Failed to delete communication',
+        details: deleteError.message,
+      }, 500 as any);
+    }
+
+    // Log audit event for communication deletion
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'delete',
+        resource_type: 'communication',
+        resource_id: id,
+        workflow_id: existingCommunication.workflow_id,
+        event_data: {
+          communication_type: existingCommunication.communication_type,
+          direction: existingCommunication.direction,
+          subject: existingCommunication.subject,
+          thread_id: existingCommunication.thread_id,
+          operation: 'delete_communication'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for communication deletion:', auditError);
+      // Don't fail the request for audit errors
+    }
+
+    return c.json({
+      success: true,
+      message: 'Communication deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete communication error:', error);
     return c.json({
       success: false,
       error: 'Internal server error',
@@ -577,6 +732,32 @@ communications.post('/:id/reply', async (c) => {
       if (emailError) {
         console.error('Email metadata error:', emailError);
       }
+    }
+
+    // Log audit event for communication reply
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'create',
+        resource_type: 'communication',
+        resource_id: reply.id,
+        workflow_id: reply.workflow_id,
+        event_data: {
+          communication_type: reply.communication_type,
+          direction: reply.direction,
+          thread_id: reply.thread_id,
+          original_communication_id: id,
+          recipient_email: reply.recipient_email,
+          subject: reply.subject,
+          operation: 'reply_communication'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for communication reply:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({
@@ -680,6 +861,32 @@ communications.post('/:id/forward', async (c) => {
       if (emailError) {
         console.error('Email metadata error:', emailError);
       }
+    }
+
+    // Log audit event for communication forward
+    try {
+      await auditLogger.log({
+        actor_type: 'human',
+        actor_id: user.id,
+        actor_name: user.email,
+        event_type: 'communication',
+        action: 'create',
+        resource_type: 'communication',
+        resource_id: forward.id,
+        workflow_id: forward.workflow_id,
+        event_data: {
+          communication_type: forward.communication_type,
+          direction: forward.direction,
+          thread_id: forward.thread_id,
+          original_communication_id: id,
+          recipient_email: forward.recipient_email,
+          subject: forward.subject,
+          operation: 'forward_communication'
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit event for communication forward:', auditError);
+      // Don't fail the request for audit errors
     }
 
     return c.json({

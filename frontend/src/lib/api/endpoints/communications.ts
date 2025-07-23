@@ -8,7 +8,14 @@ import type {
   CreateHilNote,
   UpdateHilNote,
   HilNoteFilters,
-  ReplyHilNote
+  ReplyHilNote,
+  Communication,
+  CreateCommunication,
+  UpdateCommunication,
+  CommunicationFilters,
+  ReplyCommunication,
+  ForwardCommunication,
+  EmailThread
 } from '@rexera/shared';
 import { apiRequest, getAuthToken, getApiBaseUrl } from '../core/request';
 import { ApiError } from '../core/api-error';
@@ -17,29 +24,21 @@ import type { ApiResponse, ApiErrorResponse } from '../core/types';
 // Communications API functions
 export const communicationsApi = {
   /**
-   * List communications with filtering
+   * List communications with filtering and pagination
    */
-  async list(filters: {
-    workflow_id?: string;
-    type?: 'email' | 'phone' | 'sms' | 'internal_note';
-    communication_type?: 'email' | 'phone' | 'sms' | 'internal_note';
-    direction?: 'INBOUND' | 'OUTBOUND';
-    limit?: number;
-  } = {}) {
+  async list(filters: Partial<CommunicationFilters> = {}) {
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined) {
-        // Map 'type' to 'communication_type' for backend compatibility
-        if (key === 'type') {
-          params.append('communication_type', String(value));
+        if (Array.isArray(value)) {
+          params.append(key, value.join(','));
         } else {
           params.append(key, String(value));
         }
       }
     });
 
-    // We need the full response including pagination, so we'll handle the request manually
     const authToken = await getAuthToken();
     const headers: Record<string, string> = {};
     
@@ -74,26 +73,92 @@ export const communicationsApi = {
   },
 
   /**
+   * Get communication by ID with optional relations
+   */
+  async byId(id: string, include: string[] = []): Promise<Communication> {
+    const params = new URLSearchParams();
+    if (include.length > 0) {
+      params.append('include', include.join(','));
+    }
+    
+    const url = `/communications/${id}?${params}`;
+    return apiRequest<Communication>(url);
+  },
+
+  /**
+   * Get email threads for a workflow
+   */
+  async getThreads(workflowId: string): Promise<EmailThread[]> {
+    const params = new URLSearchParams({ workflow_id: workflowId });
+    const url = `/communications/threads?${params}`;
+    return apiRequest<EmailThread[]>(url);
+  },
+
+  /**
    * Create a new communication record
    */
-  async create(data: {
-    workflow_id: string;
-    recipient_email: string;
-    subject: string;
-    body: string;
-    communication_type: 'email' | 'phone' | 'sms' | 'internal_note';
-    direction: 'INBOUND' | 'OUTBOUND';
-    thread_id?: string;
-  }) {
-    return apiRequest('/communications', {
+  async create(data: CreateCommunication): Promise<Communication> {
+    return apiRequest<Communication>('/communications', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update a communication record
+   */
+  async update(id: string, data: UpdateCommunication): Promise<Communication> {
+    return apiRequest<Communication>(`/communications/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Reply to a communication
+   */
+  async reply(id: string, data: ReplyCommunication): Promise<Communication> {
+    return apiRequest<Communication>(`/communications/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Forward a communication
+   */
+  async forward(id: string, data: ForwardCommunication): Promise<Communication> {
+    return apiRequest<Communication>(`/communications/${id}/forward`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a communication
+   */
+  async delete(id: string): Promise<{ message: string }> {
+    return apiRequest(`/communications/${id}`, {
+      method: 'DELETE',
     });
   },
 };
 
 // HIL Notes API functions
 export const hilNotesApi = {
+  /**
+   * Get HIL note by ID with optional relations
+   */
+  async byId(id: string, include: string[] = []): Promise<HilNote> {
+    const params = new URLSearchParams();
+    if (include.length > 0) {
+      params.append('include', include.join(','));
+    }
+    
+    const url = `/hil-notes/${id}?${params}`;
+    return apiRequest<HilNote>(url);
+  },
+
   /**
    * List HIL notes with filtering
    */
