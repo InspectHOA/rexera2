@@ -175,6 +175,7 @@ export type AuditEventType =
   | 'user_authentication'
   | 'document_management'
   | 'communication'
+  | 'counterparty_management'
   | 'system_operation';
 
 /**
@@ -213,6 +214,7 @@ export const AUDIT_EVENT_TYPES = [
   'user_authentication',
   'document_management',
   'communication',
+  'counterparty_management',
   'system_operation'
 ] as const;
 

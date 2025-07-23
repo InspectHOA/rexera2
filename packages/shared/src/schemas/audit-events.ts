@@ -9,7 +9,7 @@ import {
   AUDIT_ACTIONS, 
   AUDIT_EVENT_TYPES, 
   AUDIT_RESOURCE_TYPES 
-} from '../enums/index.js';
+} from '../enums/index';
 
 // =====================================================
 // BASE AUDIT EVENT SCHEMA

@@ -66,35 +66,49 @@ Golden standard patterns that ALL components must follow for platform consistenc
 ### 2. Backend Route Organization
 **RULE**: All routes in `/serverless-api/src/routes/` with kebab-case naming, use `clientDataMiddleware`, standard REST endpoints
 
-### 3. Shared Schema Organization
-**RULE**: All schemas in `/packages/shared/src/schemas/` with kebab-case naming. Required: Base, Create, Update, Filters, Response schemas
+### 3. Clean Hono Route Pattern
+**RULE**: Use minimal Hono setup with shared schema reuse:
+```typescript
+import { Hono } from 'hono';
+import { CreateWorkflowSchema } from '@rexera/shared';
 
-### 4. Error Handling
+const workflows = new Hono();
+
+workflows.post('/', async (c) => {
+  const body = await c.req.json();
+  const validated = CreateWorkflowSchema.parse(body);
+  // Business logic here
+  return c.json({ success: true, data: result }, 201);
+});
+```
+**Benefits**: Concise files (200-400 lines), no schema duplication, simple debugging, fast performance
+
+### 4. Shared Schema Organization
+**RULE**: All schemas in `/packages/shared/src/schemas/` with kebab-case naming. Required: Base, Create, Update, Filters, Response schemas. **NEVER duplicate schemas** - always import and reuse from `@rexera/shared`
+
+### 5. Error Handling
 **RULE**: Frontend uses `ApiError` class and `isApiError()` utility. Backend returns `{ success: boolean, error?: string, details?: any }`
 
-### 5. Response Format
+### 6. Response Format
 **RULE**: Success responses: `{ success: true, data: T, pagination?: PaginationMeta }`. Pagination: `{ page, limit, total, totalPages }`
 
-### 6. Authentication & Authorization
+### 7. Authentication & Authorization
 **RULE**: All protected routes use `clientDataMiddleware`
 
-### 7. Audit Logging
+### 8. Audit Logging
 **RULE**: All data mutations include audit logging using `auditLogger.log()`. Include actor, action, resource details. Log audit errors but don't fail requests
 
-### 8. Real-time Updates
+### 9. Real-time Updates
 **RULE**: All data hooks include Supabase real-time subscriptions with proper query invalidation
 
-### 9. Query Key Factory Pattern
+### 10. Query Key Factory Pattern
 **RULE**: React hooks use structured query key factories with `all`, `lists`, `list`, `details`, `detail` pattern
 
-### 10. Include Parameter Pattern
+### 11. Include Parameter Pattern
 **RULE**: All list/detail endpoints support `include` parameter for relationship loading
 
-### 11. Access Control Pattern
+### 12. Access Control Pattern
 **RULE**: All backend routes implement `getCompanyFilter(user)` for proper data isolation
-
-### 12. OpenAPI Integration
-**RULE**: All new routes use `@hono/zod-openapi` with proper schema registration and tags
 
 ### 13. Database Operations
 **RULE**: DML operations use TypeScript scripts. DDL operations manual via Supabase dashboard. Required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`

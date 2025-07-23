@@ -6,7 +6,7 @@
  * and focused on developer ease.
  */
 
-import { CreateAuditEvent, CreateAuditEventSchema } from '../schemas/audit-events.js';
+import { CreateAuditEvent, CreateAuditEventSchema } from '../schemas/audit-events';
 
 /**
  * Interface for audit logger implementations

@@ -71,14 +71,17 @@ export const counterpartiesApi = {
     
     // Use standardized apiRequest but handle response format for backward compatibility
     // The API returns full response structure with pagination, so we return it directly
+    const authToken = await (await import('@/lib/api/core/request')).getAuthToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+    
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api${url}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await (async () => {
-          const authToken = await (await import('@/lib/api/core/request')).getAuthToken();
-          return authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-        })())
-      }
+      headers
     });
     
     if (!response.ok) {

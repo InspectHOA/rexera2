@@ -55,6 +55,42 @@ tsx scripts/utils/script-runner.ts list
 
 ## Development Guidelines
 
+### API Architecture Pattern
+
+**Clean Hono Approach**: The API uses a clean, minimal Hono setup that prioritizes simplicity and developer experience:
+
+```typescript
+// Route structure (e.g., workflows.ts)
+import { Hono } from 'hono';
+import { CreateWorkflowSchema } from '@rexera/shared';
+
+const workflows = new Hono();
+
+workflows.get('/', async (c) => {
+  // Simple, clean handler logic
+  return c.json({ success: true, data: results });
+});
+
+workflows.post('/', async (c) => {
+  const body = await c.req.json();
+  const validated = CreateWorkflowSchema.parse(body);
+  // Implementation
+  return c.json({ success: true, data: result }, 201);
+});
+```
+
+**Key Principles:**
+- **Reuse schemas from @rexera/shared** - Never duplicate Zod schemas
+- **Clean handlers** - Minimal boilerplate, focus on business logic
+- **Standard error handling** - Consistent JSON error responses
+- **Type safety** - Full TypeScript + Zod validation throughout
+
+**Why this approach:**
+- Keeps route files concise (200-400 lines vs 1000+ with complex frameworks)
+- Leverages existing shared schemas instead of redefining them
+- Simple to understand, debug, and extend
+- Fast compilation and runtime performance
+
 ### Package Management
 - Use `@rexera/shared` for all shared code
 - Add new packages only for genuinely independent services

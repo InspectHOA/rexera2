@@ -289,12 +289,12 @@ counterparties.post('/', async (c) => {
         actor_type: 'human',
         actor_id: user.id,
         actor_name: user.email,
-        event_type: 'counterparty',
+        event_type: 'counterparty_management',
         action: 'create',
         resource_type: 'counterparty',
         resource_id: data.id,
-        resource_name: data.name,
-        details: {
+        event_data: {
+          resource_name: data.name,
           counterparty_type: data.type,
           has_email: !!data.email,
           has_phone: !!data.phone,
@@ -362,16 +362,17 @@ counterparties.patch('/:id', async (c) => {
     
     // Log audit event for counterparty update
     try {
+      const user = c.get('user') as AuthUser;
       await auditLogger.log({
         actor_type: 'human',
         actor_id: user.id,
         actor_name: user.email,
-        event_type: 'counterparty',
+        event_type: 'counterparty_management',
         action: 'update',
         resource_type: 'counterparty',
         resource_id: data.id,
-        resource_name: data.name,
-        details: {
+        event_data: {
+          resource_name: data.name,
           updated_fields: Object.keys(validatedData),
           counterparty_type: data.type
         }
@@ -467,12 +468,12 @@ counterparties.delete('/:id', async (c) => {
         actor_type: 'human',
         actor_id: user.id,
         actor_name: user.email,
-        event_type: 'counterparty',
+        event_type: 'counterparty_management',
         action: 'delete',
         resource_type: 'counterparty',
         resource_id: counterparty.id,
-        resource_name: counterparty.name,
-        details: {
+        event_data: {
+          resource_name: counterparty.name,
           counterparty_type: counterparty.type,
           had_email: !!counterparty.email,
           had_phone: !!counterparty.phone,
