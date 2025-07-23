@@ -81,6 +81,7 @@ app.use('/api/clients/*', authMiddleware);
 app.use('/api/audit-events/*', authMiddleware);
 app.use('/api/hil-notes/*', authMiddleware);
 app.use('/api/users/*', authMiddleware);
+app.use('/api/notifications/*', authMiddleware);
 
 // Mount route modules
 app.route('/api/agents', agents);
