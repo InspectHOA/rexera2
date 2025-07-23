@@ -18,41 +18,36 @@ describe('notificationsApi', () => {
   });
 
   describe('list', () => {
-    const mockResponse = {
-      notifications: [
-        {
-          id: '1',
-          user_id: 'user-1',
-          type: 'TASK_INTERRUPT',
-          priority: 'URGENT',
-          title: 'Test Notification',
-          message: 'Test message',
-          action_url: null,
-          metadata: null,
-          read: false,
-          read_at: null,
-          created_at: '2024-01-01T00:00:00Z',
-        },
-      ],
-      pagination: {
-        total: 1,
-        limit: 100,
-        offset: 0,
-        hasMore: false,
+    const mockNotifications = [
+      {
+        id: '1',
+        user_id: 'user-1',
+        type: 'TASK_INTERRUPT',
+        priority: 'URGENT',
+        title: 'Test Notification',
+        message: 'Test message',
+        action_url: null,
+        metadata: null,
+        read: false,
+        read_at: null,
+        created_at: '2024-01-01T00:00:00Z',
       },
-    };
+    ];
 
     it('should fetch notifications with default parameters', async () => {
-      mockApiRequest.mockResolvedValue(mockResponse);
+      // apiRequest extracts the 'data' field, so it returns the notifications array directly
+      mockApiRequest.mockResolvedValue(mockNotifications);
 
       const result = await notificationsApi.list();
 
       expect(mockApiRequest).toHaveBeenCalledWith('/notifications');
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockNotifications);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
     });
 
     it('should fetch notifications with filters', async () => {
-      mockApiRequest.mockResolvedValue(mockResponse);
+      mockApiRequest.mockResolvedValue(mockNotifications);
 
       const filters = {
         type: 'TASK_INTERRUPT',
@@ -67,20 +62,22 @@ describe('notificationsApi', () => {
       expect(mockApiRequest).toHaveBeenCalledWith(
         '/notifications?type=TASK_INTERRUPT&priority=URGENT&read=false&limit=50&offset=10'
       );
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockNotifications);
+      expect(Array.isArray(result)).toBe(true);
     });
 
     it('should handle empty filters', async () => {
-      mockApiRequest.mockResolvedValue(mockResponse);
+      mockApiRequest.mockResolvedValue(mockNotifications);
 
       const result = await notificationsApi.list({});
 
       expect(mockApiRequest).toHaveBeenCalledWith('/notifications');
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockNotifications);
+      expect(Array.isArray(result)).toBe(true);
     });
 
     it('should handle partial filters', async () => {
-      mockApiRequest.mockResolvedValue(mockResponse);
+      mockApiRequest.mockResolvedValue(mockNotifications);
 
       const filters = {
         type: 'SLA_WARNING',
@@ -92,7 +89,19 @@ describe('notificationsApi', () => {
       expect(mockApiRequest).toHaveBeenCalledWith(
         '/notifications?type=SLA_WARNING&limit=25'
       );
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockNotifications);
+      expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('should handle empty notifications list', async () => {
+      mockApiRequest.mockResolvedValue([]);
+
+      const result = await notificationsApi.list();
+
+      expect(mockApiRequest).toHaveBeenCalledWith('/notifications');
+      expect(result).toEqual([]);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
   });
 

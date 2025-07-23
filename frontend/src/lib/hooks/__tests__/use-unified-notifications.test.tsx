@@ -136,15 +136,8 @@ describe('useUnifiedNotifications', () => {
   ];
 
   it('should fetch and display notifications', async () => {
-    mockApi.notifications.list.mockResolvedValue({
-      data: mockNotifications,
-      pagination: {
-        page: 1,
-        limit: 100,
-        total: 2,
-        totalPages: 1,
-      },
-    });
+    // Fixed: Mock should return the array directly, not wrapped in { data: ... }
+    mockApi.notifications.list.mockResolvedValue(mockNotifications);
 
     const { getByTestId } = render(
       <TestWrapper>
@@ -166,15 +159,7 @@ describe('useUnifiedNotifications', () => {
   });
 
   it('should handle empty notifications list', async () => {
-    mockApi.notifications.list.mockResolvedValue({
-      data: [],
-      pagination: {
-        page: 1,
-        limit: 100,
-        total: 0,
-        totalPages: 0,
-      },
-    });
+    mockApi.notifications.list.mockResolvedValue([]);
 
     const { getByTestId } = render(
       <TestWrapper>
@@ -208,15 +193,7 @@ describe('useUnifiedNotifications', () => {
   });
 
   it('should mark notification as read', async () => {
-    mockApi.notifications.list.mockResolvedValue({
-      data: mockNotifications,
-      pagination: {
-        page: 1,
-        limit: 100,
-        total: 2,
-        totalPages: 1,
-      },
-    });
+    mockApi.notifications.list.mockResolvedValue(mockNotifications);
 
     mockApi.notifications.markAsRead.mockResolvedValue({
       notification: { ...mockNotifications[0], read: true, read_at: '2024-01-01T02:00:00Z' },
@@ -241,15 +218,7 @@ describe('useUnifiedNotifications', () => {
   });
 
   it('should mark all notifications as read', async () => {
-    mockApi.notifications.list.mockResolvedValue({
-      data: mockNotifications,
-      pagination: {
-        page: 1,
-        limit: 100,
-        total: 2,
-        totalPages: 1,
-      },
-    });
+    mockApi.notifications.list.mockResolvedValue(mockNotifications);
 
     mockApi.notifications.markAllAsRead.mockResolvedValue({
       message: 'Marked 1 notifications as read',
@@ -281,15 +250,7 @@ describe('useUnifiedNotifications', () => {
       { ...mockNotifications[0], id: '3', read: true },
     ];
 
-    mockApi.notifications.list.mockResolvedValue({
-      data: mixedNotifications,
-      pagination: {
-        page: 1,
-        limit: 100,
-        total: 3,
-        totalPages: 1,
-      },
-    });
+    mockApi.notifications.list.mockResolvedValue(mixedNotifications);
 
     const { getByTestId } = render(
       <TestWrapper>
@@ -306,15 +267,7 @@ describe('useUnifiedNotifications', () => {
   });
 
   it('should handle dismiss notification', async () => {
-    mockApi.notifications.list.mockResolvedValue({
-      data: mockNotifications,
-      pagination: {
-        page: 1,
-        limit: 100,
-        total: 2,
-        totalPages: 1,
-      },
-    });
+    mockApi.notifications.list.mockResolvedValue(mockNotifications);
 
     mockApi.notifications.markAsRead.mockResolvedValue({
       notification: { ...mockNotifications[0], read: true, read_at: '2024-01-01T02:00:00Z' },

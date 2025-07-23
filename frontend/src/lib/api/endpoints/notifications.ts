@@ -36,7 +36,7 @@ export const notificationsApi = {
   /**
    * List notifications for the current user
    */
-  async list(filters: NotificationFilters = {}): Promise<NotificationsPaginatedResponse> {
+  async list(filters: NotificationFilters = {}): Promise<UnifiedNotification[]> {
     const params = new URLSearchParams();
     
     if (filters.type) params.append('type', filters.type);
@@ -50,7 +50,8 @@ export const notificationsApi = {
     const queryString = params.toString();
     const url = queryString ? `/notifications?${queryString}` : '/notifications';
     
-    return apiRequest(url);
+    // apiRequest returns the 'data' field from the backend response, which is the notifications array
+    return apiRequest<UnifiedNotification[]>(url);
   },
 
   /**
