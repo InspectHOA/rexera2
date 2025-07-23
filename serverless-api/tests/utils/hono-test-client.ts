@@ -183,6 +183,30 @@ export class HonoTestClient {
       }
     };
   }
+
+  async options(path: string, headers?: Record<string, string>): Promise<TestResponse> {
+    const request = new Request(`http://localhost${path}`, {
+      method: 'OPTIONS',
+      headers: headers || {},
+    });
+
+    const response = await this.app.fetch(request);
+    const body = await this.parseResponse(response);
+
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body,
+      get: (headerName: string) => response.headers.get(headerName),
+      expect: (expectedStatus: number) => {
+        if (response.status !== expectedStatus) {
+          throw new Error(`Expected status ${expectedStatus}, got ${response.status}`);
+        }
+        return this.createAssertions(response, body);
+      }
+    };
+  }
 }
 
 export function testClient(app: Hono) {

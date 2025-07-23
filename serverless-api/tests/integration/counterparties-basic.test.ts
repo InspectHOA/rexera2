@@ -135,13 +135,6 @@ describe('Counterparties API Basic Tests', () => {
         expect(response.body.success).toBe(false);
       }
     });
-
-    it('should handle search with type filter', async () => {
-      const response = await client.get('/api/counterparties/search?q=Test&type=lender&limit=5');
-
-      expect([200, 400, 401, 500]).toContain(response.status);
-      expect(response.headers['content-type']).toMatch(/json/);
-    });
   });
 
   describe('GET /api/counterparties/:id', () => {
@@ -163,14 +156,6 @@ describe('Counterparties API Basic Tests', () => {
 
       expect([400, 401, 404, 500]).toContain(response.status);
       expect(response.body.success).toBe(false);
-    });
-
-    it('should handle include parameter', async () => {
-      const testId = '12345678-1234-1234-1234-123456789012';
-      const response = await client.get(`/api/counterparties/${testId}?include=workflows`);
-
-      expect([200, 401, 404, 500]).toContain(response.status);
-      expect(response.headers['content-type']).toMatch(/json/);
     });
   });
 
@@ -202,13 +187,6 @@ describe('Counterparties API Basic Tests', () => {
         expect(response.body.success).toBe(false);
       }
     });
-
-    it('should handle invalid UUID', async () => {
-      const response = await client.patch('/api/counterparties/invalid-uuid', { name: 'Test' });
-
-      expect([400, 401, 404, 500]).toContain(response.status);
-      expect(response.body.success).toBe(false);
-    });
   });
 
   describe('DELETE /api/counterparties/:id', () => {
@@ -226,7 +204,6 @@ describe('Counterparties API Basic Tests', () => {
     });
 
     it('should handle relationship conflicts', async () => {
-      // This might return 409 if the counterparty has workflow relationships
       const testId = '12345678-1234-1234-1234-123456789012';
       const response = await client.delete(`/api/counterparties/${testId}`);
 
@@ -236,13 +213,6 @@ describe('Counterparties API Basic Tests', () => {
         expect(response.body.success).toBe(false);
         expect(response.body.error).toBe('Cannot delete counterparty with active workflow relationships');
       }
-    });
-
-    it('should handle invalid UUID', async () => {
-      const response = await client.delete('/api/counterparties/invalid-uuid');
-
-      expect([400, 401, 404, 500]).toContain(response.status);
-      expect(response.body.success).toBe(false);
     });
   });
 

@@ -178,51 +178,43 @@ export const requestValidationMiddleware = async (c: Context, next: Next) => {
  */
 export const corsMiddleware = async (c: Context, next: Next) => {
   const origin = c.req.header('origin');
-  console.log('[CORS] Incoming request - Origin:', origin, 'Method:', c.req.method, 'Path:', c.req.path);
+  console.log('[CORS] Request:', { origin, method: c.req.method, path: c.req.path });
   
-  // Get allowed origins from environment variables or use defaults
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://rexera.vercel.app',
-    'https://rexera2-frontend.vercel.app',
-    // Add environment variable for frontend URL
-    process.env.FRONTEND_URL,
-    // Allow Vercel preview deployments
-    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-  ].filter(Boolean); // Remove undefined values
-
-  // Set CORS headers for all requests
-  const isVercelDomain = origin && (
-    origin.includes('.vercel.app') || 
-    origin.includes('localhost') ||
-    allowedOrigins.includes(origin)
-  );
-
-  if (origin && isVercelDomain) {
-    c.header('Access-Control-Allow-Origin', origin);
-    console.log('[CORS] Allowed origin:', origin);
-  } else if (origin) {
-    console.log('[CORS] Origin not in allowed list:', origin);
-    // Be more permissive for Vercel deployments and development
-    const isVercelContext = !!(process.env.VERCEL || process.env.VERCEL_ENV || process.env.VERCEL_URL);
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
-    if (isDevelopment || isVercelContext) {
-      c.header('Access-Control-Allow-Origin', origin);
-      console.log('[CORS] Permissive mode - allowing origin:', origin, { isDevelopment, isVercelContext });
-    } else {
-      console.log('[CORS] Origin blocked:', origin);
-    }
+  // For Vercel production - be very permissive temporarily to debug
+  const isVercelDeployment = !!(process.env.VERCEL || process.env.VERCEL_ENV);
+  
+  if (isVercelDeployment) {
+    // TEMPORARY: Ultra-permissive CORS for Vercel to fix the issue
+    c.header('Access-Control-Allow-Origin', origin || '*');
+    console.log('[CORS] Vercel deployment - allowing all origins temporarily');
   } else {
-    // No origin header (e.g., test environment or some API clients)
-    // For OPTIONS preflight requests, we still need to set CORS headers
-    if (c.req.method === 'OPTIONS' || process.env.NODE_ENV === 'test') {
+    // Local development - normal CORS logic
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://rexera.vercel.app',
+      'https://rexera2-frontend.vercel.app',
+    ];
+
+    const isAllowed = origin && (
+      origin.includes('.vercel.app') || 
+      origin.includes('localhost') ||
+      allowedOrigins.includes(origin)
+    );
+
+    if (isAllowed) {
+      c.header('Access-Control-Allow-Origin', origin);
+      console.log('[CORS] Allowed origin:', origin);
+    } else if (origin) {
+      c.header('Access-Control-Allow-Origin', origin);
+      console.log('[CORS] Development - allowing origin:', origin);
+    } else {
       c.header('Access-Control-Allow-Origin', '*');
-      console.log('[CORS] No origin header - setting wildcard for preflight/test');
+      console.log('[CORS] No origin - using wildcard');
     }
   }
   
+  // Always set these headers
   c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   c.header('Access-Control-Allow-Credentials', 'true');
@@ -230,7 +222,7 @@ export const corsMiddleware = async (c: Context, next: Next) => {
 
   // Handle preflight OPTIONS requests
   if (c.req.method === 'OPTIONS') {
-    console.log('[CORS] Handling OPTIONS preflight request');
+    console.log('[CORS] Returning 204 for OPTIONS preflight');
     return c.body(null, 204);
   }
 

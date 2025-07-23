@@ -60,6 +60,32 @@ describe('Workflow Counterparties API', () => {
   });
 
   describe('GET /api/workflows/:workflowId/counterparties', () => {
+    it('should handle OPTIONS preflight requests properly', async () => {
+      const response = await client.options('/api/workflows/72c8946d-3ce1-4eb8-870e-1fac2bb56b15/counterparties?include=counterparty');
+
+      // OPTIONS requests should always succeed for CORS preflight
+      expect(response.status).toBe(204);
+      
+      // Should have CORS headers
+      expect(response.headers['access-control-allow-origin']).toBeDefined();
+      expect(response.headers['access-control-allow-methods']).toContain('GET');
+      expect(response.headers['access-control-allow-headers']).toBeDefined();
+    });
+
+    it('should handle OPTIONS preflight requests with origin header', async () => {
+      const response = await client.options('/api/workflows/72c8946d-3ce1-4eb8-870e-1fac2bb56b15/counterparties?include=counterparty', {
+        'Origin': 'http://localhost:3000'
+      });
+
+      // OPTIONS requests should always succeed for CORS preflight
+      expect(response.status).toBe(204);
+      
+      // Should have CORS headers with the specific origin
+      expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+      expect(response.headers['access-control-allow-methods']).toContain('GET');
+      expect(response.headers['access-control-allow-headers']).toBeDefined();
+    });
+
     it('should return proper response format', async () => {
       const response = await client.get('/api/workflows/test-id/counterparties');
 
