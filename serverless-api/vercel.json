@@ -2,12 +2,6 @@
   "version": 2,
   "buildCommand": "pnpm --filter=@rexera/shared build && pnpm --filter=@rexera/api build",
   "installCommand": "pnpm install",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ],
   "crons": [
     {
       "path": "/api/cron/sla-monitor",
