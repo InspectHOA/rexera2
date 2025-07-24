@@ -164,9 +164,38 @@ taskExecutions.post('/bulk', async (c) => {
       }
     }
 
+    // Check for existing task executions to avoid duplicates
+    const workflowIds = [...new Set(task_executions.map(te => te.workflow_id))];
+    const { data: existingTasks, error: checkError } = await supabase
+      .from('task_executions')
+      .select('workflow_id, task_type')
+      .in('workflow_id', workflowIds);
+
+    if (checkError) {
+      throw new Error(`Failed to check existing tasks: ${checkError.message}`);
+    }
+
+    // Create a Set of existing workflow_id + task_type combinations
+    const existingCombinations = new Set(
+      existingTasks?.map(t => `${t.workflow_id}|${t.task_type}`) || []
+    );
+
+    // Filter out tasks that already exist
+    const tasksToCreate = task_executions.filter(te => 
+      !existingCombinations.has(`${te.workflow_id}|${te.task_type}`)
+    );
+
+    // If no tasks to create, return empty success
+    if (tasksToCreate.length === 0) {
+      return c.json({
+        success: true,
+        data: [],
+      }, 201 as any);
+    }
+
     const { data: taskExecutions, error } = await supabase
       .from('task_executions')
-      .insert(task_executions)
+      .insert(tasksToCreate)
       .select();
 
     if (error) {
