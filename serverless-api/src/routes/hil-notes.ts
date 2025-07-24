@@ -288,7 +288,8 @@ hilNotes.post('/', async (c) => {
     if (result.data.mentions && result.data.mentions.length > 0) {
       const notifications = result.data.mentions.map((mentionedUserId: string) => ({
         user_id: mentionedUserId,
-        notification_type: 'HIL_MENTION' as const,
+        type: 'HIL_MENTION' as const,
+        priority: result.data.priority || 'NORMAL',
         title: 'You were mentioned in a note',
         message: `${note.author?.name || 'Someone'} mentioned you in a ${result.data.priority} priority note`,
         metadata: {
@@ -430,7 +431,8 @@ hilNotes.patch('/:id', async (c) => {
       if (newMentions.length > 0) {
         const notifications = newMentions.map((mentionedUserId: string) => ({
           user_id: mentionedUserId,
-          notification_type: 'HIL_MENTION' as const,
+          type: 'HIL_MENTION' as const,
+          priority: updatedNote.priority || 'NORMAL',
           title: 'You were mentioned in an updated note',
           message: `${updatedNote.author?.name || 'Someone'} mentioned you in an updated note`,
           metadata: {
@@ -565,7 +567,8 @@ hilNotes.post('/:id/reply', async (c) => {
     if (result.data.mentions && result.data.mentions.length > 0) {
       const notifications = result.data.mentions.map((mentionedUserId: string) => ({
         user_id: mentionedUserId,
-        notification_type: 'HIL_MENTION' as const,
+        type: 'HIL_MENTION' as const,
+        priority: parentNote.priority || 'NORMAL',
         title: 'You were mentioned in a note reply',
         message: `${reply.author?.name || 'Someone'} mentioned you in a note reply`,
         metadata: {
