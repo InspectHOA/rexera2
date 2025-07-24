@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertCounterparty, updateCounterparty, deleteCounterparty } from '../utils/type-safe-db';
 import { type AuthUser, clientDataMiddleware } from '../middleware';
 import {
   CounterpartyFiltersSchema,
@@ -268,18 +269,15 @@ counterparties.post('/', async (c) => {
     
     const supabase = createServerClient();
     
-    const { data, error } = await supabase
-      .from('counterparties')
-      .insert([validatedData])
-      .select()
-      .single();
-    
-    if (error) {
+    let data;
+    try {
+      data = await insertCounterparty(validatedData);
+    } catch (error) {
       console.error('Error creating counterparty:', error);
       return c.json({
         success: false,
         error: 'Failed to create counterparty',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
     
@@ -337,15 +335,12 @@ counterparties.patch('/:id', async (c) => {
     
     const supabase = createServerClient();
     
-    const { data, error } = await supabase
-      .from('counterparties')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') {
+    let data;
+    try {
+      data = await updateCounterparty(id, updateData);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('PGRST116')) {
         return c.json({
           success: false,
           error: 'Counterparty not found'
@@ -356,7 +351,7 @@ counterparties.patch('/:id', async (c) => {
       return c.json({
         success: false,
         error: 'Failed to update counterparty',
-        details: error.message
+        details: errorMessage
       }, 500);
     }
     
@@ -448,17 +443,14 @@ counterparties.delete('/:id', async (c) => {
       }, 409);
     }
     
-    const { error } = await supabase
-      .from('counterparties')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
+    try {
+      await deleteCounterparty(id);
+    } catch (error) {
       console.error('Error deleting counterparty:', error);
       return c.json({
         success: false,
         error: 'Failed to delete counterparty',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
     

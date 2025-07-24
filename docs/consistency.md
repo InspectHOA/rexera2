@@ -113,8 +113,28 @@ workflows.post('/', async (c) => {
 ### 13. Database Operations
 **RULE**: DML operations use TypeScript scripts. DDL operations manual via Supabase dashboard. Required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 
-### 14. Quality Gates
+### 14. Type-Safe Database Operations
+**RULE**: Never use raw Supabase `.insert()/.update()` - always use type-safe helper functions with explicit interfaces. Create `DatabaseInsert` types that match table schemas exactly. Use runtime validation in development to catch schema mismatches.
+
+**Example**:
+```typescript
+// ✅ Good: Type-safe with validation
+await insertNotifications([{
+  user_id: userId,
+  type: 'HIL_MENTION',  // TypeScript enforces correct column name
+  priority: 'NORMAL',   // Required field enforced at compile time
+  title: 'You were mentioned',
+  message: 'Content here'
+}]);
+
+// ❌ Bad: No type safety
+await supabase.from('hil_notifications').insert({
+  notification_type: 'HIL_MENTION'  // Wrong column name, silent failure
+});
+```
+
+### 15. Quality Gates
 **RULE**: `pnpm lint` and `pnpm type-check` must pass before commits. Write tests for new features. Use migrations for schema changes
 
-### 15. Documentation Updates
+### 16. Documentation Updates
 **RULE**: New systems require `docs1/systems/` updates. Breaking changes require migration guides in `docs1/guides/` 

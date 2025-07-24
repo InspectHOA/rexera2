@@ -322,16 +322,6 @@ export default function WorkflowDetailPage() {
               {/* Right Panel Tabs */}
               <div className="px-4 py-2 border-b border-border/50 bg-muted flex-shrink-0 flex gap-6">
                 <button
-                  onClick={() => setRightPanelTab('task-details')}
-                  className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
-                    rightPanelTab === 'task-details'
-                      ? 'text-foreground border-primary'
-                      : 'text-muted-foreground hover:text-foreground border-transparent'
-                  }`}
-                >
-                  Task Details
-                </button>
-                <button
                   onClick={() => setRightPanelTab('agent-interface')}
                   className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
                     rightPanelTab === 'agent-interface'
@@ -340,6 +330,16 @@ export default function WorkflowDetailPage() {
                   }`}
                 >
                   {selectedTask && tasks.find(t => t.id === selectedTask)?.agent ? `${tasks.find(t => t.id === selectedTask)?.agent} Interface` : 'Agent Interface'}
+                </button>
+                <button
+                  onClick={() => setRightPanelTab('task-details')}
+                  className={`text-xs font-semibold uppercase tracking-wider transition-all duration-200 pb-2 border-b-2 ${
+                    rightPanelTab === 'task-details'
+                      ? 'text-foreground border-primary'
+                      : 'text-muted-foreground hover:text-foreground border-transparent'
+                  }`}
+                >
+                  Task Details
                 </button>
               </div>
               
@@ -490,7 +490,7 @@ function TabContent({
               ) : (
                 <>
                   <Play className="w-4 h-4 mr-2" />
-                  Start n8n Workflow
+                  Start Workflow
                 </>
               )}
             </button>

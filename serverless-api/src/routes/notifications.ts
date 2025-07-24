@@ -4,6 +4,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertNotifications, updateNotification, updateNotificationForUser, bulkMarkNotificationsAsRead, deleteNotificationForUser } from '../utils/type-safe-db';
 import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { 
   NotificationFiltersSchema,
@@ -199,23 +200,18 @@ notifications.patch('/:id/read', async (c) => {
       .eq('user_id', user.id)
       .single();
 
-    const { data, error } = await supabase
-      .from('hil_notifications')
-      .update({ 
+    let data;
+    try {
+      data = await updateNotificationForUser(notificationId, user.id, { 
         read: true, 
         read_at: new Date().toISOString() 
-      })
-      .eq('id', notificationId)
-      .eq('user_id', user.id) // Ensure user can only update their own notifications
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error marking notification as read:', error);
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
       return c.json({
         success: false,
         error: 'Failed to mark notification as read',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
       }, 500);
     }
 
@@ -274,22 +270,15 @@ notifications.patch('/mark-all-read', async (c) => {
       company_id: undefined 
     };
 
-    const { data, error } = await supabase
-      .from('hil_notifications')
-      .update({ 
-        read: true, 
-        read_at: new Date().toISOString() 
-      })
-      .eq('user_id', user.id)
-      .eq('read', false) // Only update unread notifications
-      .select();
-
-    if (error) {
-      console.error('Supabase error marking all notifications as read:', error);
+    let data;
+    try {
+      data = await bulkMarkNotificationsAsRead(user.id);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
       return c.json({
         success: false,
         error: 'Failed to mark all notifications as read',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
       }, 500);
     }
 
@@ -396,14 +385,13 @@ notifications.post('/', async (c) => {
       }, 403);
     }
 
-    const { data: notification, error } = await supabase
-      .from('hil_notifications')
-      .insert(body)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create notification: ${error.message}`);
+    let notification;
+    try {
+      // Insert single notification using array format (insertNotifications expects array)
+      const result = await insertNotifications([body]);
+      notification = result[0];
+    } catch (error) {
+      throw new Error(`Failed to create notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
     // Log audit event for notification creation
@@ -473,22 +461,18 @@ notifications.patch('/:id', async (c) => {
       .eq('user_id', user.id)
       .single();
 
-    const { data: notification, error } = await supabase
-      .from('hil_notifications')
-      .update(result.data)
-      .eq('id', notificationId)
-      .eq('user_id', user.id) // Ensure user can only update their own notifications
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
+    let notification;
+    try {
+      notification = await updateNotificationForUser(notificationId, user.id, result.data);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('PGRST116')) {
         return c.json({
           success: false,
           error: 'Notification not found',
         }, 404);
       }
-      throw new Error(`Failed to update notification: ${error.message}`);
+      throw new Error(`Failed to update notification: ${errorMessage}`);
     }
 
     // Log audit event for notification update
@@ -549,14 +533,10 @@ notifications.delete('/:id', async (c) => {
       .eq('user_id', user.id)
       .single();
 
-    const { error } = await supabase
-      .from('hil_notifications')
-      .delete()
-      .eq('id', notificationId)
-      .eq('user_id', user.id); // Ensure user can only delete their own notifications
-
-    if (error) {
-      throw new Error(`Failed to delete notification: ${error.message}`);
+    try {
+      await deleteNotificationForUser(notificationId, user.id);
+    } catch (error) {
+      throw new Error(`Failed to delete notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
     // Log audit event for notification deletion

@@ -43,7 +43,7 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
   const [composeOpen, setComposeOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [forwardOpen, setForwardOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [emails, setEmails] = useState<Email[]>([]);
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [loading, setLoading] = useState(true);

@@ -77,7 +77,9 @@ export function useWorkflowTableState() {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      // For interrupts column, default to descending (most interrupts first)
+      // For other columns, default to ascending
+      setSortDirection(field === 'interrupts' ? 'desc' : 'asc');
     }
     // Reset to page 1 when sorting changes since the order of all records changes
     setCurrentPage(1);

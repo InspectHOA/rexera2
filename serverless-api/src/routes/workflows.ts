@@ -6,6 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertWorkflow, updateWorkflow, insertWorkflowCounterparty, updateWorkflowCounterparty, deleteWorkflowCounterparty } from '../utils/type-safe-db';
 import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { resolveWorkflowId, getWorkflowByHumanId, isUUID } from '../utils/workflow-resolver';
 import { 
@@ -210,14 +211,11 @@ workflows.post('/', async (c) => {
       }, 403 as any);
     }
 
-    const { data: workflow, error } = await supabase
-      .from('workflows')
-      .insert(workflowData)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create workflow: ${error.message}`);
+    let workflow;
+    try {
+      workflow = await insertWorkflow(workflowData);
+    } catch (error) {
+      throw new Error(`Failed to create workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
     // Log audit event for workflow creation
@@ -297,16 +295,12 @@ workflows.patch('/:id', async (c) => {
       .eq('id', id)
       .single();
 
-    // Update the workflow
-    const { data: workflow, error } = await supabase
-      .from('workflows')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to update workflow: ${error.message}`);
+    // Update the workflow using type-safe function
+    let workflow;
+    try {
+      workflow = await updateWorkflow(id, body);
+    } catch (error) {
+      throw new Error(`Failed to update workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
     // Log audit event for workflow update
@@ -587,24 +581,35 @@ workflows.post('/:workflowId/counterparties', async (c) => {
       }, 200);
     }
     
-    // Create the relationship
+    // Create the relationship using type-safe function
     const insertData = {
       workflow_id: workflowId,
       ...validatedData
     };
     
-    const { data, error } = await supabase
-      .from('workflow_counterparties')
-      .insert([insertData])
-      .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
-      .single();
-    
-    if (error) {
+    let data;
+    try {
+      data = await insertWorkflowCounterparty(insertData);
+      
+      // Get the relationship with counterparty details for the response
+      const { data: dataWithCounterparty, error: selectError } = await supabase
+        .from('workflow_counterparties')
+        .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
+        .eq('id', data.id)
+        .single();
+      
+      if (selectError) {
+        console.error('Error fetching counterparty details:', selectError);
+        data = { ...data, counterparties: null };
+      } else {
+        data = dataWithCounterparty;
+      }
+    } catch (error) {
       console.error('Error creating workflow counterparty relationship:', error);
       return c.json({
         success: false,
         error: 'Failed to add counterparty to workflow',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
 
@@ -691,16 +696,27 @@ workflows.patch('/:workflowId/counterparties/:id', async (c) => {
       updated_at: new Date().toISOString()
     };
     
-    const { data, error } = await supabase
-      .from('workflow_counterparties')
-      .update(updateData)
-      .eq('id', relationshipId)
-      .eq('workflow_id', workflowId)  // Ensure it belongs to the correct workflow
-      .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') {
+    let data;
+    try {
+      data = await updateWorkflowCounterparty(relationshipId, updateData);
+      
+      // Get the relationship with counterparty details for the response
+      const { data: dataWithCounterparty, error: selectError } = await supabase
+        .from('workflow_counterparties')
+        .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
+        .eq('id', relationshipId)
+        .eq('workflow_id', workflowId)
+        .single();
+      
+      if (selectError) {
+        console.error('Error fetching counterparty details:', selectError);
+        data = { ...data, counterparties: null };
+      } else {
+        data = dataWithCounterparty;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('PGRST116')) {
         return c.json({
           success: false,
           error: 'Workflow counterparty relationship not found'
@@ -711,7 +727,7 @@ workflows.patch('/:workflowId/counterparties/:id', async (c) => {
       return c.json({
         success: false,
         error: 'Failed to update workflow counterparty',
-        details: error.message
+        details: errorMessage
       }, 500);
     }
 
@@ -789,18 +805,14 @@ workflows.delete('/:workflowId/counterparties/:id', async (c) => {
       .eq('workflow_id', workflowId)
       .single();
 
-    const { error } = await supabase
-      .from('workflow_counterparties')
-      .delete()
-      .eq('id', relationshipId)
-      .eq('workflow_id', workflowId);  // Ensure it belongs to the correct workflow
-    
-    if (error) {
+    try {
+      await deleteWorkflowCounterparty(relationshipId);
+    } catch (error) {
       console.error('Error removing workflow counterparty:', error);
       return c.json({
         success: false,
         error: 'Failed to remove counterparty from workflow',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
 

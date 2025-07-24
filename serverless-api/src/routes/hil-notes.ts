@@ -6,6 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertNotifications, insertHilNote } from '../utils/type-safe-db';
 import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { 
   HilNoteFiltersSchema,
@@ -300,11 +301,9 @@ hilNotes.post('/', async (c) => {
         }
       }));
 
-      const { error: notificationError } = await supabase
-        .from('hil_notifications')
-        .insert(notifications);
-
-      if (notificationError) {
+      try {
+        await insertNotifications(notifications);
+      } catch (notificationError) {
         console.error('Error creating mention notifications:', notificationError);
         // Don't fail the request, just log the error
       }

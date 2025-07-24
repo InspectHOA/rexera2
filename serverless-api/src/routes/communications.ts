@@ -6,6 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertCommunication, insertEmailMetadata, insertPhoneMetadata, updateCommunication, deleteCommunication } from '../utils/type-safe-db';
 import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { 
   CommunicationFiltersSchema,
@@ -310,10 +311,10 @@ communications.post('/', async (c) => {
     // Generate thread_id if not provided (for new conversations)
     const thread_id = data.thread_id || crypto.randomUUID();
 
-    // Insert communication record
-    const { data: communication, error: commError } = await supabase
-      .from('communications')
-      .insert({
+    // Insert communication record using type-safe function
+    let communication;
+    try {
+      communication = await insertCommunication({
         workflow_id: data.workflow_id,
         thread_id: thread_id,
         sender_id: user.id,
@@ -324,24 +325,20 @@ communications.post('/', async (c) => {
         direction: data.direction,
         status: data.direction === 'OUTBOUND' ? 'SENT' : 'DELIVERED',
         metadata: data.metadata,
-      })
-      .select()
-      .single();
-
-    if (commError) {
+      });
+    } catch (commError) {
       console.error('Database error:', commError);
       return c.json({
         success: false,
         error: 'Failed to create communication',
-        details: commError.message,
+        details: commError instanceof Error ? commError.message : 'Unknown error',
       }, 500 as any);
     }
 
     // Insert email metadata if provided
     if (data.email_metadata && data.communication_type === 'email') {
-      const { error: emailError } = await supabase
-        .from('email_metadata')
-        .insert({
+      try {
+        await insertEmailMetadata({
           communication_id: communication.id,
           message_id: data.email_metadata.message_id,
           in_reply_to: data.email_metadata.in_reply_to,
@@ -349,8 +346,7 @@ communications.post('/', async (c) => {
           attachments: data.email_metadata.attachments,
           headers: data.email_metadata.headers,
         });
-
-      if (emailError) {
+      } catch (emailError) {
         console.error('Email metadata error:', emailError);
         // Continue - don't fail the whole request for metadata issues
       }
@@ -358,17 +354,15 @@ communications.post('/', async (c) => {
 
     // Insert phone metadata if provided
     if (data.phone_metadata && data.communication_type === 'phone') {
-      const { error: phoneError } = await supabase
-        .from('phone_metadata')
-        .insert({
+      try {
+        await insertPhoneMetadata({
           communication_id: communication.id,
           phone_number: data.phone_metadata.phone_number,
           duration_seconds: data.phone_metadata.duration_seconds,
           call_recording_url: data.phone_metadata.call_recording_url,
           transcript: data.phone_metadata.transcript,
         });
-
-      if (phoneError) {
+      } catch (phoneError) {
         console.error('Phone metadata error:', phoneError);
         // Continue - don't fail the whole request for metadata issues
       }
@@ -499,24 +493,19 @@ communications.patch('/:id', async (c) => {
       .eq('id', id)
       .single();
 
-    // Update communication record
-    const { data: communication, error: commError } = await supabase
-      .from('communications')
-      .update({
+    // Update communication record using type-safe function
+    let communication;
+    try {
+      communication = await updateCommunication(id, {
         status: data.status,
         metadata: data.metadata,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (commError) {
+      });
+    } catch (commError) {
       console.error('Database error:', commError);
       return c.json({
         success: false,
         error: 'Failed to update communication',
-        details: commError.message,
+        details: commError instanceof Error ? commError.message : 'Unknown error',
       }, 500 as any);
     }
 
@@ -587,18 +576,15 @@ communications.delete('/:id', async (c) => {
       }, 404);
     }
 
-    // Delete the communication record
-    const { error: deleteError } = await supabase
-      .from('communications')
-      .delete()
-      .eq('id', id);
-
-    if (deleteError) {
+    // Delete the communication record using type-safe function
+    try {
+      await deleteCommunication(id);
+    } catch (deleteError) {
       console.error('Database error:', deleteError);
       return c.json({
         success: false,
         error: 'Failed to delete communication',
-        details: deleteError.message,
+        details: deleteError instanceof Error ? deleteError.message : 'Unknown error',
       }, 500 as any);
     }
 
@@ -684,10 +670,10 @@ communications.post('/:id/reply', async (c) => {
       }, 404 as any);
     }
 
-    // Create reply
-    const { data: reply, error: replyError } = await supabase
-      .from('communications')
-      .insert({
+    // Create reply using type-safe function
+    let reply;
+    try {
+      reply = await insertCommunication({
         workflow_id: originalComm.workflow_id,
         thread_id: originalComm.thread_id || originalComm.id,
         sender_id: user.id,
@@ -700,24 +686,20 @@ communications.post('/:id/reply', async (c) => {
         direction: 'OUTBOUND',
         status: 'SENT',
         metadata: data.metadata,
-      })
-      .select()
-      .single();
-
-    if (replyError) {
+      });
+    } catch (replyError) {
       console.error('Database error:', replyError);
       return c.json({
         success: false,
         error: 'Failed to create reply',
-        details: replyError.message,
+        details: replyError instanceof Error ? replyError.message : 'Unknown error',
       }, 500 as any);
     }
 
     // Add email metadata for reply
     if (originalComm.communication_type === 'email') {
-      const { error: emailError } = await supabase
-        .from('email_metadata')
-        .insert({
+      try {
+        await insertEmailMetadata({
           communication_id: reply.id,
           message_id: `${reply.id}@rexera.com`,
           in_reply_to: originalComm.email_metadata?.[0]?.message_id || originalComm.id,
@@ -728,8 +710,7 @@ communications.post('/:id/reply', async (c) => {
           attachments: [],
           headers: {},
         });
-
-      if (emailError) {
+      } catch (emailError) {
         console.error('Email metadata error:', emailError);
       }
     }
@@ -818,10 +799,10 @@ communications.post('/:id/forward', async (c) => {
       }, 404 as any);
     }
 
-    // Create forward (new thread)
-    const { data: forward, error: forwardError } = await supabase
-      .from('communications')
-      .insert({
+    // Create forward (new thread) using type-safe function
+    let forward;
+    try {
+      forward = await insertCommunication({
         workflow_id: originalComm.workflow_id,
         thread_id: crypto.randomUUID(), // New thread for forwards
         sender_id: user.id,
@@ -832,33 +813,28 @@ communications.post('/:id/forward', async (c) => {
         direction: 'OUTBOUND',
         status: 'SENT',
         metadata: data.metadata,
-      })
-      .select()
-      .single();
-
-    if (forwardError) {
+      });
+    } catch (forwardError) {
       console.error('Database error:', forwardError);
       return c.json({
         success: false,
         error: 'Failed to create forward',
-        details: forwardError.message,
+        details: forwardError instanceof Error ? forwardError.message : 'Unknown error',
       }, 500 as any);
     }
 
     // Add email metadata for forward
     if (originalComm.communication_type === 'email') {
-      const { error: emailError } = await supabase
-        .from('email_metadata')
-        .insert({
+      try {
+        await insertEmailMetadata({
           communication_id: forward.id,
           message_id: `${forward.id}@rexera.com`,
-          in_reply_to: null, // Forwards don't reply to original
+          in_reply_to: undefined, // Forwards don't reply to original
           email_references: [],
           attachments: [],
           headers: {},
         });
-
-      if (emailError) {
+      } catch (emailError) {
         console.error('Email metadata error:', emailError);
       }
     }
