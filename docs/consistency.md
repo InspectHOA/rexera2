@@ -31,31 +31,55 @@ Golden standard patterns that ALL components must follow for platform consistenc
 ### 9. Data Fetching
 **RULE**: React Query with `['entity', filters]` query keys, `formatErrorMessage()` for errors, real-time subscriptions with invalidation
 
-### 10. Tailwind & Dark Mode
+### 10. Component Library Pattern
+**RULE**: Use shadcn/ui + Tailwind CSS complementary approach. shadcn/ui provides pre-built accessible components (`Button`, `Dialog`, `Card`), Tailwind provides utility classes for custom layouts and styling. Use `cn()` utility for className merging.
+
+**Examples:**
+```tsx
+// ✅ Good: shadcn/ui component for complex functionality
+<Button variant="outline" size="sm" onClick={handleCreate}>
+  Create New
+</Button>
+
+// ✅ Good: Tailwind for custom layouts
+<div className="flex h-full bg-background border-r border-border p-4">
+
+// ✅ Good: Combining both approaches
+<Card className="p-6 mt-4 hover:shadow-lg transition-shadow">
+  <Button variant="ghost" className="w-full justify-start">
+    Custom styled button
+  </Button>
+</Card>
+
+// ❌ Bad: Building complex components from scratch when shadcn/ui exists
+<button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2...">
+```
+
+### 11. Tailwind & Dark Mode
 **RULE**: Use Tailwind classes with dark mode variants: `bg-card dark:bg-card`, `text-foreground dark:text-foreground`. Use semantic color tokens like `bg-background`, `text-muted-foreground`, `border-border`
 
-### 11. Theme Integration
+### 12. Theme Integration
 **RULE**: Use CSS custom properties and CVA variants: `variant: { default, destructive, outline }`, `size: { sm, md, lg }`. Always include dark mode variants for colors
 
-### 12. Type Safety
+### 13. Type Safety
 **RULE**: All components use TypeScript with shared types from `@rexera/shared`. Props interfaces named `ComponentNameProps`
 
-### 13. Responsive Design
+### 14. Responsive Design
 **RULE**: Use standard Tailwind breakpoints with mobile-first approach: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
 
-### 14. Import Organization
+### 15. Import Organization
 **RULE**: Import order: external packages → `@rexera/shared` → `@/` aliases → relative imports. Group related imports, separate with blank lines
 
-### 15. Environment Variables
+### 16. Environment Variables
 **RULE**: Use `NEXT_PUBLIC_` prefix for client-side variables. Environment variables must be typed and validated at startup
 
-### 16. Code Organization
+### 17. Code Organization
 **RULE**: Feature-based components, NOT file-type based. Use `@rexera/shared` for all shared code. Use `workspace:*` for internal dependencies
 
-### 17. Script Standards  
+### 18. Script Standards  
 **RULE**: All scripts in `/scripts/` directory using TypeScript only. Categories: `testing/`, `db/`, `utils/`, `deployment/`. Use unified runner: `tsx scripts/utils/script-runner.ts`
 
-### 18. Testing Standards
+### 19. Testing Standards
 **RULE**: Tests in `__tests__/` directories with `*.test.{ts,tsx}` naming. Use Jest + React Testing Library. Mock dependencies before imports, use `jest.clearAllMocks()` in `beforeEach`
 
 ## API Consistency Rules

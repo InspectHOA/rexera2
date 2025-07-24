@@ -7,6 +7,7 @@ import type {
   HilNotificationInsert, 
   CommunicationInsert, 
   HilNoteInsert,
+  HilNoteUpdate,
   WorkflowInsert,
   WorkflowUpdate,
   CounterpartyInsert,
@@ -152,10 +153,23 @@ export async function insertHilNote(note: HilNoteInsert) {
     throw new Error('Missing required HIL note fields');
   }
   
+  // Validate enum values
+  const validPriorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+  if (!validPriorities.includes(note.priority)) {
+    throw new Error(`Invalid HIL note priority: ${note.priority}`);
+  }
+  
   const { data, error } = await supabase
     .from('hil_notes')
     .insert(note)
-    .select('*, author:user_profiles!author_id(full_name)')
+    .select(`
+      *,
+      author:user_profiles!hil_notes_author_id_fkey (
+        id,
+        full_name,
+        email
+      )
+    `)
     .single();
     
   if (error) {
@@ -164,6 +178,55 @@ export async function insertHilNote(note: HilNoteInsert) {
   }
   
   return data;
+}
+
+export async function updateHilNote(id: string, updates: HilNoteUpdate) {
+  const supabase = createServerClient();
+  
+  // Validate enum values if provided
+  if (updates.priority) {
+    const validPriorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+    if (!validPriorities.includes(updates.priority)) {
+      throw new Error(`Invalid HIL note priority: ${updates.priority}`);
+    }
+  }
+  
+  const { data, error } = await supabase
+    .from('hil_notes')
+    .update(updates)
+    .eq('id', id)
+    .select(`
+      *,
+      author:user_profiles!hil_notes_author_id_fkey (
+        id,
+        full_name,
+        email
+      )
+    `)
+    .single();
+    
+  if (error) {
+    console.error('Database error updating HIL note:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+export async function deleteHilNote(id: string) {
+  const supabase = createServerClient();
+  
+  const { error } = await supabase
+    .from('hil_notes')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Database error deleting HIL note:', error);
+    throw error;
+  }
+  
+  return true;
 }
 
 // Workflows
@@ -307,8 +370,35 @@ export async function deleteCounterparty(id: string) {
 export async function insertTaskExecution(taskExecution: TaskExecutionInsert) {
   const supabase = createServerClient();
   
-  if (!taskExecution.workflow_id || !taskExecution.task_id || !taskExecution.executor_type || !taskExecution.status) {
-    throw new Error('Missing required task execution fields: workflow_id, task_id, executor_type, status');
+  if (!taskExecution.workflow_id || !taskExecution.title || !taskExecution.task_type || !taskExecution.executor_type) {
+    throw new Error('Missing required task execution fields: workflow_id, title, task_type, executor_type');
+  }
+  
+  // Validate enum values if provided
+  if (taskExecution.status) {
+    const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED'];
+    if (!validStatuses.includes(taskExecution.status)) {
+      throw new Error(`Invalid task execution status: ${taskExecution.status}`);
+    }
+  }
+  
+  const validExecutorTypes = ['AI', 'HIL'];
+  if (!validExecutorTypes.includes(taskExecution.executor_type)) {
+    throw new Error(`Invalid executor type: ${taskExecution.executor_type}`);
+  }
+  
+  if (taskExecution.priority) {
+    const validPriorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+    if (!validPriorities.includes(taskExecution.priority)) {
+      throw new Error(`Invalid priority: ${taskExecution.priority}`);
+    }
+  }
+  
+  if (taskExecution.sla_status) {
+    const validSlaStatuses = ['ON_TIME', 'AT_RISK', 'BREACHED'];
+    if (!validSlaStatuses.includes(taskExecution.sla_status)) {
+      throw new Error(`Invalid SLA status: ${taskExecution.sla_status}`);
+    }
   }
   
   const { data, error } = await supabase
@@ -328,6 +418,21 @@ export async function insertTaskExecution(taskExecution: TaskExecutionInsert) {
 export async function updateTaskExecution(id: string, updates: TaskExecutionUpdate) {
   const supabase = createServerClient();
   
+  // Validate enum values if provided
+  if (updates.status) {
+    const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED'];
+    if (!validStatuses.includes(updates.status)) {
+      throw new Error(`Invalid task execution status: ${updates.status}`);
+    }
+  }
+  
+  if (updates.executor_type) {
+    const validExecutorTypes = ['AI', 'HIL'];
+    if (!validExecutorTypes.includes(updates.executor_type)) {
+      throw new Error(`Invalid executor type: ${updates.executor_type}`);
+    }
+  }
+  
   const { data, error } = await supabase
     .from('task_executions')
     .update(updates)
@@ -337,6 +442,94 @@ export async function updateTaskExecution(id: string, updates: TaskExecutionUpda
     
   if (error) {
     console.error('Database error updating task execution:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+export async function insertTaskExecutions(taskExecutions: TaskExecutionInsert[]) {
+  const supabase = createServerClient();
+  
+  // Validate all task executions
+  for (const taskExecution of taskExecutions) {
+    if (!taskExecution.workflow_id || !taskExecution.title || !taskExecution.task_type || !taskExecution.executor_type) {
+      throw new Error('Missing required task execution fields: workflow_id, title, task_type, executor_type');
+    }
+    
+    // Validate enum values if provided
+    if (taskExecution.status) {
+      const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED'];
+      if (!validStatuses.includes(taskExecution.status)) {
+        throw new Error(`Invalid task execution status: ${taskExecution.status}`);
+      }
+    }
+    
+    const validExecutorTypes = ['AI', 'HIL'];
+    if (!validExecutorTypes.includes(taskExecution.executor_type)) {
+      throw new Error(`Invalid executor type: ${taskExecution.executor_type}`);
+    }
+    
+    if (taskExecution.priority) {
+      const validPriorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+      if (!validPriorities.includes(taskExecution.priority)) {
+        throw new Error(`Invalid priority: ${taskExecution.priority}`);
+      }
+    }
+    
+    if (taskExecution.sla_status) {
+      const validSlaStatuses = ['ON_TIME', 'AT_RISK', 'BREACHED'];
+      if (!validSlaStatuses.includes(taskExecution.sla_status)) {
+        throw new Error(`Invalid SLA status: ${taskExecution.sla_status}`);
+      }
+    }
+  }
+  
+  const { data, error } = await supabase
+    .from('task_executions')
+    .insert(taskExecutions)
+    .select();
+    
+  if (error) {
+    console.error('Database error inserting task executions:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+export async function updateTaskExecutionByWorkflowAndType(workflowId: string, taskType: string, updates: TaskExecutionUpdate) {
+  const supabase = createServerClient();
+  
+  // Validate enum values if provided
+  if (updates.status) {
+    const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'INTERRUPT', 'COMPLETED', 'FAILED'];
+    if (!validStatuses.includes(updates.status)) {
+      throw new Error(`Invalid task execution status: ${updates.status}`);
+    }
+  }
+  
+  if (updates.executor_type) {
+    const validExecutorTypes = ['AI', 'HIL'];
+    if (!validExecutorTypes.includes(updates.executor_type)) {
+      throw new Error(`Invalid executor type: ${updates.executor_type}`);
+    }
+  }
+  
+  const { data, error } = await supabase
+    .from('task_executions')
+    .update(updates)
+    .eq('workflow_id', workflowId)
+    .eq('task_type', taskType)
+    .select(`
+      *,
+      workflows!workflow_id(id, title, client_id),
+      agents!agent_id(id, name, type)
+    `)
+    .single();
+    
+  if (error) {
+    console.error('Database error updating task execution by workflow and type:', error);
     throw error;
   }
   

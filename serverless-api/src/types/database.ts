@@ -35,10 +35,20 @@ export interface HilNoteInsert {
   content: string;
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   mentions?: string[];
-  parent_id?: string;
+  parent_note_id?: string;
   is_resolved?: boolean;
   resolved_at?: string;
   resolved_by?: string;
+}
+
+export interface HilNoteUpdate {
+  content?: string;
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  mentions?: string[];
+  is_resolved?: boolean;
+  resolved_at?: string | null;
+  resolved_by?: string | null;
+  updated_at?: string;
 }
 
 export interface WorkflowInsert {
@@ -83,28 +93,37 @@ export interface CounterpartyUpdate {
 
 export interface TaskExecutionInsert {
   workflow_id: string;
-  task_id: string;
-  agent_id?: string;
+  agent_id?: string | null;
+  title: string;
+  description?: string | null;
+  sequence_order?: number;
+  task_type: string;
+  status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'COMPLETED' | 'FAILED';
+  interrupt_type?: 'MISSING_DOCUMENT' | 'PAYMENT_REQUIRED' | 'CLIENT_CLARIFICATION' | 'MANUAL_VERIFICATION' | null;
   executor_type: 'AI' | 'HIL';
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'COMPLETED' | 'FAILED';
-  started_at?: string;
-  completed_at?: string;
-  execution_time_ms?: number;
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   input_data?: Record<string, any>;
-  output_data?: Record<string, any>;
-  error_message?: string;
-  metadata?: Record<string, any>;
+  output_data?: Record<string, any> | null;
+  error_message?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  execution_time_ms?: number | null;
+  retry_count?: number;
+  sla_hours?: number;
+  sla_due_at?: string | null;
+  sla_status?: 'ON_TIME' | 'AT_RISK' | 'BREACHED';
 }
 
 export interface TaskExecutionUpdate {
   status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'INTERRUPT' | 'COMPLETED' | 'FAILED';
-  started_at?: string;
-  completed_at?: string;
-  execution_time_ms?: number;
-  input_data?: Record<string, any>;
-  output_data?: Record<string, any>;
-  error_message?: string;
-  metadata?: Record<string, any>;
+  executor_type?: 'AI' | 'HIL';
+  started_at?: string | null;
+  completed_at?: string | null;
+  execution_time_ms?: number | null;
+  input_data?: Record<string, any> | null;
+  output_data?: Record<string, any> | null;
+  error_message?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 export interface NotificationUpdate {
@@ -126,15 +145,17 @@ export interface WorkflowCounterpartyUpdate {
 }
 
 export interface AuditEventInsert {
+  actor_type: 'human' | 'agent' | 'system';
   actor_id: string;
-  actor_type: 'user' | 'system' | 'api';
-  action: string;
-  resource_type: string;
-  resource_id?: string;
-  details?: Record<string, any>;
-  ip_address?: string;
-  user_agent?: string;
-  metadata?: Record<string, any>;
+  actor_name?: string;
+  event_type: 'workflow_management' | 'task_execution' | 'task_intervention' | 'sla_management' | 'user_authentication' | 'document_management' | 'communication' | 'counterparty_management' | 'system_operation';
+  action: 'create' | 'read' | 'update' | 'delete' | 'execute' | 'approve' | 'reject' | 'login' | 'logout';
+  resource_type: 'workflow' | 'task_execution' | 'user_profile' | 'client' | 'agent' | 'document' | 'communication' | 'notification' | 'counterparty';
+  resource_id: string;
+  workflow_id?: string;
+  client_id?: string;
+  event_data?: Record<string, any>;
+  created_at?: string;
 }
 
 export interface EmailMetadataInsert {

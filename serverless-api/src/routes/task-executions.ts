@@ -6,6 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertTaskExecution, updateTaskExecution, insertTaskExecutions, updateTaskExecutionByWorkflowAndType } from '../utils/type-safe-db';
 import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { 
   CreateTaskExecutionSchema,
@@ -193,13 +194,11 @@ taskExecutions.post('/bulk', async (c) => {
       }, 201 as any);
     }
 
-    const { data: taskExecutions, error } = await supabase
-      .from('task_executions')
-      .insert(tasksToCreate)
-      .select();
-
-    if (error) {
-      throw new Error(`Failed to create task executions: ${error.message}`);
+    let taskExecutions;
+    try {
+      taskExecutions = await insertTaskExecutions(tasksToCreate);
+    } catch (error) {
+      throw new Error(`Failed to create task executions: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
     // Log audit events for bulk creation
@@ -354,27 +353,19 @@ taskExecutions.patch('/by-workflow-and-type', async (c) => {
       .eq('task_type', task_type)
       .single();
 
-    // Find and update the task by workflow_id and task_type
-    const { data: taskExecution, error } = await supabase
-      .from('task_executions')
-      .update(result.data)
-      .eq('workflow_id', workflow_id)
-      .eq('task_type', task_type)
-      .select(`
-        *,
-        workflows!workflow_id(id, title, client_id),
-        agents!agent_id(id, name, type)
-      `)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
+    // Find and update the task by workflow_id and task_type using type-safe function
+    let taskExecution;
+    try {
+      taskExecution = await updateTaskExecutionByWorkflowAndType(workflow_id, task_type, result.data);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('PGRST116')) {
         return c.json({
           success: false,
           error: 'Task execution not found',
         }, 404 as any);
       }
-      throw new Error(`Failed to update task execution: ${error.message}`);
+      throw new Error(`Failed to update task execution: ${errorMessage}`);
     }
 
     // Log audit event for task update
@@ -471,25 +462,36 @@ taskExecutions.patch('/:id', async (c) => {
       .eq('id', id)
       .single();
 
-    const { data: taskExecution, error } = await supabase
-      .from('task_executions')
-      .update(updateData)
-      .eq('id', id)
-      .select(`
-        *,
-        workflows!workflow_id(id, title, client_id),
-        agents!agent_id(id, name, type)
-      `)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
+    let taskExecution;
+    try {
+      taskExecution = await updateTaskExecution(id, updateData);
+      
+      // Get the task execution with related data for the response
+      const { data: taskWithRelations, error: selectError } = await supabase
+        .from('task_executions')
+        .select(`
+          *,
+          workflows!workflow_id(id, title, client_id),
+          agents!agent_id(id, name, type)
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (selectError) {
+        console.error('Error fetching task execution details:', selectError);
+        // Return the basic task execution if we can't get relations
+      } else {
+        taskExecution = taskWithRelations;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('PGRST116')) {
         return c.json({
           success: false,
           error: 'Task execution not found',
         }, 404 as any);
       }
-      throw new Error(`Failed to update task execution: ${error.message}`);
+      throw new Error(`Failed to update task execution: ${errorMessage}`);
     }
 
     // Log audit event for task update

@@ -7,6 +7,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
+import { insertAuditEvent, insertAuditEvents } from '../utils/type-safe-db';
 import { type AuthUser } from '../middleware';
 import { z } from 'zod';
 import { 
@@ -42,18 +43,15 @@ const listAuditEventsSchema = AuditEventQuerySchema.omit({
  * Writes audit events directly to the database
  */
 class SupabaseAuditLogger extends BaseAuditLogger {
-  private supabase = createServerClient();
 
   protected async writeEvent(event: CreateAuditEvent): Promise<void> {
-    const { error } = await this.supabase
-      .from('audit_events')
-      .insert({
+    try {
+      await insertAuditEvent({
         ...event,
         created_at: new Date().toISOString()
       });
-
-    if (error) {
-      throw new Error(`Failed to write audit event: ${error.message}`);
+    } catch (error) {
+      throw new Error(`Failed to write audit event: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -63,12 +61,10 @@ class SupabaseAuditLogger extends BaseAuditLogger {
       created_at: new Date().toISOString()
     }));
 
-    const { error } = await this.supabase
-      .from('audit_events')
-      .insert(eventsWithTimestamp);
-
-    if (error) {
-      throw new Error(`Failed to write audit event batch: ${error.message}`);
+    try {
+      await insertAuditEvents(eventsWithTimestamp);
+    } catch (error) {
+      throw new Error(`Failed to write audit event batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

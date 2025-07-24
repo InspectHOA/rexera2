@@ -6,7 +6,7 @@
 
 import { Hono } from 'hono';
 import { createServerClient } from '../utils/database';
-import { insertNotifications, insertHilNote } from '../utils/type-safe-db';
+import { insertNotifications, insertHilNote, updateHilNote, deleteHilNote } from '../utils/type-safe-db';
 import { getCompanyFilter, clientDataMiddleware, type AuthUser } from '../middleware';
 import { 
   HilNoteFiltersSchema,
@@ -262,26 +262,16 @@ hilNotes.post('/', async (c) => {
       author_id: user.id
     };
 
-    // Create the note
-    const { data: note, error: noteError } = await supabase
-      .from('hil_notes')
-      .insert(noteData)
-      .select(`
-        *,
-        author:user_profiles!hil_notes_author_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .single();
-
-    if (noteError) {
-      console.error('Error creating HIL note:', noteError);
+    // Create the note using type-safe function
+    let note;
+    try {
+      note = await insertHilNote(noteData);
+    } catch (error) {
+      console.error('Error creating HIL note:', error);
       return c.json({
         success: false,
         error: 'Failed to create note',
-        details: noteError
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
 
@@ -398,26 +388,23 @@ hilNotes.patch('/:id', async (c) => {
       updated_at: new Date().toISOString()
     };
 
-    const { data: updatedNote, error: updateError } = await supabase
-      .from('hil_notes')
-      .update(updateData)
-      .eq('id', noteId)
-      .select(`
-        *,
-        author:user_profiles!hil_notes_author_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .single();
-
-    if (updateError) {
-      console.error('Error updating HIL note:', updateError);
+    let updatedNote;
+    try {
+      updatedNote = await updateHilNote(noteId, updateData);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('PGRST116')) {
+        return c.json({
+          success: false,
+          error: 'Note not found'
+        }, 404);
+      }
+      
+      console.error('Error updating HIL note:', error);
       return c.json({
         success: false,
         error: 'Failed to update note',
-        details: updateError
+        details: errorMessage
       }, 500);
     }
 
@@ -442,12 +429,11 @@ hilNotes.patch('/:id', async (c) => {
           }
         }));
 
-        const { error: notificationError } = await supabase
-          .from('hil_notifications')
-          .insert(notifications);
-
-        if (notificationError) {
+        try {
+          await insertNotifications(notifications);
+        } catch (notificationError) {
           console.error('Error creating mention notifications:', notificationError);
+          // Don't fail the request, just log the error
         }
       }
     }
@@ -540,25 +526,15 @@ hilNotes.post('/:id/reply', async (c) => {
       author_id: user.id
     };
 
-    const { data: reply, error: replyError } = await supabase
-      .from('hil_notes')
-      .insert(replyData)
-      .select(`
-        *,
-        author:user_profiles!hil_notes_author_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .single();
-
-    if (replyError) {
-      console.error('Error creating HIL note reply:', replyError);
+    let reply;
+    try {
+      reply = await insertHilNote(replyData);
+    } catch (error) {
+      console.error('Error creating HIL note reply:', error);
       return c.json({
         success: false,
         error: 'Failed to create reply',
-        details: replyError
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
 
@@ -579,12 +555,11 @@ hilNotes.post('/:id/reply', async (c) => {
         }
       }));
 
-      const { error: notificationError } = await supabase
-        .from('hil_notifications')
-        .insert(notifications);
-
-      if (notificationError) {
+      try {
+        await insertNotifications(notifications);
+      } catch (notificationError) {
         console.error('Error creating mention notifications:', notificationError);
+        // Don't fail the request, just log the error
       }
     }
 
@@ -662,17 +637,14 @@ hilNotes.delete('/:id', async (c) => {
       }, 403);
     }
 
-    const { error: deleteError } = await supabase
-      .from('hil_notes')
-      .delete()
-      .eq('id', noteId);
-
-    if (deleteError) {
-      console.error('Error deleting HIL note:', deleteError);
+    try {
+      await deleteHilNote(noteId);
+    } catch (error) {
+      console.error('Error deleting HIL note:', error);
       return c.json({
         success: false,
         error: 'Failed to delete note',
-        details: deleteError
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 500);
     }
 

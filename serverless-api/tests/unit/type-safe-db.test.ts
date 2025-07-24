@@ -3,30 +3,54 @@
  * These tests verify that our type-safe functions work correctly
  */
 
-import { insertCommunication, insertNotifications, insertWorkflow, updateCommunication, deleteCommunication, updateNotificationForUser, bulkMarkNotificationsAsRead, deleteNotificationForUser, updateWorkflow, insertWorkflowCounterparty, updateWorkflowCounterparty, deleteWorkflowCounterparty, insertCounterparty, updateCounterparty, deleteCounterparty } from '../../src/utils/type-safe-db';
+import { insertCommunication, insertNotifications, insertWorkflow, updateCommunication, deleteCommunication, updateNotificationForUser, bulkMarkNotificationsAsRead, deleteNotificationForUser, updateWorkflow, insertWorkflowCounterparty, updateWorkflowCounterparty, deleteWorkflowCounterparty, insertCounterparty, updateCounterparty, deleteCounterparty, insertTaskExecution, insertTaskExecutions, updateTaskExecution, updateTaskExecutionByWorkflowAndType, insertHilNote, updateHilNote, deleteHilNote, insertAuditEvent, insertAuditEvents } from '../../src/utils/type-safe-db';
 
 // Mock the database module
 jest.mock('../../src/utils/database', () => ({
   createServerClient: jest.fn(() => ({
     from: jest.fn((table) => ({
-      insert: jest.fn(() => ({
-        select: jest.fn(() => {
-          // For notifications table, return array directly
-          if (table === 'hil_notifications') {
-            return Promise.resolve({
-              data: [{ id: 'test-id', created_at: '2023-01-01T00:00:00Z' }],
-              error: null
-            });
-          }
-          // For other tables, return single() method
-          return {
-            single: jest.fn(() => Promise.resolve({
-              data: { id: 'test-id', created_at: '2023-01-01T00:00:00Z' },
-              error: null
-            }))
-          };
-        })
-      })),
+      insert: jest.fn((data) => {
+        const isArrayInsert = Array.isArray(data);
+        
+        return {
+          select: jest.fn(() => {
+            // For bulk operations (notifications and audit_events), always return array
+            if (table === 'hil_notifications' || (table === 'audit_events' && isArrayInsert)) {
+              return Promise.resolve({
+                data: [{ id: 'test-id', created_at: '2023-01-01T00:00:00Z' }],
+                error: null
+              });
+            }
+            
+            // For task_executions
+            if (table === 'task_executions') {
+              if (isArrayInsert) {
+                // Bulk insert - return array directly
+                return Promise.resolve({
+                  data: [{ id: 'test-id', created_at: '2023-01-01T00:00:00Z' }],
+                  error: null
+                });
+              } else {
+                // Single insert - return object with single() method
+                return {
+                  single: jest.fn(() => Promise.resolve({
+                    data: { id: 'test-id', created_at: '2023-01-01T00:00:00Z' },
+                    error: null
+                  }))
+                };
+              }
+            }
+            
+            // For all other tables, return single() method
+            return {
+              single: jest.fn(() => Promise.resolve({
+                data: { id: 'test-id', created_at: '2023-01-01T00:00:00Z' },
+                error: null
+              }))
+            };
+          })
+        };
+      }),
       update: jest.fn(() => ({
         eq: jest.fn((field, value) => {
           if (field === 'user_id') {
@@ -376,6 +400,323 @@ describe('Type-Safe Database Operations', () => {
     });
   });
 
+  describe('insertTaskExecution', () => {
+    it('should validate required fields', async () => {
+      await expect(insertTaskExecution({
+        workflow_id: 'workflow-123',
+        // Missing title, task_type, executor_type
+      } as any)).rejects.toThrow('Missing required task execution fields');
+    });
+
+    it('should validate status enum', async () => {
+      await expect(insertTaskExecution({
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'AI',
+        status: 'INVALID_STATUS' as any
+      })).rejects.toThrow('Invalid task execution status: INVALID_STATUS');
+    });
+
+    it('should validate executor type enum', async () => {
+      await expect(insertTaskExecution({
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'INVALID_EXECUTOR' as any
+      })).rejects.toThrow('Invalid executor type: INVALID_EXECUTOR');
+    });
+
+    it('should validate priority enum', async () => {
+      await expect(insertTaskExecution({
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'AI',
+        priority: 'INVALID_PRIORITY' as any
+      })).rejects.toThrow('Invalid priority: INVALID_PRIORITY');
+    });
+
+    it('should validate SLA status enum', async () => {
+      await expect(insertTaskExecution({
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'AI',
+        sla_status: 'INVALID_SLA' as any
+      })).rejects.toThrow('Invalid SLA status: INVALID_SLA');
+    });
+
+    it('should insert valid task execution', async () => {
+      const result = await insertTaskExecution({
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'AI',
+        sequence_order: 1,
+        status: 'NOT_STARTED',
+        priority: 'NORMAL'
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        created_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('insertTaskExecutions', () => {
+    it('should validate required fields', async () => {
+      await expect(insertTaskExecutions([{
+        workflow_id: 'workflow-123',
+        // Missing title, task_type, executor_type
+      } as any])).rejects.toThrow('Missing required task execution fields');
+    });
+
+    it('should validate status enum', async () => {
+      await expect(insertTaskExecutions([{
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'AI',
+        sequence_order: 1,
+        status: 'INVALID_STATUS' as any
+      }])).rejects.toThrow('Invalid task execution status: INVALID_STATUS');
+    });
+
+    it('should validate executor type enum', async () => {
+      await expect(insertTaskExecutions([{
+        workflow_id: 'workflow-123',
+        title: 'Test Task',
+        task_type: 'test_task',
+        executor_type: 'INVALID_EXECUTOR' as any,
+        sequence_order: 1
+      }])).rejects.toThrow('Invalid executor type: INVALID_EXECUTOR');
+    });
+
+    it('should insert valid task executions', async () => {
+      const result = await insertTaskExecutions([{
+        workflow_id: 'workflow-123',
+        title: 'Test Task 1',
+        task_type: 'test_task_1',
+        executor_type: 'AI',
+        sequence_order: 1,
+        status: 'NOT_STARTED',
+        priority: 'NORMAL'
+      }, {
+        workflow_id: 'workflow-123',
+        title: 'Test Task 2',
+        task_type: 'test_task_2',
+        executor_type: 'HIL',
+        sequence_order: 2,
+        priority: 'HIGH'
+      }]);
+
+      expect(result).toEqual([{
+        id: 'test-id',
+        created_at: '2023-01-01T00:00:00Z'
+      }]);
+    });
+  });
+
+  describe('updateTaskExecution', () => {
+    it('should validate status enum', async () => {
+      await expect(updateTaskExecution('test-id', {
+        status: 'INVALID_STATUS' as any
+      })).rejects.toThrow('Invalid task execution status: INVALID_STATUS');
+    });
+
+    it('should validate executor type enum', async () => {
+      await expect(updateTaskExecution('test-id', {
+        executor_type: 'INVALID_EXECUTOR' as any
+      })).rejects.toThrow('Invalid executor type: INVALID_EXECUTOR');
+    });
+
+    it('should update task execution successfully', async () => {
+      const result = await updateTaskExecution('test-id', {
+        status: 'IN_PROGRESS',
+        started_at: '2023-01-01T00:00:00Z'
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('updateTaskExecutionByWorkflowAndType', () => {
+    it('should validate status enum', async () => {
+      await expect(updateTaskExecutionByWorkflowAndType('workflow-123', 'test_task', {
+        status: 'INVALID_STATUS' as any
+      })).rejects.toThrow('Invalid task execution status: INVALID_STATUS');
+    });
+
+    it('should validate executor type enum', async () => {
+      await expect(updateTaskExecutionByWorkflowAndType('workflow-123', 'test_task', {
+        executor_type: 'INVALID_EXECUTOR' as any
+      })).rejects.toThrow('Invalid executor type: INVALID_EXECUTOR');
+    });
+
+    it('should update task execution by workflow and type successfully', async () => {
+      const result = await updateTaskExecutionByWorkflowAndType('workflow-123', 'test_task', {
+        status: 'COMPLETED',
+        completed_at: '2023-01-01T00:00:00Z'
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('insertHilNote', () => {
+    it('should validate required fields', async () => {
+      await expect(insertHilNote({
+        workflow_id: 'workflow-123',
+        // Missing author_id, content, priority
+      } as any)).rejects.toThrow('Missing required HIL note fields');
+    });
+
+    it('should validate priority enum', async () => {
+      await expect(insertHilNote({
+        workflow_id: 'workflow-123',
+        author_id: 'author-123',
+        content: 'Test HIL note',
+        priority: 'INVALID_PRIORITY' as any
+      })).rejects.toThrow('Invalid HIL note priority: INVALID_PRIORITY');
+    });
+
+    it('should insert valid HIL note', async () => {
+      const result = await insertHilNote({
+        workflow_id: 'workflow-123',
+        author_id: 'author-123',
+        content: 'Test HIL note content',
+        priority: 'NORMAL',
+        mentions: ['user-456'],
+        is_resolved: false
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        created_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('updateHilNote', () => {
+    it('should validate priority enum', async () => {
+      await expect(updateHilNote('test-id', {
+        priority: 'INVALID_PRIORITY' as any
+      })).rejects.toThrow('Invalid HIL note priority: INVALID_PRIORITY');
+    });
+
+    it('should update HIL note successfully', async () => {
+      const result = await updateHilNote('test-id', {
+        content: 'Updated content',
+        priority: 'HIGH',
+        is_resolved: true,
+        resolved_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
+    });
+
+    it('should allow partial updates', async () => {
+      const result = await updateHilNote('test-id', {
+        is_resolved: true
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('deleteHilNote', () => {
+    it('should delete HIL note successfully', async () => {
+      const result = await deleteHilNote('test-id');
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('insertAuditEvent', () => {
+    it('should validate required fields', async () => {
+      await expect(insertAuditEvent({
+        actor_type: 'human',
+        // Missing actor_id, action, resource_type
+      } as any)).rejects.toThrow('Missing required audit event fields');
+    });
+
+    it('should insert valid audit event', async () => {
+      const result = await insertAuditEvent({
+        actor_type: 'human',
+        actor_id: 'user-123',
+        actor_name: 'John Doe',
+        event_type: 'workflow_management',
+        action: 'create',
+        resource_type: 'workflow',
+        resource_id: 'workflow-456',
+        workflow_id: 'workflow-456',
+        client_id: 'client-789',
+        event_data: {
+          workflow_type: 'HOA_ACQUISITION'
+        }
+      });
+
+      expect(result).toEqual({
+        id: 'test-id',
+        created_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('insertAuditEvents', () => {
+    it('should validate required fields', async () => {
+      await expect(insertAuditEvents([{
+        actor_type: 'human',
+        // Missing actor_id, action, resource_type
+      } as any])).rejects.toThrow('Missing required audit event fields in batch insert');
+    });
+
+    it('should insert valid audit events', async () => {
+      const result = await insertAuditEvents([{
+        actor_type: 'human',
+        actor_id: 'user-123',
+        actor_name: 'John Doe',
+        event_type: 'task_execution',
+        action: 'execute',
+        resource_type: 'task_execution',
+        resource_id: 'task-456',
+        workflow_id: 'workflow-789',
+        event_data: {
+          task_type: 'document_review'
+        }
+      }, {
+        actor_type: 'system',
+        actor_id: 'system-123',
+        event_type: 'sla_management',
+        action: 'update',
+        resource_type: 'workflow',
+        resource_id: 'workflow-789',
+        event_data: {
+          sla_status: 'AT_RISK'
+        }
+      }]);
+
+      expect(result).toEqual([{
+        id: 'test-id',
+        created_at: '2023-01-01T00:00:00Z'
+      }]);
+    });
+  });
+
   describe('Type Safety Benefits', () => {
     it('should catch typos in column names at compile time', () => {
       // This would fail TypeScript compilation:
@@ -393,6 +734,18 @@ describe('Type-Safe Database Operations', () => {
       // insertWorkflow({
       //   workflow_type: 'INVALID_WORKFLOW_TYPE', // <- invalid enum
       //   client_id: 'client-123'
+      // });
+      
+      expect(true).toBe(true); // Placeholder for compile-time test
+    });
+
+    it('should enforce task execution field types at compile time', () => {
+      // This would fail TypeScript compilation:
+      // insertTaskExecution({
+      //   workflow_id: 'workflow-123',
+      //   title: 123, // <- wrong type, should be string
+      //   task_type: 'test_task',
+      //   executor_type: 'AI'
       // });
       
       expect(true).toBe(true); // Placeholder for compile-time test
