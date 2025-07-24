@@ -1922,8 +1922,8 @@ export const openApiPaths = {
         {
           name: 'include',
           in: 'query',
-          schema: { type: 'string', enum: ['workflows'] },
-          description: 'Include related workflow relationships'
+          schema: { type: 'string', enum: ['workflows', 'contacts', 'workflows,contacts'] },
+          description: 'Include related data: workflows (relationship data), contacts (contact information), or both'
         }
       ],
       responses: {
@@ -1993,8 +1993,8 @@ export const openApiPaths = {
         {
           name: 'include',
           in: 'query',
-          schema: { type: 'string', enum: ['workflows'] },
-          description: 'Include related workflow relationships'
+          schema: { type: 'string', enum: ['workflows', 'contacts', 'workflows,contacts'] },
+          description: 'Include related data: workflows (relationship data), contacts (contact information), or both'
         }
       ],
       responses: {
@@ -2371,6 +2371,475 @@ export const openApiPaths = {
         },
         '404': {
           description: 'Workflow counterparty relationship not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/{counterpartyId}/contacts': {
+    get: {
+      tags: ['Counterparty Contacts'],
+      summary: 'List counterparty contacts',
+      description: 'Retrieve contacts for a specific counterparty with role-based filtering and search',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        },
+        {
+          name: 'role',
+          in: 'query',
+          schema: { 
+            type: 'string', 
+            enum: [
+              'primary', 'billing', 'legal', 'operations', 'board_member', 
+              'property_manager', 'loan_processor', 'underwriter', 'escrow_officer', 
+              'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+            ]
+          },
+          description: 'Filter by contact role'
+        },
+        {
+          name: 'is_primary',
+          in: 'query',
+          schema: { type: 'boolean' },
+          description: 'Filter by primary contact status'
+        },
+        {
+          name: 'is_active',
+          in: 'query',
+          schema: { type: 'boolean' },
+          description: 'Filter by active status'
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search by name, email, or title'
+        },
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, default: 1 },
+          description: 'Page number'
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          description: 'Items per page'
+        },
+        {
+          name: 'sort',
+          in: 'query',
+          schema: { type: 'string', enum: ['name', 'role', 'title', 'created_at'], default: 'name' },
+          description: 'Sort field'
+        },
+        {
+          name: 'order',
+          in: 'query',
+          schema: { type: 'string', enum: ['asc', 'desc'], default: 'asc' },
+          description: 'Sort order'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'List of counterparty contacts',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyContactsResponse' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    post: {
+      tags: ['Counterparty Contacts'],
+      summary: 'Create counterparty contact',
+      description: 'Add a new contact to a counterparty with role-based validation',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateCounterpartyContact' }
+          }
+        }
+      },
+      responses: {
+        '201': {
+          description: 'Contact created successfully',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyContactResponse' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/{counterpartyId}/contacts/{contactId}': {
+    get: {
+      tags: ['Counterparty Contacts'],
+      summary: 'Get counterparty contact',
+      description: 'Retrieve details for a specific contact',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        },
+        {
+          name: 'contactId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Contact UUID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Contact details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyContactResponse' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty or contact not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    patch: {
+      tags: ['Counterparty Contacts'],
+      summary: 'Update counterparty contact',
+      description: 'Update contact information and role assignments',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        },
+        {
+          name: 'contactId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Contact UUID'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateCounterpartyContact' }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Contact updated successfully',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyContactResponse' }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty or contact not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    },
+    delete: {
+      tags: ['Counterparty Contacts'],
+      summary: 'Delete counterparty contact',
+      description: 'Remove a contact (cannot delete the only primary contact)',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        },
+        {
+          name: 'contactId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Contact UUID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Contact deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Contact deleted successfully' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Cannot delete primary contact',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty or contact not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/{counterpartyId}/contacts/primary': {
+    get: {
+      tags: ['Counterparty Contacts'],
+      summary: 'Get primary contact',
+      description: 'Retrieve the primary contact for quick access',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Primary contact details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyContactResponse' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found or no primary contact exists',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/counterparties/{counterpartyId}/contacts/by-role/{role}': {
+    get: {
+      tags: ['Counterparty Contacts'],
+      summary: 'Get contacts by role',
+      description: 'Retrieve all contacts with a specific role (e.g., board_member, loan_processor)',
+      parameters: [
+        {
+          name: 'counterpartyId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Counterparty UUID'
+        },
+        {
+          name: 'role',
+          in: 'path',
+          required: true,
+          schema: { 
+            type: 'string', 
+            enum: [
+              'primary', 'billing', 'legal', 'operations', 'board_member', 
+              'property_manager', 'loan_processor', 'underwriter', 'escrow_officer', 
+              'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+            ]
+          },
+          description: 'Contact role to filter by'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Contacts with the specified role',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CounterpartyContactsResponse' }
+            }
+          }
+        },
+        '404': {
+          description: 'Counterparty not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/tags': {
+    get: {
+      tags: ['Tags'],
+      summary: 'List predefined document tags',
+      description: 'Retrieve all available predefined tags for document categorization',
+      responses: {
+        '200': {
+          description: 'List of predefined tags',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string', description: 'Tag identifier' },
+                        name: { type: 'string', description: 'Tag display name' },
+                        color: { type: 'string', description: 'Tag color for UI display' }
+                      },
+                      required: ['id', 'name']
+                    }
+                  }
+                },
+                required: ['success', 'data']
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/tags/search': {
+    get: {
+      tags: ['Tags'],
+      summary: 'Search document tags',
+      description: 'Search predefined tags by query string for autocomplete functionality',
+      parameters: [
+        {
+          name: 'q',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', minLength: 1 },
+          description: 'Search query string'
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+          description: 'Maximum number of results'
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Search results for tags',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string', description: 'Tag identifier' },
+                        name: { type: 'string', description: 'Tag display name' },
+                        color: { type: 'string', description: 'Tag color for UI display' }
+                      },
+                      required: ['id', 'name']
+                    }
+                  },
+                  meta: {
+                    type: 'object',
+                    properties: {
+                      query: { type: 'string', description: 'Search query used' },
+                      total: { type: 'integer', description: 'Total matching results' }
+                    },
+                    required: ['query', 'total']
+                  }
+                },
+                required: ['success', 'data', 'meta']
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid search parameters',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Error' }

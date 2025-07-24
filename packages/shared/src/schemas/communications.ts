@@ -8,7 +8,7 @@ import { z } from 'zod';
 // ENUMS
 // =====================================================
 
-export const CommunicationTypeSchema = z.enum(['email', 'phone', 'sms', 'internal_note']);
+export const CommunicationTypeSchema = z.enum(['email', 'phone', 'sms', 'client_chat']);
 export const EmailDirectionSchema = z.enum(['INBOUND', 'OUTBOUND']);
 export const EmailStatusSchema = z.enum(['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED']);
 export const CallDirectionSchema = z.enum(['INBOUND', 'OUTBOUND']);
@@ -62,8 +62,8 @@ export const CommunicationSchema = z.object({
 export const CreateCommunicationSchema = z.object({
   workflow_id: z.string().uuid().optional(),
   thread_id: z.string().uuid().optional(),
-  recipient_email: z.string().email(),
-  subject: z.string().min(1, 'Subject is required'),
+  recipient_email: z.string().email().optional().nullable(),
+  subject: z.string().min(1, 'Subject is required').optional().nullable(),
   body: z.string().min(1, 'Message body is required'),
   communication_type: CommunicationTypeSchema,
   direction: EmailDirectionSchema,

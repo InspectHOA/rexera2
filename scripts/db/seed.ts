@@ -72,7 +72,7 @@ async function resetDatabase() {
   const tablesToClear = [
     'hil_notifications', 'hil_notes', 'workflow_contacts', 'email_metadata',
     'phone_metadata', 'communications', 'documents', 'costs', 'invoices',
-    'workflow_counterparties', 'counterparties', 'task_executions',
+    'counterparty_contacts', 'workflow_counterparties', 'counterparties', 'task_executions',
     'workflows', 'agent_performance_metrics', 'agents', 'user_preferences',
     'user_profiles', 'clients'
   ];
@@ -1450,6 +1450,132 @@ async function seedDatabase() {
     throw counterpartyError;
   }
   console.log(`✅ Created ${counterpartyResult?.length || 0} counterparties`);
+
+  // Create counterparty contacts for role-based organization
+  console.log('👥 Creating counterparty contacts...');
+  
+  // Sample contact data for different counterparty types
+  const contactTemplates = {
+    hoa: [
+      {
+        role: 'board_member',
+        name: 'John Smith',
+        title: 'Board President',
+        email: 'president@example-hoa.com',
+        phone: '555-0101',
+        is_primary: true,
+        preferred_contact_time: '9AM-5PM EST',
+        notes: 'Primary contact for all HOA matters'
+      },
+      {
+        role: 'property_manager',
+        name: 'Jane Doe',
+        title: 'Property Manager',
+        email: 'manager@example-hoa.com',
+        phone: '555-0102',
+        mobile_phone: '555-0103',
+        is_primary: false,
+        preferred_contact_time: 'Weekdays 8AM-6PM',
+        notes: 'Handles day-to-day operations and maintenance'
+      }
+    ],
+    lender: [
+      {
+        role: 'loan_processor',
+        name: 'Michael Johnson',
+        title: 'Senior Loan Processor',
+        email: 'mjohnson@example-lender.com',
+        phone: '555-0201',
+        extension: '1234',
+        is_primary: true,
+        department: 'Loan Processing',
+        preferred_contact_time: '9AM-5PM EST',
+        notes: 'Primary processor for residential loans'
+      },
+      {
+        role: 'customer_service',
+        name: 'Robert Davis',
+        title: 'Customer Service Manager',
+        email: 'rdavis@example-lender.com',
+        phone: '555-0203',
+        mobile_phone: '555-0204',
+        is_primary: false,
+        department: 'Customer Service',
+        preferred_contact_time: 'Any business hours',
+        notes: 'General inquiries and customer support'
+      }
+    ],
+    municipality: [
+      {
+        role: 'clerk',
+        name: 'Patricia Miller',
+        title: 'City Clerk',
+        email: 'pmiller@example-city.gov',
+        phone: '555-0301',
+        is_primary: true,
+        department: 'City Clerk Office',
+        preferred_contact_time: 'Monday-Friday 9AM-4PM',
+        notes: 'Official records and municipal documents'
+      }
+    ],
+    utility: [
+      {
+        role: 'customer_service',
+        name: 'Jennifer Garcia',
+        title: 'Customer Service Representative',
+        email: 'jgarcia@example-utility.com',
+        phone: '555-0401',
+        is_primary: true,
+        department: 'Customer Service',
+        preferred_contact_time: '24/7 support available',
+        notes: 'General account inquiries and service requests'
+      }
+    ],
+    tax_authority: [
+      {
+        role: 'assessor',
+        name: 'Nancy Martinez',
+        title: 'Tax Assessor',
+        email: 'nmartinez@example-tax.gov',
+        phone: '555-0501',
+        is_primary: true,
+        department: 'Assessment Office',
+        preferred_contact_time: 'Monday-Friday 9AM-4PM',
+        notes: 'Property assessments and valuations'
+      }
+    ]
+  };
+
+  const contactsToCreate = [];
+  
+  for (const counterparty of counterpartyResult || []) {
+    const templates = contactTemplates[counterparty.type as keyof typeof contactTemplates];
+    
+    if (templates) {
+      for (const template of templates) {
+        const contact = {
+          counterparty_id: counterparty.id,
+          ...template,
+          // Customize email domain based on counterparty name
+          email: template.email.replace('example-', `${counterparty.name.toLowerCase().replace(/\s+/g, '-')}-`)
+        };
+        contactsToCreate.push(contact);
+      }
+    }
+  }
+
+  if (contactsToCreate.length > 0) {
+    const { data: contactData, error: contactError } = await supabase
+      .from('counterparty_contacts')
+      .upsert(contactsToCreate)
+      .select();
+
+    if (contactError) {
+      console.error('❌ Failed to create counterparty contacts:', contactError);
+      throw contactError;
+    }
+    console.log(`✅ Created ${contactData?.length || 0} counterparty contacts`);
+  }
 }
 
 async function verifyData() {
@@ -1490,6 +1616,14 @@ async function verifyData() {
     .from('hil_notifications')
     .select('type, priority, read');
 
+  const { data: counterparties } = await supabase
+    .from('counterparties')
+    .select('name, type');
+
+  const { data: contacts } = await supabase
+    .from('counterparty_contacts')
+    .select('name, role, is_primary');
+
   console.log('\n📊 Comprehensive Seeding Summary:');
   console.log(`📋 Workflows: ${workflows?.length || 0}`);
   
@@ -1516,6 +1650,8 @@ async function verifyData() {
   console.log(`📧 Communications: ${comms?.length || 0}`);
   console.log(`📄 Documents: ${docs?.length || 0}`);
   console.log(`🔔 HIL Notifications: ${notifications?.length || 0} (${notifications?.filter(n => !n.read).length || 0} unread)`);
+  console.log(`🏢 Counterparties: ${counterparties?.length || 0}`);
+  console.log(`👥 Counterparty Contacts: ${contacts?.length || 0} (${contacts?.filter(c => c.is_primary).length || 0} primary)`);
 
   // Show sample workflows
   console.log('\n📋 Sample Workflows:');

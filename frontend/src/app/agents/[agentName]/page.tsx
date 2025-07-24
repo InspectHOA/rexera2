@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { EmailInterface } from '@/app/agents/_components/mia/email-interface';
 import { CounterpartySelector } from '@/app/agents/_components/nina/counterparty-selector';
 import { DocumentExtractor } from '@/app/agents/_components/iris/document-extractor';
+import { ChatInterface } from '@/app/agents/_components/ria/chat-interface';
 
 interface AgentPageProps {
   params: {
@@ -40,6 +41,14 @@ export default function AgentPage({ params, searchParams }: AgentPageProps) {
       return (
         <DocumentExtractor 
           agentId="iris" 
+          workflowId={workflowId}
+        />
+      );
+    
+    case 'ria':
+      return (
+        <ChatInterface 
+          agentId="ria" 
           workflowId={workflowId}
         />
       );

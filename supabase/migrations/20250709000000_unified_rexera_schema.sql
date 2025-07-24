@@ -37,6 +37,25 @@ CREATE TYPE call_direction AS ENUM ('INBOUND', 'OUTBOUND');
 CREATE TYPE counterparty_type AS ENUM ('hoa', 'lender', 'municipality', 'utility', 'tax_authority');
 CREATE TYPE workflow_counterparty_status AS ENUM ('PENDING', 'CONTACTED', 'RESPONDED', 'COMPLETED');
 
+-- Counterparty contact role types
+CREATE TYPE counterparty_contact_role AS ENUM (
+    'primary',           -- Main contact
+    'billing',           -- Billing/accounting contact
+    'legal',             -- Legal representative
+    'operations',        -- Day-to-day operations
+    'board_member',      -- HOA board member
+    'property_manager',  -- HOA property manager
+    'loan_processor',    -- Lender loan processor
+    'underwriter',       -- Lender underwriter
+    'escrow_officer',    -- Title/escrow officer
+    'clerk',             -- Municipal clerk
+    'assessor',          -- Tax assessor
+    'collector',         -- Tax collector
+    'customer_service',  -- Utility customer service
+    'technical',         -- Technical/IT contact
+    'other'              -- Custom role
+);
+
 -- Financial types
 CREATE TYPE invoice_status AS ENUM ('DRAFT', 'FINALIZED', 'PAID', 'VOID');
 
@@ -210,7 +229,7 @@ CREATE TABLE communications (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
     CONSTRAINT check_communication_type CHECK (
-        communication_type IN ('email', 'phone', 'sms', 'internal_note')
+        communication_type IN ('email', 'phone', 'sms', 'client_chat')
     )
 );
 
@@ -268,6 +287,39 @@ CREATE TABLE workflow_counterparties (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
     UNIQUE(workflow_id, counterparty_id)
+);
+
+-- Counterparty Contacts
+CREATE TABLE counterparty_contacts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    counterparty_id UUID NOT NULL REFERENCES counterparties(id) ON DELETE CASCADE,
+    role counterparty_contact_role NOT NULL,
+    name TEXT NOT NULL,
+    title TEXT,                    -- Job title (e.g., "Senior Loan Officer", "Board President")
+    department TEXT,               -- Department or division
+    email TEXT,
+    phone TEXT,
+    mobile_phone TEXT,
+    fax TEXT,
+    extension TEXT,                -- Phone extension
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    preferred_contact_method TEXT DEFAULT 'email',
+    preferred_contact_time TEXT,   -- e.g., "9AM-5PM EST", "Weekdays only"
+    notes TEXT,                    -- Additional notes about this contact
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    -- Constraints
+    CONSTRAINT check_preferred_contact_method CHECK (
+        preferred_contact_method IN ('email', 'phone', 'mobile', 'fax', 'any')
+    ),
+    CONSTRAINT check_at_least_one_contact_method CHECK (
+        email IS NOT NULL OR phone IS NOT NULL OR mobile_phone IS NOT NULL
+    ),
+    -- Only one primary contact per counterparty
+    CONSTRAINT unique_primary_contact_per_counterparty 
+        EXCLUDE (counterparty_id WITH =) WHERE (is_primary = TRUE)
 );
 
 -- =====================================================
@@ -461,6 +513,10 @@ CREATE INDEX idx_communications_workflow ON communications(workflow_id);
 CREATE INDEX idx_communications_type ON communications(communication_type);
 CREATE INDEX idx_counterparties_type ON counterparties(type);
 CREATE INDEX idx_workflow_counterparties_workflow ON workflow_counterparties(workflow_id);
+CREATE INDEX idx_counterparty_contacts_counterparty ON counterparty_contacts(counterparty_id);
+CREATE INDEX idx_counterparty_contacts_role ON counterparty_contacts(role);
+CREATE INDEX idx_counterparty_contacts_primary ON counterparty_contacts(counterparty_id, is_primary) WHERE is_primary = TRUE;
+CREATE INDEX idx_counterparty_contacts_active ON counterparty_contacts(counterparty_id, is_active) WHERE is_active = TRUE;
 CREATE INDEX idx_documents_workflow ON documents(workflow_id);
 CREATE INDEX idx_documents_type ON documents(document_type);
 CREATE INDEX idx_costs_workflow ON costs(workflow_id);
@@ -535,6 +591,8 @@ CREATE TRIGGER update_counterparties_updated_at BEFORE UPDATE ON counterparties
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_workflow_counterparties_updated_at BEFORE UPDATE ON workflow_counterparties 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_counterparty_contacts_updated_at BEFORE UPDATE ON counterparty_contacts 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_documents_updated_at BEFORE UPDATE ON documents 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON invoices 
@@ -588,6 +646,10 @@ WHERE status != 'COMPLETED';
 
 -- Table comments
 COMMENT ON TABLE workflows IS 'Workflows table uses UUID primary key only. Human-readable formatting is handled in application layer.';
+COMMENT ON TABLE counterparty_contacts IS 'Stores multiple contacts for each counterparty with role-based organization (e.g., board members, loan processors, clerks)';
+COMMENT ON TYPE counterparty_contact_role IS 'Predefined contact roles specific to different counterparty types (HOA board members, lender processors, municipal clerks, etc.)';
+COMMENT ON COLUMN counterparty_contacts.is_primary IS 'Designates the primary contact for this counterparty. Only one primary contact allowed per counterparty.';
+COMMENT ON COLUMN counterparty_contacts.preferred_contact_time IS 'Free-form text for contact preferences (e.g., "9AM-5PM EST", "Weekdays only", "After 2PM")';
 
 -- Enum type comments
 COMMENT ON TYPE workflow_type IS 'Workflow types: MUNI_LIEN_SEARCH (municipal lien searches), HOA_ACQUISITION (HOA document requests), PAYOFF_REQUEST (mortgage payoff requests)';

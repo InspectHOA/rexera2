@@ -463,7 +463,7 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
       )}
       
       {/* Compact Top Bar */}
-      <div className="bg-card border-b border-border p-3 flex items-center gap-3">
+      <div className="bg-card p-3 flex items-center gap-3">
         {/* Search */}
         <div className="flex-1 relative">
           <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
@@ -526,15 +526,15 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
 
         {/* Assigned Counterparties Section */}
         {workflowId && (
-          <div className="mb-4">
-            <div className="text-xs font-medium text-muted-foreground mb-2 px-1">
+          <div className="mb-6">
+            <div className="text-xs font-medium text-muted-foreground mb-3 px-1">
               ASSIGNED ({assignedCounterparties?.length || 0})
             </div>
-            <div className="bg-card rounded border border-border p-3">
+            <div className="space-y-3">
               {!assignedCounterparties || assignedCounterparties.length === 0 ? (
-                <div className="text-center py-4">
-                  <Building2 className="w-5 h-5 mx-auto mb-2 text-muted-foreground/50" />
-                  <p className="text-xs text-muted-foreground">No assigned counterparties</p>
+                <div className="text-center py-8 text-muted-foreground/60">
+                  <Building2 className="w-6 h-6 mx-auto mb-2" />
+                  <p className="text-sm">No assigned counterparties</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -543,11 +543,11 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
                         key={assignment.id}
                         className="bg-muted/30 rounded-lg border border-border p-3"
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-lg">{getTypeIcon(assignment.counterparty.type)}</span>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <span className="text-xl">{getTypeIcon(assignment.counterparty.type)}</span>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-medium text-sm text-foreground truncate">
+                              <h4 className="font-medium text-foreground truncate">
                                 {assignment.counterparty.name}
                               </h4>
                               <span className="text-xs text-muted-foreground capitalize">
@@ -555,31 +555,31 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 ml-2">
+                          <div className="flex items-center gap-1">
                             <button
                               title="Edit counterparty"
                               onClick={() => handleEditCounterparty(assignment.counterparty)}
-                              className="p-1 hover:bg-muted rounded"
+                              className="p-1.5 hover:bg-muted rounded-md transition-colors"
                             >
-                              <Edit className="w-3 h-3 text-muted-foreground" />
+                              <Edit className="w-4 h-4 text-muted-foreground" />
                             </button>
                             <button
                               title="Remove from workflow"
                               onClick={() => handleRemoveCounterparty(assignment.id, assignment.counterparty.name)}
-                              className="p-1 hover:bg-destructive/10 rounded text-destructive"
+                              className="p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
 
                         {/* Status Update Dropdown */}
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-3">
                           {getStatusIcon(assignment.status)}
                           <select
                             value={assignment.status}
                             onChange={(e) => handleStatusUpdate(assignment.id, e.target.value as WorkflowCounterpartyStatus)}
-                            className={`px-2 py-1 rounded-full text-xs font-medium border cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary ${getStatusColor(assignment.status)}`}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 ${getStatusColor(assignment.status)}`}
                           >
                             <option value="PENDING">Pending</option>
                             <option value="CONTACTED">Contacted</option>
@@ -589,23 +589,23 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
                         </div>
 
                         {/* Contact Info */}
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {assignment.counterparty.email && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Mail className="w-3 h-3" />
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Mail className="w-3.5 h-3.5" />
                               <span className="truncate">{assignment.counterparty.email}</span>
                             </div>
                           )}
                           {assignment.counterparty.phone && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Phone className="w-3 h-3" />
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Phone className="w-3.5 h-3.5" />
                               <span>{assignment.counterparty.phone}</span>
                             </div>
                           )}
                         </div>
 
                         {/* Assignment Date */}
-                        <div className="mt-2 pt-2 border-t border-border/50">
+                        <div className="mt-3 pt-2 border-t border-border/30">
                           <span className="text-xs text-muted-foreground">
                             Added {new Date(assignment.created_at).toLocaleDateString()}
                           </span>
@@ -620,8 +620,8 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
 
         {/* Available Counterparties Section */}
         <div className="mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <div className="text-xs font-medium text-muted-foreground px-1">
+          <div className="flex justify-between items-center mb-3 px-1">
+            <div className="text-xs font-medium text-muted-foreground">
               AVAILABLE ({totalCount})
             </div>
             
@@ -631,126 +631,117 @@ export function CounterpartySelector({ workflowId, agentId }: CounterpartySelect
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="p-1 rounded border border-border hover:bg-muted disabled:opacity-50"
+                  className="p-1.5 rounded-md border border-border hover:bg-muted disabled:opacity-50 transition-colors"
                 >
-                  <ChevronLeft className="w-3 h-3" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs text-muted-foreground px-1">
+                <span className="text-xs text-muted-foreground px-2">
                   {currentPage}/{totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-1 rounded border border-border hover:bg-muted disabled:opacity-50"
+                  className="p-1.5 rounded-md border border-border hover:bg-muted disabled:opacity-50 transition-colors"
                 >
-                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
           </div>
-          
-          <div className="bg-card rounded border border-border p-3">
-            {/* Results Count Info */}
-            <div className="mb-3">
-              {loading ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {totalCount > 0 ? (
-                    <>
-                      {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
-                      {selectedCounterparties.length > 0 && (
-                        <span className="ml-2 text-primary">
-                          • {selectedCounterparties.length} selected
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    'No counterparties found'
-                  )}
-                </p>
-              )}
-            </div>
-
-            {/* Counterparty Grid */}
-            <div className="max-h-96 overflow-y-auto border border-border rounded-lg p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(filteredCounterparties || []).map((counterparty) => (
-                  <div
-                    key={counterparty.id}
-                    onClick={() => toggleSelection(counterparty.id)}
-                    className={`bg-card rounded-lg shadow-sm border-2 p-4 cursor-pointer transition-all hover:shadow-md hover:bg-muted/50 ${
-                      selectedCounterparties.includes(counterparty.id)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-border'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{getTypeIcon(counterparty.type)}</span>
-                        <div>
-                          <h3 className="font-semibold text-foreground text-sm">
-                            {counterparty.name}
-                          </h3>
-                          <span className="inline-block bg-muted text-muted-foreground px-2 py-1 rounded text-xs capitalize">
-                            {counterparty.type.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                      {selectedCounterparties.includes(counterparty.id) && (
-                        <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                          <Check className="w-3 h-3" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      {counterparty.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3" />
-                          <span className="truncate">{counterparty.email}</span>
-                        </div>
-                      )}
-                      {counterparty.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3 h-3" />
-                          <span>{counterparty.phone}</span>
-                        </div>
-                      )}
-                      {counterparty.address && (
-                        <div className="flex items-start gap-2">
-                          <Building2 className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span className="text-xs leading-tight">{counterparty.address}</span>
-                        </div>
-                      )}
-                      {!counterparty.email && !counterparty.phone && !counterparty.address && (
-                        <div className="text-xs text-muted-foreground/60 italic">
-                          No contact information available
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <span className="inline-block px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        Active
+          {/* Results Count Info */}
+          <div className="mb-4 px-1">
+            {loading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Loading...
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {totalCount > 0 ? (
+                  <>
+                    
+                    {selectedCounterparties.length > 0 && (
+                      <span className="ml-2 text-primary font-medium">
+                        • {selectedCounterparties.length} selected
                       </span>
+                    )}
+                  </>
+                ) : (
+                  'No counterparties found'
+                )}
+              </p>
+            )}
+          </div>
+
+          {/* Counterparty Grid */}
+          <div className="max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(filteredCounterparties || []).map((counterparty) => (
+                <div
+                  key={counterparty.id}
+                  onClick={() => toggleSelection(counterparty.id)}
+                  className={`bg-card/50 rounded-lg border p-4 cursor-pointer transition-all hover:bg-card/80 hover:shadow-sm ${
+                    selectedCounterparties.includes(counterparty.id)
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border/50 hover:border-border'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{getTypeIcon(counterparty.type)}</span>
+                      <div>
+                        <h3 className="font-medium text-foreground">
+                          {counterparty.name}
+                        </h3>
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {counterparty.type.replace('_', ' ')}
+                        </span>
+                      </div>
                     </div>
+                    {selectedCounterparties.includes(counterparty.id) && (
+                      <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    {counterparty.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5" />
+                        <span className="truncate">{counterparty.email}</span>
+                      </div>
+                    )}
+                    {counterparty.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>{counterparty.phone}</span>
+                      </div>
+                    )}
+                    {counterparty.address && (
+                      <div className="flex items-start gap-2">
+                        <Building2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span className="text-xs leading-tight">{counterparty.address}</span>
+                      </div>
+                    )}
+                    {!counterparty.email && !counterparty.phone && !counterparty.address && (
+                      <div className="text-xs text-muted-foreground/60 italic">
+                        No contact information available
+                      </div>
+                    )}
+                  </div>
                   </div>
                 ))}
                 
-                {(!filteredCounterparties || filteredCounterparties.length === 0) && !loading && (
-                  <div className="text-center py-12 col-span-full">
-                    <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                    <p className="text-muted-foreground mb-2">No counterparties found</p>
-                    <p className="text-sm text-muted-foreground/60">
-                      Try adjusting your search criteria or add a new counterparty
-                    </p>
-                  </div>
-                )}
-              </div>
+              {(!filteredCounterparties || filteredCounterparties.length === 0) && !loading && (
+                <div className="text-center py-12 col-span-full">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-muted-foreground mb-2">No counterparties found</p>
+                  <p className="text-sm text-muted-foreground/60">
+                    Try adjusting your search criteria or add a new counterparty
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

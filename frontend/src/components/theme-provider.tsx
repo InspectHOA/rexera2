@@ -19,7 +19,8 @@ function ThemeSync() {
         const res = await fetch('/api/user/preferences');
         const data = await res.json();
         
-        if (isMounted && data.theme && data.theme !== theme) {
+        // Only set theme if we haven't initialized yet and it's different
+        if (isMounted && data.theme && !isInitialized) {
           setTheme(data.theme);
         }
       } catch (error) {
@@ -33,12 +34,14 @@ function ThemeSync() {
       }
     }
 
-    fetchTheme();
+    if (!isInitialized) {
+      fetchTheme();
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [setTheme, theme]);
+  }, [setTheme, isInitialized]);
 
   // Save theme to database when it changes (but not on initial load)
   const saveTheme = useCallback(async (themeToSave: string) => {

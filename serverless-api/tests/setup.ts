@@ -14,20 +14,33 @@ if (!process.env.NODE_ENV) {
     writable: true
   });
 }
-process.env.SUPABASE_URL = 'https://mock.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-role-key';
-process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
 
-// Mock fetch for tests that don't need real network calls
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    json: () => Promise.resolve({ success: true, data: [] }),
-    text: () => Promise.resolve(''),
-  } as Response)
-);
+// Only mock Supabase credentials if real ones aren't available
+// This allows integration tests to use real database when configured
+if (!process.env.SUPABASE_URL) {
+  process.env.SUPABASE_URL = 'https://mock.supabase.co';
+}
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-role-key';
+}
+if (!process.env.SUPABASE_ANON_KEY) {
+  process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
+}
+
+// Only mock fetch if we're using mock Supabase credentials
+// This allows real database tests to work when real credentials are provided
+if (process.env.SUPABASE_URL === 'https://mock.supabase.co') {
+  // Mock fetch for tests that don't need real network calls
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: () => Promise.resolve({ success: true, data: [] }),
+      text: () => Promise.resolve(''),
+    } as Response)
+  );
+}
 
 // Custom Jest matchers
 expect.extend({

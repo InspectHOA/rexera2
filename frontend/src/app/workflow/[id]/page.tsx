@@ -16,6 +16,7 @@ import { api } from '@/lib/api/client';
 import { EmailInterface } from '@/app/agents/_components/mia/email-interface';
 import { CounterpartySelector } from '@/app/agents/_components/nina/counterparty-selector';
 import { DocumentExtractor } from '@/app/agents/_components/iris/document-extractor';
+import { ChatInterface } from '@/app/agents/_components/ria/chat-interface';
 import { NotesTab } from '@/app/workflow/_components/notes/notes-tab';
 import { ActivityFeed } from '@/app/dashboard/_components/activity-feed';
 
@@ -586,6 +587,14 @@ function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask:
           />
         );
       
+      case 'ria':
+        return (
+          <ChatInterface
+            agentId="ria"
+            workflowId={workflowId}
+          />
+        );
+      
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -601,7 +610,7 @@ function AgentInterfaceView({ selectedTask, tasks, workflowId }: { selectedTask:
                 <div className="text-sm text-muted-foreground">
                   Interface not available for agent &quot;{task.agent}&quot;.
                   <br />
-                  Available agents: Mia, Nina, Iris
+                  Available agents: Mia, Nina, Iris, Ria
                 </div>
               </div>
             </div>

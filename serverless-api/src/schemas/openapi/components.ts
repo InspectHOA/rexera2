@@ -1019,6 +1019,157 @@ export const openApiComponents = {
         }
       },
       required: ['success', 'data']
+    },
+    CounterpartyContact: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid', description: 'Unique identifier' },
+        counterparty_id: { type: 'string', format: 'uuid', description: 'Associated counterparty ID' },
+        role: {
+          type: 'string',
+          enum: [
+            'primary', 'billing', 'legal', 'operations', 'board_member', 
+            'property_manager', 'loan_processor', 'underwriter', 'escrow_officer', 
+            'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+          ],
+          description: 'Contact role specific to counterparty type'
+        },
+        name: { type: 'string', description: 'Contact person name' },
+        title: { type: 'string', nullable: true, description: 'Job title (e.g., "Senior Loan Officer", "Board President")' },
+        department: { type: 'string', nullable: true, description: 'Department or division' },
+        email: { type: 'string', format: 'email', nullable: true, description: 'Email address' },
+        phone: { type: 'string', nullable: true, description: 'Phone number' },
+        mobile_phone: { type: 'string', nullable: true, description: 'Mobile phone number' },
+        fax: { type: 'string', nullable: true, description: 'Fax number' },
+        extension: { type: 'string', nullable: true, description: 'Phone extension' },
+        is_primary: { type: 'boolean', description: 'Whether this is the primary contact for the counterparty' },
+        is_active: { type: 'boolean', description: 'Whether the contact is active' },
+        preferred_contact_method: {
+          type: 'string',
+          enum: ['email', 'phone', 'mobile', 'fax', 'any'],
+          description: 'Preferred method of contact'
+        },
+        preferred_contact_time: { type: 'string', nullable: true, description: 'Preferred contact time (e.g., "9AM-5PM EST")' },
+        notes: { type: 'string', nullable: true, description: 'Additional notes about this contact' },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' }
+      },
+      required: ['id', 'counterparty_id', 'role', 'name', 'is_primary', 'is_active', 'preferred_contact_method', 'created_at', 'updated_at']
+    },
+    CreateCounterpartyContact: {
+      type: 'object',
+      required: ['counterparty_id', 'role', 'name'],
+      properties: {
+        counterparty_id: { type: 'string', format: 'uuid', description: 'ID of counterparty to add contact to' },
+        role: {
+          type: 'string',
+          enum: [
+            'primary', 'billing', 'legal', 'operations', 'board_member', 
+            'property_manager', 'loan_processor', 'underwriter', 'escrow_officer', 
+            'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+          ],
+          description: 'Contact role specific to counterparty type'
+        },
+        name: { type: 'string', minLength: 1, maxLength: 255, description: 'Contact person name' },
+        title: { type: 'string', maxLength: 255, description: 'Job title' },
+        department: { type: 'string', maxLength: 255, description: 'Department or division' },
+        email: { type: 'string', format: 'email', description: 'Email address' },
+        phone: { type: 'string', minLength: 1, description: 'Phone number' },
+        mobile_phone: { type: 'string', minLength: 1, description: 'Mobile phone number' },
+        fax: { type: 'string', minLength: 1, description: 'Fax number' },
+        extension: { type: 'string', maxLength: 20, description: 'Phone extension' },
+        is_primary: { type: 'boolean', default: false, description: 'Whether this is the primary contact' },
+        is_active: { type: 'boolean', default: true, description: 'Whether the contact is active' },
+        preferred_contact_method: {
+          type: 'string',
+          enum: ['email', 'phone', 'mobile', 'fax', 'any'],
+          default: 'email',
+          description: 'Preferred method of contact'
+        },
+        preferred_contact_time: { type: 'string', maxLength: 255, description: 'Preferred contact time' },
+        notes: { type: 'string', maxLength: 1000, description: 'Additional notes' }
+      },
+      description: 'At least one contact method (email, phone, or mobile_phone) is required'
+    },
+    UpdateCounterpartyContact: {
+      type: 'object',
+      properties: {
+        role: {
+          type: 'string',
+          enum: [
+            'primary', 'billing', 'legal', 'operations', 'board_member', 
+            'property_manager', 'loan_processor', 'underwriter', 'escrow_officer', 
+            'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+          ],
+          description: 'Updated contact role'
+        },
+        name: { type: 'string', minLength: 1, maxLength: 255, description: 'Updated contact name' },
+        title: { type: 'string', maxLength: 255, description: 'Updated job title' },
+        department: { type: 'string', maxLength: 255, description: 'Updated department' },
+        email: { type: 'string', format: 'email', description: 'Updated email address' },
+        phone: { type: 'string', minLength: 1, description: 'Updated phone number' },
+        mobile_phone: { type: 'string', minLength: 1, description: 'Updated mobile phone' },
+        fax: { type: 'string', minLength: 1, description: 'Updated fax number' },
+        extension: { type: 'string', maxLength: 20, description: 'Updated phone extension' },
+        is_primary: { type: 'boolean', description: 'Updated primary contact status' },
+        is_active: { type: 'boolean', description: 'Updated active status' },
+        preferred_contact_method: {
+          type: 'string',
+          enum: ['email', 'phone', 'mobile', 'fax', 'any'],
+          description: 'Updated preferred contact method'
+        },
+        preferred_contact_time: { type: 'string', maxLength: 255, description: 'Updated preferred contact time' },
+        notes: { type: 'string', maxLength: 1000, description: 'Updated notes' }
+      }
+    },
+    CounterpartyWithContacts: {
+      type: 'object',
+      allOf: [
+        { $ref: '#/components/schemas/Counterparty' },
+        {
+          type: 'object',
+          properties: {
+            contacts: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/CounterpartyContact' },
+              description: 'All contacts for this counterparty'
+            },
+            primary_contact: {
+              $ref: '#/components/schemas/CounterpartyContact',
+              nullable: true,
+              description: 'Primary contact for this counterparty'
+            }
+          }
+        }
+      ]
+    },
+    CounterpartyContactResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { $ref: '#/components/schemas/CounterpartyContact' }
+      },
+      required: ['success', 'data']
+    },
+    CounterpartyContactsResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/CounterpartyContact' }
+        },
+        pagination: { $ref: '#/components/schemas/Pagination' }
+      },
+      required: ['success', 'data']
+    },
+    CounterpartyWithContactsResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { $ref: '#/components/schemas/CounterpartyWithContacts' }
+      },
+      required: ['success', 'data']
     }
   }
 } as const;

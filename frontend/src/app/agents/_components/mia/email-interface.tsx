@@ -2,17 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { Mail, Plus, Reply, Forward, Archive, Trash2, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+
+import type { Communication } from '@rexera/shared';
+
 import { api } from '@/lib/api/client';
+import { cn } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useApiErrorHandling } from '@/lib/hooks/use-error-handling';
+import { toast } from '@/lib/hooks/use-toast';
 
 interface EmailInterfaceProps {
   workflowId?: string;
   agentId: string;
 }
 
+// Local interface for email display - extends Communication with UI-specific fields
 interface Email {
   id: string;
   subject: string;
-  sender: string;
+  sender: string; // Transformed from sender_id or metadata
   recipient_email: string;
   body: string;
   direction: 'INBOUND' | 'OUTBOUND';
@@ -39,89 +47,116 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Error handling
+  const { executeWithErrorHandling } = useApiErrorHandling();
   const [replyText, setReplyText] = useState('');
   const [replyTo, setReplyTo] = useState('');
   const [forwardText, setForwardText] = useState('');
   const [forwardTo, setForwardTo] = useState('');
   const [forwardSubject, setForwardSubject] = useState('');
+  
+  // Compose email state
+  const [composeTo, setComposeTo] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [composeSending, setComposeSending] = useState(false);
+  
+  // Reply and forward loading states
+  const [replySending, setReplySending] = useState(false);
+  const [forwardSending, setForwardSending] = useState(false);
+  
+  // Include team state
+  const [replyIncludeTeam, setReplyIncludeTeam] = useState(false);
+  const [forwardIncludeTeam, setForwardIncludeTeam] = useState(false);
+
+  // Function to refresh email data
+  const fetchEmails = async () => {
+    if (!workflowId) {
+      setEmails([]);
+      setThreads([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Fetch emails using the API client
+      const result = await api.communications.list({
+        workflow_id: workflowId,
+        communication_type: 'email'  // Use backend parameter name directly
+      });
+      
+      const transformedEmails: Email[] = (Array.isArray(result.data) ? result.data : []).map((comm: any) => ({
+        id: comm.id,
+        subject: comm.subject || '(No Subject)',
+        sender: comm.direction === 'INBOUND' 
+          ? (comm.metadata?.from_email || comm.sender_email || 'Unknown Sender')
+          : 'mia@rexera.com',
+        recipient_email: comm.recipient_email || 'mia@rexera.com',
+        body: comm.body || '',
+        direction: comm.direction,
+        status: comm.status,
+        thread_id: comm.thread_id,
+        created_at: comm.created_at,
+        attachments: comm.email_metadata?.attachments || []
+      }));
+      
+      setEmails(transformedEmails);
+      
+      // Group emails into threads
+      const threadMap = new Map<string, Email[]>();
+      transformedEmails.forEach(email => {
+        const threadKey = email.thread_id || email.id;
+        if (!threadMap.has(threadKey)) {
+          threadMap.set(threadKey, []);
+        }
+        threadMap.get(threadKey)!.push(email);
+      });
+
+      const emailThreads: EmailThread[] = Array.from(threadMap.entries()).map(([threadId, threadEmails]) => {
+        const sortedEmails = threadEmails.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const participants = Array.from(new Set(threadEmails.flatMap(e => [e.sender, e.recipient_email])));
+        
+        return {
+          thread_id: threadId,
+          subject: sortedEmails[0].subject,
+          emails: sortedEmails,
+          lastActivity: sortedEmails[sortedEmails.length - 1].created_at,
+          participants
+        };
+      }).sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
+
+      setThreads(emailThreads);
+      
+      // Auto-select first thread if available
+      if (emailThreads.length > 0 && !selectedThread) {
+        setSelectedThread(emailThreads[0].thread_id);
+      }
+      
+    } catch (error) {
+      console.error('Failed to fetch email communications:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load emails',
+        description: 'Unable to fetch email conversations. Please refresh to try again.',
+      });
+      // Error is handled by setting empty state
+      setEmails([]);
+      setThreads([]);
+    }
+    
+    setLoading(false);
+  };
 
   // Fetch real emails from the database
   useEffect(() => {
-    const fetchEmails = async () => {
-      if (!workflowId) {
-        setEmails([]);
-        setThreads([]);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      
-      try {
-        // Fetch emails using the API client
-        const result = await api.communications.list({
-          workflow_id: workflowId,
-          communication_type: 'email'  // Use backend parameter name directly
-        });
-        
-        const transformedEmails: Email[] = (Array.isArray(result.data) ? result.data : []).map((comm: any) => ({
-          id: comm.id,
-          subject: comm.subject || '(No Subject)',
-          sender: comm.direction === 'INBOUND' 
-            ? (comm.metadata?.from_email || comm.sender_email || 'Unknown Sender')
-            : 'mia@rexera.com',
-          recipient_email: comm.recipient_email || 'mia@rexera.com',
-          body: comm.body || '',
-          direction: comm.direction,
-          status: comm.status,
-          thread_id: comm.thread_id,
-          created_at: comm.created_at,
-          attachments: comm.email_metadata?.attachments || []
-        }));
-        
-        setEmails(transformedEmails);
-        
-        // Group emails into threads
-        const threadMap = new Map<string, Email[]>();
-        transformedEmails.forEach(email => {
-          const threadKey = email.thread_id || email.id;
-          if (!threadMap.has(threadKey)) {
-            threadMap.set(threadKey, []);
-          }
-          threadMap.get(threadKey)!.push(email);
-        });
-
-        const emailThreads: EmailThread[] = Array.from(threadMap.entries()).map(([threadId, threadEmails]) => {
-          const sortedEmails = threadEmails.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-          const participants = Array.from(new Set(threadEmails.flatMap(e => [e.sender, e.recipient_email])));
-          
-          return {
-            thread_id: threadId,
-            subject: sortedEmails[0].subject,
-            emails: sortedEmails,
-            lastActivity: sortedEmails[sortedEmails.length - 1].created_at,
-            participants
-          };
-        }).sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-
-        setThreads(emailThreads);
-        
-        // Auto-select first thread if available
-        if (emailThreads.length > 0 && !selectedThread) {
-          setSelectedThread(emailThreads[0].thread_id);
-        }
-        
-      } catch (error) {
-        console.error('Failed to fetch email communications:', error);
-        // Error is handled by setting empty state
-        setEmails([]);
-        setThreads([]);
-      }
-      
-      setLoading(false);
+    const fetchData = async () => {
+      await fetchEmails();
     };
 
-    fetchEmails();
+    fetchData();
   }, [workflowId]);
 
   const selectedThreadData = threads.find(t => t.thread_id === selectedThread);
@@ -148,11 +183,163 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
     }
   };
 
+  // Handle sending a new email
+  const handleSendEmail = async () => {
+    if (!composeTo.trim() || !composeSubject.trim() || !composeBody.trim() || !workflowId) {
+      return;
+    }
+
+    setComposeSending(true);
+    
+    const result = await executeWithErrorHandling(async () => {
+      // Create new email communication
+      await api.communications.create({
+        workflow_id: workflowId,
+        recipient_email: composeTo.trim(),
+        subject: composeSubject.trim(),
+        body: composeBody.trim(),
+        communication_type: 'email',
+        direction: 'OUTBOUND',
+        metadata: {},
+        email_metadata: {
+          message_id: `${Date.now()}@rexera.com`,
+          email_references: [],
+          attachments: [],
+          headers: {}
+        }
+      });
+
+      // Clear compose form
+      setComposeTo('');
+      setComposeSubject('');
+      setComposeBody('');
+      setComposeOpen(false);
+
+      // Refresh the email list to show the new email
+      await fetchEmails();
+      
+      return true;
+    });
+
+    if (result) {
+      toast({
+        title: 'Email sent',
+        description: `Message sent to ${composeTo.trim()}`,
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to send email',
+        description: 'Please try again or contact support if the problem persists.',
+      });
+    }
+    
+    setComposeSending(false);
+  };
+
+  // Handle sending a reply
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !replyTo.trim() || !selectedThreadData || !workflowId) {
+      return;
+    }
+
+    setReplySending(true);
+    
+    const result = await executeWithErrorHandling(async () => {
+      // Get the latest email in the thread to reply to
+      const latestEmail = selectedThreadData.emails[selectedThreadData.emails.length - 1];
+      
+      // Create reply using the reply endpoint
+      await api.communications.reply(latestEmail.id, {
+        recipient_email: replyTo.trim(),
+        body: replyText.trim(),
+        include_team: replyIncludeTeam,
+        metadata: {}
+      });
+
+      // Clear reply form
+      setReplyText('');
+      setReplyTo('');
+      setReplyIncludeTeam(false);
+      setReplyOpen(false);
+
+      // Refresh the email list to show the new reply
+      await fetchEmails();
+      
+      return true;
+    });
+
+    if (result) {
+      toast({
+        title: 'Reply sent',
+        description: `Reply sent to ${replyTo.trim()}`,
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to send reply',
+        description: 'Please try again or contact support if the problem persists.',
+      });
+    }
+    
+    setReplySending(false);
+  };
+
+  // Handle sending a forward
+  const handleSendForward = async () => {
+    if (!forwardText.trim() || !forwardTo.trim() || !forwardSubject.trim() || !selectedThreadData || !workflowId) {
+      return;
+    }
+
+    setForwardSending(true);
+    
+    const result = await executeWithErrorHandling(async () => {
+      // Get the latest email in the thread to forward
+      const latestEmail = selectedThreadData.emails[selectedThreadData.emails.length - 1];
+      
+      // Create forward using the forward endpoint
+      await api.communications.forward(latestEmail.id, {
+        recipient_email: forwardTo.trim(),
+        subject: forwardSubject.trim(),
+        body: forwardText.trim(),
+        include_team: forwardIncludeTeam,
+        metadata: {}
+      });
+
+      // Clear forward form
+      setForwardText('');
+      setForwardTo('');
+      setForwardSubject('');
+      setForwardIncludeTeam(false);
+      setForwardOpen(false);
+
+      // Refresh the email list to show the new forward
+      await fetchEmails();
+      
+      return true;
+    });
+
+    if (result) {
+      toast({
+        title: 'Email forwarded',
+        description: `Message forwarded to ${forwardTo.trim()}`,
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to forward email',
+        description: 'Please try again or contact support if the problem persists.',
+      });
+    }
+    
+    setForwardSending(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
-          <Mail className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+          <LoadingSpinner size="lg" className="mx-auto mb-2" />
           <p>Loading conversations...</p>
         </div>
       </div>
@@ -162,9 +349,10 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
   return (
     <div className="flex h-full relative">
       {/* Thread List - Left Side */}
-      <div className={`${
+      <div className={cn(
+        'bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out relative',
         sidebarCollapsed ? 'w-12' : 'w-64 lg:w-72 xl:w-80'
-      } bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out relative`}>
+      )}>
         {/* Collapse/Expand Button */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -223,11 +411,11 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
               <div
                 key={thread.thread_id}
                 onClick={() => setSelectedThread(thread.thread_id)}
-                className={`${
-                  sidebarCollapsed ? 'p-2' : 'p-3'
-                } border-b border-border cursor-pointer hover:bg-muted/50 ${
+                className={cn(
+                  'border-b border-border cursor-pointer hover:bg-muted/50',
+                  sidebarCollapsed ? 'p-2' : 'p-3',
                   selectedThread === thread.thread_id ? 'bg-primary/10 border-primary/20' : ''
-                }`}
+                )}
                 title={sidebarCollapsed ? `${thread.subject} - ${thread.participants.filter(p => p !== 'mia@rexera.com').join(', ')}` : undefined}
               >
                 {sidebarCollapsed ? (
@@ -301,11 +489,12 @@ export function EmailInterface({ workflowId, agentId }: EmailInterfaceProps) {
                         setReplyTo(selectedThreadData.participants.filter(p => p !== 'mia@rexera.com').join(', '));
                       }
                     }}
-                    className={`p-2 rounded transition-colors ${
+                    className={cn(
+                      'p-2 rounded transition-colors',
                       replyOpen 
                         ? 'bg-primary/10 text-primary' 
                         : 'text-muted-foreground hover:bg-muted'
-                    }`}
+                    )}
                     title="Reply to this conversation"
                   >
                     <Reply className="w-4 h-4" />
@@ -474,7 +663,12 @@ ${latestEmail.body}`);
                     <div className="px-4 py-3 border-t border-border bg-muted/50 rounded-b-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <input type="checkbox" className="rounded border-border bg-card" />
+                          <input 
+                            type="checkbox" 
+                            checked={replyIncludeTeam}
+                            onChange={(e) => setReplyIncludeTeam(e.target.checked)}
+                            className="rounded border-border bg-card" 
+                          />
                           Send copy to team
                         </label>
                       </div>
@@ -484,30 +678,28 @@ ${latestEmail.body}`);
                             setReplyOpen(false);
                             setReplyText('');
                             setReplyTo('');
+                            setReplyIncludeTeam(false);
                           }}
+                          disabled={replySending}
                           className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg text-sm"
                         >
                           Cancel
                         </button>
                         <button
-                          disabled={!replyText.trim() || !replyTo.trim()}
+                          disabled={!replyText.trim() || !replyTo.trim() || replySending}
                           className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                            replyText.trim() && replyTo.trim()
+                            replyText.trim() && replyTo.trim() && !replySending
                               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                               : 'bg-muted text-muted-foreground cursor-not-allowed'
                           }`}
-                          onClick={() => {
-                            if (replyText.trim() && replyTo.trim()) {
-                              // Reply sending to be implemented
-                              // Send reply implementation pending
-                              setReplyOpen(false);
-                              setReplyText('');
-                              setReplyTo('');
-                            }
-                          }}
+                          onClick={handleSendReply}
                         >
-                          <Send className="w-4 h-4" />
-                          Send Reply
+                          {replySending ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                          {replySending ? 'Sending...' : 'Send Reply'}
                         </button>
                       </div>
                     </div>
@@ -583,7 +775,12 @@ ${latestEmail.body}`);
                     <div className="px-4 py-3 border-t border-border bg-muted/50 rounded-b-lg flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <input type="checkbox" className="rounded border-border bg-card" />
+                          <input 
+                            type="checkbox" 
+                            checked={forwardIncludeTeam}
+                            onChange={(e) => setForwardIncludeTeam(e.target.checked)}
+                            className="rounded border-border bg-card" 
+                          />
                           Send copy to team
                         </label>
                       </div>
@@ -594,31 +791,28 @@ ${latestEmail.body}`);
                             setForwardText('');
                             setForwardTo('');
                             setForwardSubject('');
+                            setForwardIncludeTeam(false);
                           }}
+                          disabled={forwardSending}
                           className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg text-sm"
                         >
                           Cancel
                         </button>
                         <button
-                          disabled={!forwardText.trim() || !forwardTo.trim() || !forwardSubject.trim()}
+                          disabled={!forwardText.trim() || !forwardTo.trim() || !forwardSubject.trim() || forwardSending}
                           className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                            forwardText.trim() && forwardTo.trim() && forwardSubject.trim()
+                            forwardText.trim() && forwardTo.trim() && forwardSubject.trim() && !forwardSending
                               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                               : 'bg-muted text-muted-foreground cursor-not-allowed'
                           }`}
-                          onClick={() => {
-                            if (forwardText.trim() && forwardTo.trim() && forwardSubject.trim()) {
-                              // Forward sending to be implemented
-                              // Forward implementation pending
-                              setForwardOpen(false);
-                              setForwardText('');
-                              setForwardTo('');
-                              setForwardSubject('');
-                            }
-                          }}
+                          onClick={handleSendForward}
                         >
-                          <Send className="w-4 h-4" />
-                          Forward
+                          {forwardSending ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                          {forwardSending ? 'Sending...' : 'Forward'}
                         </button>
                       </div>
                     </div>
@@ -639,8 +833,8 @@ ${latestEmail.body}`);
 
       {/* Compose Modal */}
       {composeOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg shadow-xl border w-full max-w-2xl mx-4">
             <div className="border-b border-border p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Compose Email</h3>
@@ -656,28 +850,52 @@ ${latestEmail.body}`);
               <input
                 type="email"
                 placeholder="To:"
+                value={composeTo}
+                onChange={(e) => setComposeTo(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
               <input
                 type="text"
                 placeholder="Subject:"
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
               <textarea
                 placeholder="Compose your email..."
                 rows={8}
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
               />
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => setComposeOpen(false)}
+                  onClick={() => {
+                    setComposeOpen(false);
+                    setComposeTo('');
+                    setComposeSubject('');
+                    setComposeBody('');
+                  }}
                   className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg"
+                  disabled={composeSending}
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
-                  <Send className="w-4 h-4" />
-                  Send
+                <button 
+                  onClick={handleSendEmail}
+                  disabled={!composeTo.trim() || !composeSubject.trim() || !composeBody.trim() || composeSending}
+                  className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                    !composeTo.trim() || !composeSubject.trim() || !composeBody.trim() || composeSending
+                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  }`}
+                >
+                  {composeSending ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {composeSending ? 'Sending...' : 'Send'}
                 </button>
               </div>
             </div>

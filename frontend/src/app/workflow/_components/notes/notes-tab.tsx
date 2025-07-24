@@ -309,7 +309,7 @@ export function NotesTab({ workflowId }: NotesTabProps) {
                 </div>
                 
                 <div className="mb-3">
-                  <div 
+                  <div
                     className="text-sm whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{ __html: renderNoteContent(note.content) }}
                   />
