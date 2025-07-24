@@ -147,7 +147,7 @@ workflow-data/
 n8n-data/
 
 # Document storage (local development)
-documents/
+# documents/
 uploads/
 temp-files/
 
