@@ -82,7 +82,7 @@ describe('Workflow-Counterparties Relationship API', () => {
       expect(response.body.error).toContain('not allowed');
     });
 
-    it('should prevent duplicate assignments', async () => {
+    it('should handle duplicate assignments idempotently', async () => {
       const hoaCounterparty = testCounterparties.find(cp => cp.type === 'hoa');
       const assignmentData = {
         counterparty_id: hoaCounterparty.id,
@@ -95,14 +95,16 @@ describe('Workflow-Counterparties Relationship API', () => {
         assignmentData
       );
       expect(firstResponse.status).toBe(201);
+      expect(firstResponse.body.success).toBe(true);
 
-      // Second assignment (duplicate)
+      // Second assignment (duplicate) - should return existing relationship
       const secondResponse = await client.post(
         `/api/workflows/${testWorkflow.id}/counterparties`,
         assignmentData
       );
-      expect(secondResponse.status).toBe(409);
-      expect(secondResponse.body.error).toBe('Counterparty already associated with this workflow');
+      expect(secondResponse.status).toBe(200);
+      expect(secondResponse.body.success).toBe(true);
+      expect(secondResponse.body.data.id).toBe(firstResponse.body.data.id);
     });
 
     it('should validate assignment data', async () => {

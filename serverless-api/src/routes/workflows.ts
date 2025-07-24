@@ -574,16 +574,17 @@ workflows.post('/:workflowId/counterparties', async (c) => {
     // Check if relationship already exists
     const { data: existing, error: existingError } = await supabase
       .from('workflow_counterparties')
-      .select('id')
+      .select('*, counterparties(id, name, type, email, phone, address, contact_info)')
       .eq('workflow_id', workflowId)
       .eq('counterparty_id', validatedData.counterparty_id)
       .single();
     
     if (existing && !existingError) {
+      // Relationship already exists, return the existing one (idempotent behavior)
       return c.json({
-        success: false,
-        error: 'Counterparty already associated with this workflow'
-      }, 409);
+        success: true,
+        data: existing
+      }, 200);
     }
     
     // Create the relationship
