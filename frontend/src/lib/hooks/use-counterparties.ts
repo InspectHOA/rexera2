@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/lib/supabase/provider';
 import { counterpartiesApi } from '@/lib/api/endpoints/counterparties';
-import { workflowCounterpartiesApi } from '@/lib/api';
+import { workflowCounterpartiesApi } from '@/lib/api/endpoints/workflow-counterparties';
 import type { 
   Counterparty, 
   CounterpartyFilters, 
@@ -82,7 +82,10 @@ export function useCounterparties(filters: Partial<CounterpartyFilters> = {}) {
 
   // Create counterparty mutation
   const createCounterpartyMutation = useMutation({
-    mutationFn: (data: CreateCounterpartyRequest) => counterpartiesApi.create(data),
+    mutationFn: async (data: CreateCounterpartyRequest) => {
+      const response = await counterpartiesApi.create(data);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: counterpartiesKeys.all });
     }
@@ -90,8 +93,10 @@ export function useCounterparties(filters: Partial<CounterpartyFilters> = {}) {
 
   // Update counterparty mutation
   const updateCounterpartyMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateCounterpartyRequest }) => 
-      counterpartiesApi.update(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: UpdateCounterpartyRequest }) => {
+      const response = await counterpartiesApi.update(id, data);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: counterpartiesKeys.all });
     }

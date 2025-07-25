@@ -14,7 +14,7 @@ import { taskExecutionsApi } from './endpoints/task-executions';
 import { documentsApi, tagsApi } from './endpoints/documents';
 import { communicationsApi, hilNotesApi } from './endpoints/communications';
 import { counterpartiesApi } from './endpoints/counterparties';
-import { workflowCounterpartiesApi } from './counterparties';
+import { workflowCounterpartiesApi } from './endpoints/workflow-counterparties';
 import { 
   healthApi, 
   activitiesApi, 
@@ -33,7 +33,7 @@ export { taskExecutionsApi } from './endpoints/task-executions';
 export { documentsApi, tagsApi } from './endpoints/documents';
 export { communicationsApi, hilNotesApi } from './endpoints/communications';
 export { counterpartiesApi } from './endpoints/counterparties';
-export { workflowCounterpartiesApi } from './counterparties';
+export { workflowCounterpartiesApi } from './endpoints/workflow-counterparties';
 export { 
   healthApi, 
   activitiesApi, 

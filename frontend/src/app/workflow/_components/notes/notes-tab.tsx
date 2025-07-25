@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MentionInput } from './mention-input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { MessageSquare, Plus, Filter, Check, X } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import type { HilNote, CreateHilNote, PriorityLevel } from '@rexera/shared';
@@ -278,8 +277,7 @@ export function NotesTab({ workflowId }: NotesTabProps) {
       ) : (
         <div className="space-y-3">
           {notes.map((note) => (
-            <Card key={note.id} className={`border shadow-none ${note.is_resolved ? 'opacity-75' : ''}`}>
-              <CardContent className="p-4">
+            <div key={note.id} className={`p-4 bg-card border border-border rounded-lg ${note.is_resolved ? 'opacity-75' : ''}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
@@ -341,8 +339,7 @@ export function NotesTab({ workflowId }: NotesTabProps) {
                 </div>
                 
                 {/* TODO: Add replies here */}
-              </CardContent>
-            </Card>
+            </div>
           ))}
         </div>
       )}

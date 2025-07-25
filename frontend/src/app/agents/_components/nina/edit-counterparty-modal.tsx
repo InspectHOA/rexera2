@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Building2, Mail, Phone, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
-import { counterpartiesApi } from '@/lib/api/counterparties';
+import { counterpartiesApi } from '@/lib/api/endpoints/counterparties';
 import { toast } from '@/lib/hooks/use-toast';
 import type { CounterpartyType, UpdateCounterpartyRequest, Counterparty } from '@rexera/shared';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';

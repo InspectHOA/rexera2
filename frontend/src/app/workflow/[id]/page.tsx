@@ -2,23 +2,26 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Play, Clock, CheckCircle, XCircle } from 'lucide-react';
+
+import { formatWorkflowIdWithType, type WorkflowStatus, type TaskStatus } from '@rexera/shared';
+
+import { api } from '@/lib/api/client';
+import { useWorkflow, taskExecutionKeys } from '@/lib/hooks/use-workflows';
+import type { WorkflowData } from '@/types/workflow';
 import { WorkflowHeader } from '@/app/workflow/_components/workflow-header';
 import { TaskList } from '@/app/workflow/_components/task-list';
 import { TabNavigation } from '@/app/workflow/_components/tab-navigation';
 import { TaskDetailView } from '@/app/workflow/_components/task-detail-view';
 import { FileUpload } from '@/app/workflow/_components/file-upload';
 import { DocumentList } from '@/app/workflow/_components/document-list';
-import { useWorkflow } from '@/lib/hooks/use-workflows';
-import { formatWorkflowIdWithType, type WorkflowStatus, type TaskStatus } from '@rexera/shared';
-import type { WorkflowData } from '@/types/workflow';
-import { api } from '@/lib/api/client';
+import { NotesTab } from '@/app/workflow/_components/notes/notes-tab';
+import { ActivityFeed } from '@/app/dashboard/_components/activity-feed';
 import { EmailInterface } from '@/app/agents/_components/mia/email-interface';
 import { CounterpartySelector } from '@/app/agents/_components/nina/counterparty-selector';
 import { DocumentExtractor } from '@/app/agents/_components/iris/document-extractor';
 import { ChatInterface } from '@/app/agents/_components/ria/chat-interface';
-import { NotesTab } from '@/app/workflow/_components/notes/notes-tab';
-import { ActivityFeed } from '@/app/dashboard/_components/activity-feed';
 
 // Types
 interface Task {
@@ -49,11 +52,33 @@ export default function WorkflowDetailPage() {
   const [activeTab, setActiveTab] = useState('details');
   const [rightPanelTab, setRightPanelTab] = useState('task-details');
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
-  const [isStartingN8n, setIsStartingN8n] = useState(false);
   const [n8nError, setN8nError] = useState<string | null>(null);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
+  const queryClient = useQueryClient();
   const { workflow: workflowData, taskExecutions: taskExecutionsData, loading, error } = useWorkflow(params.id as string);
+
+  // n8n workflow trigger mutation - must be at top level to follow Rules of Hooks
+  const triggerN8nMutation = useMutation({
+    mutationFn: async () => {
+      const workflowTyped = workflowData as WorkflowData | undefined;
+      if (!workflowTyped?.id) throw new Error('No workflow ID');
+      return api.workflows.triggerN8nWorkflow(
+        workflowTyped.id,
+        workflowTyped.workflow_type || 'BASIC_TEST'
+      );
+    },
+    onSuccess: () => {
+      // Invalidate queries for real-time updates - consistent with useWorkflow pattern
+      queryClient.invalidateQueries({ queryKey: ['workflow', params.id] });
+      queryClient.invalidateQueries({ queryKey: taskExecutionKeys.list({ workflow_id: params.id as string }) });
+      setN8nError(null);
+    },
+    onError: (error) => {
+      console.error('Failed to start n8n workflow:', error);
+      setN8nError(error instanceof Error ? error.message : 'Failed to start n8n workflow');
+    }
+  });
   
   // Track when we've initially loaded to prevent flashing
   useEffect(() => {
@@ -235,28 +260,9 @@ export default function WorkflowDetailPage() {
     );
   }
 
-  const handleStartN8nWorkflow = async () => {
-    if (!workflowTyped?.id) return;
-    
-    setIsStartingN8n(true);
+  const handleStartN8nWorkflow = () => {
     setN8nError(null);
-    
-    try {
-      // Trigger the n8n workflow via backend endpoint
-      const result = await api.workflows.triggerN8nWorkflow(
-        workflowTyped!.id,
-        workflowTyped!.workflow_type || 'BASIC_TEST'
-      );
-      
-      // Refresh the workflow data to show updated status
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Failed to start n8n workflow:', error);
-      setN8nError(error instanceof Error ? error.message : 'Failed to start n8n workflow');
-    } finally {
-      setIsStartingN8n(false);
-    }
+    triggerN8nMutation.mutate();
   };
 
   const handleBackClick = () => router.push('/dashboard' as any);
@@ -295,7 +301,7 @@ export default function WorkflowDetailPage() {
                   activeTab={activeTab}
                   workflowData={workflowTyped}
                   onStartN8nWorkflow={handleStartN8nWorkflow}
-                  isStartingN8n={isStartingN8n}
+                  isStartingN8n={triggerN8nMutation.isPending}
                   n8nError={n8nError}
                 />
               </div>

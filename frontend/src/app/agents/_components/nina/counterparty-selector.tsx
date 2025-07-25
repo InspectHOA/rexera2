@@ -7,7 +7,8 @@ import type { Counterparty, CounterpartyType, CreateCounterpartyRequest, Workflo
 import { getAllowedCounterpartyTypes, isApiError } from '@rexera/shared';
 
 import { counterpartiesApi } from '@/lib/api/endpoints/counterparties';
-import { workflowCounterpartiesApi, workflowsApi } from '@/lib/api';
+import { workflowsApi } from '@/lib/api';
+import { workflowCounterpartiesApi } from '@/lib/api/endpoints/workflow-counterparties';
 import { toast } from '@/lib/hooks/use-toast';
 
 import { AddCounterpartyModal } from './add-counterparty-modal';

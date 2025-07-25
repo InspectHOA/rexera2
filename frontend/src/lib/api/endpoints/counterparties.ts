@@ -105,8 +105,8 @@ export const counterpartiesApi = {
   /**
    * Create new counterparty
    */
-  async create(data: CreateCounterpartyRequest): Promise<Counterparty> {
-    return apiRequest<Counterparty>('/counterparties', {
+  async create(data: CreateCounterpartyRequest): Promise<CounterpartyResponse> {
+    return apiRequest<CounterpartyResponse>('/counterparties', {
       method: 'POST',
       body: JSON.stringify(data)
     });
@@ -115,8 +115,8 @@ export const counterpartiesApi = {
   /**
    * Update counterparty
    */
-  async update(id: string, data: UpdateCounterpartyRequest): Promise<Counterparty> {
-    return apiRequest<Counterparty>(`/counterparties/${id}`, {
+  async update(id: string, data: UpdateCounterpartyRequest): Promise<CounterpartyResponse> {
+    return apiRequest<CounterpartyResponse>(`/counterparties/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
