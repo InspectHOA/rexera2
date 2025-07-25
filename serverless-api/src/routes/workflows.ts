@@ -896,17 +896,7 @@ workflows.post('/:id/trigger-n8n', async (c) => {
     
     try {
       const n8nResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          metadata: {
-            triggered_from: 'backend',
-            triggered_at: new Date().toISOString(),
-            user_id: user.id
-          }
-        }),
+        method: 'GET',
       });
 
       if (!n8nResponse.ok) {
