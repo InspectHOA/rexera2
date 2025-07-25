@@ -65,6 +65,8 @@ export interface WorkflowUpdate {
   status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'BLOCKED' | 'WAITING_FOR_CLIENT' | 'COMPLETED';
   metadata?: Record<string, any>;
   sla_due_date?: string;
+  n8n_status?: string;
+  n8n_started_at?: string;
 }
 
 export interface CounterpartyInsert {

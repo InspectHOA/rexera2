@@ -925,14 +925,15 @@ workflows.post('/:id/trigger-n8n', async (c) => {
           AuditHelpers.workflowEvent(
             user.id,
             user.email,
-            'trigger_n8n',
+            'update',
             id,
             existingWorkflow.client_id,
             {
               workflow_type: existingWorkflow.workflow_type,
               webhook_url: webhookUrl,
               triggered_via: 'api',
-              user_agent: c.req.header('user-agent')
+              user_agent: c.req.header('user-agent'),
+              action: 'trigger_n8n'
             }
           )
         );
