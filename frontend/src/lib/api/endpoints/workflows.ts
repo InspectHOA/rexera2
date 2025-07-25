@@ -132,18 +132,21 @@ export const workflowsApi = {
    * Trigger n8n workflow execution
    */
   async triggerN8nWorkflow(id: string, workflowType: string = 'basic-test') {
-    // For development/testing, we'll use a mock n8n endpoint
-    // In production, this would be the actual n8n webhook URL
-    const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678';
-    const webhookPath = workflowType === 'PAYOFF' ? '/webhook/payoff-test' : '/webhook/basic-test';
+    // Use the new n8n webhook URL as fallback, with localhost for development
+    const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL || 'https://rexera2.app.n8n.cloud';
+    const webhookPath = process.env.NEXT_PUBLIC_N8N_BASE_URL ? 
+      (workflowType === 'PAYOFF' ? '/webhook/payoff-test' : '/webhook/basic-test') : 
+      '/webhook/c3d09ff3-71b5-461b-a8a5-38b5a69bfd5b';
     
-    const response = await fetch(`${n8nBaseUrl}${webhookPath}`, {
+    // Send workflow_id as query parameter
+    const webhookUrl = `${n8nBaseUrl}${webhookPath}?workflow_id=${id}`;
+    
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        workflow_id: id,
         metadata: {
           triggered_from: 'frontend',
           triggered_at: new Date().toISOString()
