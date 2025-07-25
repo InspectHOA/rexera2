@@ -864,4 +864,119 @@ workflows.delete('/:workflowId/counterparties/:id', async (c) => {
   }
 });
 
+// POST /api/workflows/:id/trigger-n8n - Trigger n8n workflow from backend
+workflows.post('/:id/trigger-n8n', async (c) => {
+  try {
+    const supabase = createServerClient();
+    const user = c.get('user') as AuthUser || {
+      id: 'test-user',
+      email: 'test@example.com',
+      user_type: 'hil_user' as const,
+      role: 'HIL',
+      company_id: undefined
+    };
+    const id = c.req.param('id');
+
+    // Validate that the workflow exists
+    const { data: existingWorkflow, error: fetchError } = await supabase
+      .from('workflows')
+      .select('id, client_id, workflow_type')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingWorkflow) {
+      return c.json({
+        success: false,
+        error: 'Workflow not found',
+      }, 404 as any);
+    }
+
+    // Call n8n webhook from backend to avoid CORS issues
+    const webhookUrl = `https://rexera2.app.n8n.cloud/webhook/c3d09ff3-71b5-461b-a8a5-38b5a69bfd5b?workflow_id=${id}`;
+    
+    try {
+      const n8nResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metadata: {
+            triggered_from: 'backend',
+            triggered_at: new Date().toISOString(),
+            user_id: user.id
+          }
+        }),
+      });
+
+      if (!n8nResponse.ok) {
+        throw new Error(`n8n webhook failed: ${n8nResponse.status} ${n8nResponse.statusText}`);
+      }
+
+      // Update workflow status to indicate n8n has been triggered
+      await updateWorkflow(id, {
+        n8n_status: 'running',
+        n8n_started_at: new Date().toISOString()
+      });
+
+      // Log audit event for n8n trigger
+      try {
+        await auditLogger.log(
+          AuditHelpers.workflowEvent(
+            user.id,
+            user.email,
+            'trigger_n8n',
+            id,
+            existingWorkflow.client_id,
+            {
+              workflow_type: existingWorkflow.workflow_type,
+              webhook_url: webhookUrl,
+              triggered_via: 'api',
+              user_agent: c.req.header('user-agent')
+            }
+          )
+        );
+      } catch (auditError) {
+        console.warn('Failed to log audit event for n8n trigger:', auditError);
+        // Don't fail the request if audit logging fails
+      }
+
+      return c.json({
+        success: true,
+        message: 'n8n workflow triggered successfully',
+        data: {
+          workflow_id: id,
+          n8n_status: 'running',
+          triggered_at: new Date().toISOString()
+        }
+      });
+
+    } catch (n8nError) {
+      console.error('Failed to trigger n8n workflow:', n8nError);
+      
+      // Reset workflow status on error
+      try {
+        await updateWorkflow(id, {
+          n8n_status: 'error'
+        });
+      } catch (resetError) {
+        console.error('Failed to reset workflow status:', resetError);
+      }
+
+      return c.json({
+        success: false,
+        error: 'Failed to trigger n8n workflow',
+        details: n8nError instanceof Error ? n8nError.message : 'Unknown error',
+      }, 500 as any);
+    }
+
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: 'Failed to trigger n8n workflow',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    }, 500 as any);
+  }
+});
+
 export { workflows };

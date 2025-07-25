@@ -129,39 +129,13 @@ export const workflowsApi = {
   },
 
   /**
-   * Trigger n8n workflow execution
+   * Trigger n8n workflow execution via backend
    */
   async triggerN8nWorkflow(id: string, workflowType: string = 'basic-test') {
-    // Use the new n8n webhook URL as fallback, with localhost for development
-    const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL || 'https://rexera2.app.n8n.cloud';
-    const webhookPath = process.env.NEXT_PUBLIC_N8N_BASE_URL ? 
-      (workflowType === 'PAYOFF' ? '/webhook/payoff-test' : '/webhook/basic-test') : 
-      '/webhook/c3d09ff3-71b5-461b-a8a5-38b5a69bfd5b';
-    
-    // Send workflow_id as query parameter
-    const webhookUrl = `${n8nBaseUrl}${webhookPath}?workflow_id=${id}`;
-    
-    const response = await fetch(webhookUrl, {
+    // Call the backend endpoint to trigger n8n (avoids CORS issues)
+    return apiRequest(`/workflows/${id}/trigger-n8n`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        metadata: {
-          triggered_from: 'frontend',
-          triggered_at: new Date().toISOString()
-        }
-      }),
     });
-
-    if (!response.ok) {
-      throw new ApiError(
-        `Failed to trigger n8n workflow: ${response.statusText}`,
-        response.status
-      );
-    }
-
-    return response.json();
   },
 
   /**

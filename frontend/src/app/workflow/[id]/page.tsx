@@ -242,24 +242,11 @@ export default function WorkflowDetailPage() {
     setN8nError(null);
     
     try {
-      // First update the workflow to mark n8n as starting
-      await api.workflows.updateWorkflow(workflowTyped!.id, {
-        n8n_status: 'running',
-        n8n_started_at: new Date().toISOString()
-      });
-      
-      // Call the n8n webhook with workflow_id as query parameter
-      const webhookUrl = `https://rexera2.app.n8n.cloud/webhook/c3d09ff3-71b5-461b-a8a5-38b5a69bfd5b?workflow_id=${workflowTyped!.id}`;
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`n8n webhook failed: ${response.status} ${response.statusText}`);
-      }
+      // Trigger the n8n workflow via backend endpoint
+      const result = await api.workflows.triggerN8nWorkflow(
+        workflowTyped!.id,
+        workflowTyped!.workflow_type || 'BASIC_TEST'
+      );
       
       // Refresh the workflow data to show updated status
       window.location.reload();
@@ -267,15 +254,6 @@ export default function WorkflowDetailPage() {
     } catch (error) {
       console.error('Failed to start n8n workflow:', error);
       setN8nError(error instanceof Error ? error.message : 'Failed to start n8n workflow');
-      
-      // Reset the workflow status on error
-      try {
-        await api.workflows.updateWorkflow(workflowTyped!.id, {
-          n8n_status: 'not_started'
-        });
-      } catch (resetError) {
-        console.error('Failed to reset workflow status:', resetError);
-      }
     } finally {
       setIsStartingN8n(false);
     }
