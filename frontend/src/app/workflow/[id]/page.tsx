@@ -248,12 +248,18 @@ export default function WorkflowDetailPage() {
         n8n_started_at: new Date().toISOString()
       });
       
-      // Then trigger the n8n workflow
-      const result = await api.workflows.triggerN8nWorkflow(
-        workflowTyped!.id,
-        workflowTyped!.workflow_type || 'BASIC_TEST'
-      );
+      // Call the n8n webhook with workflow_id as query parameter
+      const webhookUrl = `https://rexera2.app.n8n.cloud/webhook/c3d09ff3-71b5-461b-a8a5-38b5a69bfd5b?workflow_id=${workflowTyped!.id}`;
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
+      if (!response.ok) {
+        throw new Error(`n8n webhook failed: ${response.status} ${response.statusText}`);
+      }
       
       // Refresh the workflow data to show updated status
       window.location.reload();
