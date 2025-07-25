@@ -3,6 +3,14 @@
  */
 
 import { Fragment } from 'react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface WorkflowFiltersProps {
   filterType: string;
@@ -27,19 +35,19 @@ export function WorkflowFilters({
   onSearchChange,
   onClearFilters,
 }: WorkflowFiltersProps) {
-  const hasActiveFilters = filterType || filterStatus || filterInterrupts || searchQuery;
+  const hasActiveFilters = (filterType && filterType !== 'all') || (filterStatus && filterStatus !== 'all') || (filterInterrupts && filterInterrupts !== 'all') || searchQuery;
 
   return (
     <div className="mb-4 space-y-3">
       {/* Search and Clear */}
       <div className="flex items-center gap-3">
         <div className="flex-1">
-          <input
+          <Input
             type="text"
             placeholder="Search workflows..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-input"
+            className="text-sm"
           />
         </div>
         {hasActiveFilters && (
@@ -57,45 +65,48 @@ export function WorkflowFilters({
         {/* Type Filter */}
         <div className="flex items-center gap-4">
           <label className="text-muted-foreground font-medium">Type:</label>
-          <select
-            value={filterType}
-            onChange={(e) => onFilterTypeChange(e.target.value)}
-            className="px-2 py-1 border border-input rounded bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input"
-          >
-            <option value="">All</option>
-            <option value="PAYOFF_REQUEST">Payoff Request</option>
-            <option value="HOA_ACQUISITION">HOA Documents</option>
-            <option value="MUNI_LIEN_SEARCH">Lien Search</option>
-          </select>
+          <Select value={filterType} onValueChange={onFilterTypeChange}>
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="PAYOFF_REQUEST">Payoff Request</SelectItem>
+              <SelectItem value="HOA_ACQUISITION">HOA Documents</SelectItem>
+              <SelectItem value="MUNI_LIEN_SEARCH">Lien Search</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Status Filter */}
         <div className="flex items-center gap-4">
           <label className="text-muted-foreground font-medium">Status:</label>
-          <select
-            value={filterStatus}
-            onChange={(e) => onFilterStatusChange(e.target.value)}
-            className="px-2 py-1 border border-input rounded bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input"
-          >
-            <option value="">All</option>
-            <option value="urgent">🚨 Urgent</option>
-            <option value="progress">🔄 In Progress</option>
-            <option value="completed">✅ Completed</option>
-          </select>
+          <Select value={filterStatus} onValueChange={onFilterStatusChange}>
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="urgent">🚨 Urgent</SelectItem>
+              <SelectItem value="progress">🔄 In Progress</SelectItem>
+              <SelectItem value="completed">✅ Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Interrupts Filter */}
         <div className="flex items-center gap-4">
           <label className="text-muted-foreground font-medium">Interrupts:</label>
-          <select
-            value={filterInterrupts}
-            onChange={(e) => onFilterInterruptsChange(e.target.value)}
-            className="px-2 py-1 border border-input rounded bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input"
-          >
-            <option value="">All</option>
-            <option value="has-interrupts">Has Interrupts</option>
-            <option value="no-interrupts">No Interrupts</option>
-          </select>
+          <Select value={filterInterrupts} onValueChange={onFilterInterruptsChange}>
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="has-interrupts">Has Interrupts</SelectItem>
+              <SelectItem value="no-interrupts">No Interrupts</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

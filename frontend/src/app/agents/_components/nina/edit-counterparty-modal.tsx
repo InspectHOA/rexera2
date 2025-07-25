@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Building2, Mail, Phone, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
 import { counterpartiesApi } from '@/lib/api/counterparties';
 import { toast } from '@/lib/hooks/use-toast';
 import type { CounterpartyType, UpdateCounterpartyRequest, Counterparty } from '@rexera/shared';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface EditCounterpartyModalProps {
   isOpen: boolean;
@@ -168,45 +172,32 @@ export function EditCounterpartyModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl border border-border">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Edit Counterparty</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Update counterparty information and contact details
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-muted rounded-md transition-colors"
-            disabled={isSubmitting}
-          >
-            <X className="h-5 w-5 text-muted-foreground" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Counterparty</DialogTitle>
+          <DialogDescription>
+            Update counterparty information and contact details
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name Field */}
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground/70">
+          <div className="space-y-2">
+            <Label htmlFor="name">
               Name <span className="text-destructive">*</span>
-            </label>
+            </Label>
             <div className="relative">
               <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <input
+              <Input
+                id="name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter counterparty name"
-                className={`w-full pl-10 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
-                  errors.name ? 'border-destructive' : 'border-border'
-                }`}
+                className={`pl-10 ${errors.name ? 'border-destructive' : ''}`}
                 disabled={isSubmitting}
               />
             </div>
@@ -219,10 +210,10 @@ export function EditCounterpartyModal({
           </div>
 
           {/* Type Selection */}
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground/70">
+          <div className="space-y-2">
+            <Label>
               Type <span className="text-destructive">*</span>
-            </label>
+            </Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {allowedTypes.map((type) => {
                 const info = COUNTERPARTY_TYPE_INFO[type];
@@ -258,18 +249,17 @@ export function EditCounterpartyModal({
           {/* Contact Information */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Email Field */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground/70">Email</label>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <input
+                <Input
+                  id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="email@example.com"
-                  className={`w-full pl-10 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
-                    errors.email ? 'border-destructive' : 'border-border'
-                  }`}
+                  className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
                   disabled={isSubmitting}
                 />
               </div>
@@ -282,18 +272,17 @@ export function EditCounterpartyModal({
             </div>
 
             {/* Phone Field */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground/70">Phone</label>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <input
+                <Input
+                  id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="(555) 123-4567"
-                  className={`w-full pl-10 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
-                    errors.phone ? 'border-destructive' : 'border-border'
-                  }`}
+                  className={`pl-10 ${errors.phone ? 'border-destructive' : ''}`}
                   disabled={isSubmitting}
                 />
               </div>
@@ -307,17 +296,18 @@ export function EditCounterpartyModal({
           </div>
 
           {/* Address Field */}
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground/70">Address</label>
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <textarea
+                id="address"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
                 placeholder="Enter full address"
                 rows={2}
-                className={`w-full pl-10 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground resize-none ${
-                  errors.address ? 'border-destructive' : 'border-border'
+                className={`flex w-full rounded-md border border-input bg-transparent pl-10 pr-4 py-3 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none md:text-sm ${
+                  errors.address ? 'border-destructive' : ''
                 }`}
                 disabled={isSubmitting}
               />
@@ -330,35 +320,31 @@ export function EditCounterpartyModal({
             )}
           </div>
 
-          {/* Submit Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Updating...
                 </>
               ) : (
-                <>
-                  Update Counterparty
-                </>
+                'Update Counterparty'
               )}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

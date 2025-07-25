@@ -78,8 +78,7 @@ export const updateCounterpartyFixtures = {
   validUpdate: {
     name: 'Updated Test Company',
     email: 'updated@example.com',
-    phone: '555-9999',
-    notes: 'Updated notes'
+    phone: '555-9999'
   },
   invalidUpdate: {
     type: 'invalid_type',

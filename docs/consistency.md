@@ -20,10 +20,10 @@ Golden standard patterns that ALL components must follow for platform consistenc
 **RULE**: Use `useErrorHandling()` hook with consistent error display patterns. Show `AlertTriangle` icon + message for form errors
 
 ### 6. Modal Structure
-**RULE**: Consistent modal patterns: `fixed inset-0 bg-black/50 backdrop-blur-sm` backdrop, `bg-card rounded-lg shadow-xl border` container
+**RULE**: Use shadcn/ui Dialog components for all modals. Structure: `Dialog > DialogContent > DialogHeader/DialogFooter`. Never use custom modal implementations.
 
 ### 7. Form Patterns
-**RULE**: Client-side validation with error state management, consistent field structure with labels and icons
+**RULE**: Use shadcn/ui form components: `Input`, `Label`, `Select`, `Button`. Client-side validation with error state management. Always use `Label` with `htmlFor` attribute matching input `id`.
 
 ### 8. Toast Notifications
 **RULE**: Use `toast()` with title + description pattern. Success: default variant, errors: destructive variant
@@ -32,28 +32,55 @@ Golden standard patterns that ALL components must follow for platform consistenc
 **RULE**: React Query with `['entity', filters]` query keys, `formatErrorMessage()` for errors, real-time subscriptions with invalidation
 
 ### 10. Component Library Pattern
-**RULE**: Use shadcn/ui + Tailwind CSS complementary approach. shadcn/ui provides pre-built accessible components (`Button`, `Dialog`, `Card`), Tailwind provides utility classes for custom layouts and styling. Use `cn()` utility for className merging.
+**RULE**: Use shadcn/ui + Tailwind CSS complementary approach. ALWAYS use official shadcn CLI for component installation. shadcn/ui provides pre-built accessible components, Tailwind provides utility classes for layouts. Use `cn()` utility for className merging.
 
-**Examples:**
+**Installation Pattern:**
+```bash
+# ✅ Always use official CLI
+pnpm dlx shadcn@latest add button dialog input select tabs
+
+# ❌ Never create components manually
+```
+
+**Component Usage:**
 ```tsx
-// ✅ Good: shadcn/ui component for complex functionality
-<Button variant="outline" size="sm" onClick={handleCreate}>
-  Create New
-</Button>
+// ✅ Good: shadcn components for UI elements
+<Dialog open={isOpen} onOpenChange={onClose}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Modal Title</DialogTitle>
+      <DialogDescription>Modal description</DialogDescription>
+    </DialogHeader>
+    <form onSubmit={handleSubmit}>
+      <Label htmlFor="name">Name</Label>
+      <Input id="name" value={name} onChange={setName} />
+      <Select value={type} onValueChange={setType}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="option1">Option 1</SelectItem>
+        </SelectContent>
+      </Select>
+    </form>
+    <DialogFooter>
+      <Button variant="outline" onClick={onClose}>Cancel</Button>
+      <Button type="submit">Save</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
-// ✅ Good: Tailwind for custom layouts
+// ✅ Good: Tailwind for layouts
 <div className="flex h-full bg-background border-r border-border p-4">
 
-// ✅ Good: Combining both approaches
-<Card className="p-6 mt-4 hover:shadow-lg transition-shadow">
-  <Button variant="ghost" className="w-full justify-start">
-    Custom styled button
-  </Button>
-</Card>
-
-// ❌ Bad: Building complex components from scratch when shadcn/ui exists
-<button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2...">
+// ❌ Bad: Custom components when shadcn exists
+<button className="inline-flex items-center justify-center...">
 ```
+
+**Select Component Rules:**
+- Never use `value=""` - use `value="all"` for "All" options
+- Update filter logic to handle `value="all"` as no filter
+- Initialize state with `"all"` not empty strings
 
 ### 11. Tailwind & Dark Mode
 **RULE**: Use Tailwind classes with dark mode variants: `bg-card dark:bg-card`, `text-foreground dark:text-foreground`. Use semantic color tokens like `bg-background`, `text-muted-foreground`, `border-border`

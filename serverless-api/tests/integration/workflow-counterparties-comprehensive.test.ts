@@ -3,6 +3,7 @@
  * Comprehensive testing of workflow counterparty management
  */
 
+import { randomUUID } from 'crypto';
 import { testClient } from '../utils/hono-test-client';
 import { testDataManager, setupTest, cleanupTest, checkDatabaseConnection } from '../utils/database-setup';
 import { validCounterpartyFixtures } from '../fixtures/counterparties';
@@ -123,7 +124,7 @@ describe('Workflow-Counterparties Relationship API', () => {
     });
 
     it('should return 404 for non-existent workflow', async () => {
-      const nonExistentWorkflowId = crypto.randomUUID();
+      const nonExistentWorkflowId = randomUUID();
       const hoaCounterparty = testCounterparties.find(cp => cp.type === 'hoa');
 
       const response = await client.post(
@@ -139,7 +140,7 @@ describe('Workflow-Counterparties Relationship API', () => {
     });
 
     it('should return 404 for non-existent counterparty', async () => {
-      const nonExistentCounterpartyId = crypto.randomUUID();
+      const nonExistentCounterpartyId = randomUUID();
 
       const response = await client.post(
         `/api/workflows/${testWorkflow.id}/counterparties`,
@@ -254,7 +255,7 @@ describe('Workflow-Counterparties Relationship API', () => {
     });
 
     it('should return 404 for non-existent workflow', async () => {
-      const nonExistentId = crypto.randomUUID();
+      const nonExistentId = randomUUID();
       const response = await client.get(`/api/workflows/${nonExistentId}/counterparties`);
 
       expect(response.status).toBe(404);
@@ -301,7 +302,7 @@ describe('Workflow-Counterparties Relationship API', () => {
     });
 
     it('should return 404 for non-existent assignment', async () => {
-      const nonExistentId = crypto.randomUUID();
+      const nonExistentId = randomUUID();
 
       const response = await client.patch(
         `/api/workflows/${testWorkflow.id}/counterparties/${nonExistentId}`,
@@ -367,7 +368,7 @@ describe('Workflow-Counterparties Relationship API', () => {
     });
 
     it('should return 404 for non-existent assignment', async () => {
-      const nonExistentId = crypto.randomUUID();
+      const nonExistentId = randomUUID();
 
       const response = await client.delete(
         `/api/workflows/${testWorkflow.id}/counterparties/${nonExistentId}`

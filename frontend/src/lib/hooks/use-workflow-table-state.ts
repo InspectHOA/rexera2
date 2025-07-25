@@ -19,9 +19,9 @@ export interface WorkflowTableSorting {
 export function useWorkflowTableState() {
   const [sortField, setSortField] = useState<string>('due');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
-  const [filterInterrupts, setFilterInterrupts] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterInterrupts, setFilterInterrupts] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -51,12 +51,12 @@ export function useWorkflowTableState() {
     };
 
     // Workflow type filter
-    if (filterType) {
+    if (filterType && filterType !== 'all') {
       filters.workflow_type = filterType;
     }
 
     // Status filter - map frontend values to backend values
-    if (filterStatus) {
+    if (filterStatus && filterStatus !== 'all') {
       const statusMap: Record<string, string> = {
         'urgent': 'BLOCKED,INTERRUPT', // Map to multiple statuses (note: workflows don't have INTERRUPT, but task executions do)
         'progress': 'IN_PROGRESS',
@@ -107,9 +107,9 @@ export function useWorkflowTableState() {
   };
 
   const handleClearFilters = () => {
-    setFilterType('');
-    setFilterStatus('');
-    setFilterInterrupts('');
+    setFilterType('all');
+    setFilterStatus('all');
+    setFilterInterrupts('all');
     setSearchQuery('');
     setCurrentPage(1);
   };

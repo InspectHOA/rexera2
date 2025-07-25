@@ -3,6 +3,24 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Building, MapPin, Calendar, User, FileText, DollarSign, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useWorkflows } from '@/lib/hooks/use-workflows';
 import { useAuth } from '@/lib/auth/provider';
 import { api } from '@/lib/api/client';
@@ -259,32 +277,19 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
 
   const currentWorkflowInfo = WORKFLOW_TYPES[formData.workflow_type];
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-lg shadow-2xl border border-border/50 w-full max-w-4xl max-h-[95vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl">{currentWorkflowInfo.icon}</div>
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Create New Workflow</h2>
-                <p className="text-sm text-muted-foreground mt-1">{currentWorkflowInfo.description}</p>
-              </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden">
+        <DialogHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">{currentWorkflowInfo.icon}</div>
+            <div>
+              <DialogTitle className="text-xl font-semibold text-foreground">Create New Workflow</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">{currentWorkflowInfo.description}</DialogDescription>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              disabled={isCreating}
-            >
-              <X className="h-5 w-5 text-muted-foreground" />
-            </button>
           </div>
-        </div>
+        </DialogHeader>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(95vh-140px)]">
           <div className="p-6 space-y-4">
             {/* Workflow Type Selection */}
@@ -313,26 +318,25 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
 
             {/* Client Selection */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground/70">
+              <Label className="text-xs text-muted-foreground/70">
                 Client <span className="text-destructive">*</span>
-              </label>
-              <select
+              </Label>
+              <Select
                 value={formData.client_id}
-                onChange={(e) => handleInputChange('client_id', e.target.value)}
+                onValueChange={(value) => handleInputChange('client_id', value)}
                 disabled={loadingClients}
-                className={`w-full px-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
-                  errors.client_id ? 'border-destructive' : 'border-border'
-                }`}
               >
-                <option value="">
-                  {loadingClients ? 'Loading clients...' : 'Select a client'}
-                </option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className={`w-full py-3 ${errors.client_id ? 'border-destructive' : ''}`}>
+                  <SelectValue placeholder={loadingClients ? 'Loading clients...' : 'Select a client'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.client_id && (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
@@ -353,20 +357,20 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                   return (
                     <React.Fragment key={field.key}>
                       <div className={`${isPropertyAddress ? 'sm:col-span-2' : ''} space-y-1`}>
-                        <label className="text-xs text-muted-foreground/70">
+                        <Label className="text-xs text-muted-foreground/70">
                           {field.label} {field.required && <span className="text-destructive">*</span>}
-                        </label>
+                        </Label>
                         <div className="relative">
                           {IconComponent && (
-                            <IconComponent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <IconComponent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                           )}
-                          <input
+                          <Input
                             type={field.type}
                             value={formData.metadata[field.key] || ''}
                             onChange={(e) => handleMetadataChange(field.key, e.target.value)}
                             placeholder={field.placeholder}
-                            className={`w-full ${IconComponent ? 'pl-10' : 'pl-3'} pr-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
-                              errors[`metadata.${field.key}`] ? 'border-destructive' : 'border-border'
+                            className={`${IconComponent ? 'pl-10' : ''} py-3 ${
+                              errors[`metadata.${field.key}`] ? 'border-destructive' : ''
                             }`}
                           />
                         </div>
@@ -381,18 +385,18 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
                       {/* Add Due Date right after Closing Date */}
                       {isClosingDate && (
                         <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground/70">
+                          <Label className="text-xs text-muted-foreground/70">
                             Due Date <span className="text-destructive">*</span>
-                          </label>
+                          </Label>
                           <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <input
+                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                            <Input
                               type="date"
                               value={formData.due_date}
                               onChange={(e) => handleInputChange('due_date', e.target.value)}
                               min={new Date().toISOString().split('T')[0]}
-                              className={`w-full pl-10 pr-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground ${
-                                errors.due_date ? 'border-destructive' : 'border-border'
+                              className={`pl-10 py-3 ${
+                                errors.due_date ? 'border-destructive' : ''
                               }`}
                             />
                           </div>
@@ -414,74 +418,78 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
             <div className="space-y-3">
               {/* Priority */}
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground/70">Priority</label>
-                <select
+                <Label className="text-xs text-muted-foreground/70">Priority</Label>
+                <Select
                   value={formData.priority}
-                  onChange={(e) => handleInputChange('priority', e.target.value as PriorityLevel)}
-                  className="w-full px-3 py-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
+                  onValueChange={(value) => handleInputChange('priority', value as PriorityLevel)}
                 >
-                  <option value="" disabled>Select Priority</option>
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full py-3">
+                    <SelectValue placeholder="Select Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className={option.color}>{option.label}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
 
             {/* Description */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground/70">Description</label>
-              <textarea
+              <Label className="text-xs text-muted-foreground/70">Description</Label>
+              <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Optional additional details about this workflow..."
                 rows={3}
-                className="w-full px-3 py-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
+                className="py-3"
               />
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="bg-muted/50 px-6 py-4 border-t border-border flex items-center justify-between">
-            {errors.submit && (
-              <p className="text-sm text-destructive flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                {errors.submit}
-              </p>
-            )}
-            <div className="flex items-center gap-3 ml-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isCreating}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isCreating || loadingClients}
-                className="flex items-center gap-2"
-              >
-                {isCreating ? (
-                  <>
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    Create Workflow
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
         </form>
-      </div>
-    </div>
+        
+        <DialogFooter className="bg-muted/50 px-6 py-4 border-t border-border flex items-center justify-between">
+          {errors.submit && (
+            <p className="text-sm text-destructive flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              {errors.submit}
+            </p>
+          )}
+          <div className="flex items-center gap-3 ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isCreating || loadingClients}
+              className="flex items-center gap-2"
+              onClick={handleSubmit}
+            >
+              {isCreating ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  Create Workflow
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

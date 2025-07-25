@@ -278,8 +278,8 @@ export function NotesTab({ workflowId }: NotesTabProps) {
       ) : (
         <div className="space-y-3">
           {notes.map((note) => (
-            <Card key={note.id} className={note.is_resolved ? 'opacity-75' : ''}>
-              <CardContent className="pt-4">
+            <Card key={note.id} className={`border shadow-none ${note.is_resolved ? 'opacity-75' : ''}`}>
+              <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">

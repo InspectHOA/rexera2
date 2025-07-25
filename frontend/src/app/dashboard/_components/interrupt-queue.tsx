@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Clock, User, ArrowRight } from 'lucide-react';
 import { useUnifiedNotifications } from '@/lib/hooks/use-unified-notifications';
+import { Button } from '@/components/ui/button';
 
 export function InterruptQueue() {
   const { notifications, loading, error } = useUnifiedNotifications();
@@ -161,18 +162,18 @@ export function InterruptQueue() {
                 
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
-                    <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                    <Button className="inline-flex items-center gap-2">
                       <User className="h-4 w-4" />
                       Take Action
-                    </button>
-                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                    </Button>
+                    <Button variant="outline" className="inline-flex items-center gap-2">
                       Assign to Team
-                    </button>
+                    </Button>
                   </div>
-                  <button className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+                  <Button variant="ghost" size="sm" className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700">
                     View Workflow
                     <ArrowRight className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))

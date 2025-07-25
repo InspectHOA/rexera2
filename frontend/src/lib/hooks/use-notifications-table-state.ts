@@ -14,9 +14,9 @@ import type {
 
 export function useNotificationsTableState(): UseNotificationsTableStateReturn {
   // Filter states
-  const [filterType, setFilterType] = useState('');
-  const [filterPriority, setFilterPriority] = useState('');
-  const [filterReadStatus, setFilterReadStatus] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [filterReadStatus, setFilterReadStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Pagination
@@ -31,12 +31,12 @@ export function useNotificationsTableState(): UseNotificationsTableStateReturn {
   const getFilteredNotifications = useCallback((notifications: UnifiedNotification[]) => {
     return notifications.filter(notification => {
       // Type filter
-      if (filterType && notification.type !== filterType) {
+      if (filterType && filterType !== 'all' && notification.type !== filterType) {
         return false;
       }
       
       // Priority filter
-      if (filterPriority && notification.priority !== filterPriority) {
+      if (filterPriority && filterPriority !== 'all' && notification.priority !== filterPriority) {
         return false;
       }
       
@@ -139,9 +139,9 @@ export function useNotificationsTableState(): UseNotificationsTableStateReturn {
   };
 
   const handleClearFilters = () => {
-    setFilterType('');
-    setFilterPriority('');
-    setFilterReadStatus('');
+    setFilterType('all');
+    setFilterPriority('all');
+    setFilterReadStatus('all');
     setSearchQuery('');
     setCurrentPage(1);
   };

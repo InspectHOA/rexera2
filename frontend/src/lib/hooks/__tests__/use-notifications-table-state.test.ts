@@ -52,9 +52,9 @@ describe('useNotificationsTableState', () => {
   it('should initialize with default state', () => {
     const { result } = renderHook(() => useNotificationsTableState());
 
-    expect(result.current.filterType).toBe('');
-    expect(result.current.filterPriority).toBe('');
-    expect(result.current.filterReadStatus).toBe('');
+    expect(result.current.filterType).toBe('all');
+    expect(result.current.filterPriority).toBe('all');
+    expect(result.current.filterReadStatus).toBe('all');
     expect(result.current.searchQuery).toBe('');
     expect(result.current.currentPage).toBe(1);
     expect(result.current.itemsPerPage).toBe(50);
@@ -175,9 +175,9 @@ describe('useNotificationsTableState', () => {
         result.current.handleClearFilters();
       });
 
-      expect(result.current.filterType).toBe('');
-      expect(result.current.filterPriority).toBe('');
-      expect(result.current.filterReadStatus).toBe('');
+      expect(result.current.filterType).toBe('all');
+      expect(result.current.filterPriority).toBe('all');
+      expect(result.current.filterReadStatus).toBe('all');
       expect(result.current.searchQuery).toBe('');
       expect(result.current.currentPage).toBe(1);
     });

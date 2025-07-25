@@ -3,6 +3,7 @@
  * Comprehensive testing with real Supabase database
  */
 
+import { randomUUID } from 'crypto';
 import { testClient } from '../utils/hono-test-client';
 import { testDataManager, setupTest, cleanupTest, checkDatabaseConnection } from '../utils/database-setup';
 import { 
@@ -330,7 +331,7 @@ describe('Counterparties API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent counterparty', async () => {
-      const nonExistentId = crypto.randomUUID();
+      const nonExistentId = randomUUID();
       const response = await client.get(`/api/counterparties/${nonExistentId}`);
 
       expect(response.status).toBe(404);
@@ -376,7 +377,7 @@ describe('Counterparties API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent counterparty', async () => {
-      const nonExistentId = crypto.randomUUID();
+      const nonExistentId = randomUUID();
       const response = await client.patch(
         `/api/counterparties/${nonExistentId}`, 
         updateCounterpartyFixtures.validUpdate
@@ -433,7 +434,7 @@ describe('Counterparties API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent counterparty', async () => {
-      const nonExistentId = crypto.randomUUID();
+      const nonExistentId = randomUUID();
       const response = await client.delete(`/api/counterparties/${nonExistentId}`);
 
       expect(response.status).toBe(404);

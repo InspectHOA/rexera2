@@ -3,6 +3,7 @@
  * Uses real Supabase database with proper cleanup
  */
 
+import { randomUUID } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -121,7 +122,7 @@ export class TestDataManager {
    */
   async createTestUser(userData?: Partial<any>) {
     const defaultUser = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       email: `test-${Date.now()}@example.com`,
       full_name: 'Test User',
       role: 'user',
@@ -149,7 +150,7 @@ export class TestDataManager {
    */
   async createTestClient(clientData?: Partial<any>) {
     const defaultClient = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: `Test Client ${Date.now()}`,
       email: `client-${Date.now()}@example.com`,
       phone: '555-0000',
@@ -181,7 +182,7 @@ export class TestDataManager {
     const user = await this.createTestUser();
 
     const defaultWorkflow = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       title: `Test Workflow ${Date.now()}`,
       workflow_type: 'HOA_ACQUISITION',
       client_id: client.id,
@@ -212,7 +213,7 @@ export class TestDataManager {
    */
   async createTestCounterparty(counterpartyData?: Partial<any>) {
     const defaultCounterparty = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: `Test Counterparty ${Date.now()}`,
       type: 'hoa',
       email: `counterparty-${Date.now()}@example.com`
@@ -239,7 +240,7 @@ export class TestDataManager {
    */
   async createWorkflowCounterpartyRelationship(workflowId: string, counterpartyId: string, status = 'PENDING') {
     const relationshipData = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       workflow_id: workflowId,
       counterparty_id: counterpartyId,
       status

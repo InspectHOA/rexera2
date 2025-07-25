@@ -1,5 +1,7 @@
 // Task detail view component
 
+import { Button } from '@/components/ui/button';
+
 interface Task {
   id: string;
   name: string;
@@ -120,9 +122,9 @@ function ResultSummary() {
 function ActionButtons() {
   return (
     <div className="flex gap-2 pt-2">
-      <button className="px-3 py-2 text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-muted transition-colors duration-200">
+      <Button variant="outline" size="sm">
         Retry Task
-      </button>
+      </Button>
     </div>
   );
 }

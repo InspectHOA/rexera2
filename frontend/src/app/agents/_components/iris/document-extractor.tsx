@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AgentLayout } from '../shared/agent-layout';
 import { Upload, FileText, Image as ImageIcon, Download, Eye, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DocumentExtractorProps {
   workflowId?: string;
@@ -82,10 +83,10 @@ export function DocumentExtractor({ workflowId, agentId }: DocumentExtractorProp
 
   const actions = (
     <div className="flex items-center gap-2">
-      <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
+      <Button className="flex items-center gap-2">
         <Upload className="w-4 h-4" />
         Upload Document
-      </button>
+      </Button>
     </div>
   );
 
@@ -186,15 +187,15 @@ export function DocumentExtractor({ workflowId, agentId }: DocumentExtractorProp
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                          <Button variant="ghost" size="sm">
                             <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                          </Button>
+                          <Button variant="ghost" size="sm">
                             <Download className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                          </Button>
+                          <Button variant="ghost" size="sm">
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -226,9 +227,9 @@ export function DocumentExtractor({ workflowId, agentId }: DocumentExtractorProp
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
                               <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                               <p className="text-gray-500">PDF Preview would go here</p>
-                              <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                              <Button className="mt-4">
                                 View Full Document
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -245,9 +246,9 @@ export function DocumentExtractor({ workflowId, agentId }: DocumentExtractorProp
                           <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
                           <p className="text-gray-600 mb-2">Processing failed</p>
                           <p className="text-sm text-red-600 mb-4">{doc.error}</p>
-                          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                          <Button>
                             Retry Processing
-                          </button>
+                          </Button>
                         </div>
                       ) : null}
                     </div>
