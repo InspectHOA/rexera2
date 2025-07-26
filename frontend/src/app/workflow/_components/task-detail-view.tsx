@@ -1,20 +1,29 @@
-// Task detail view component
+/**
+ * Enhanced Task Detail View Component
+ * 
+ * Displays detailed task execution information with real data integration,
+ * editable JSONB fields, and execution timeline.
+ */
 
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Copy, Edit3, Save, X, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+
+import type { TaskExecution } from '@rexera/shared';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/lib/hooks/use-toast';
+import { taskExecutionsApi } from '@/lib/api/endpoints/task-executions';
 import { TaskStatusDropdown } from './task-status-dropdown';
-
-interface Task {
-  id: string;
-  name: string;
-  agent: string;
-  status: string;
-  meta: string;
-  sla: string;
-}
+import { cn } from '@/lib/utils';
+import { formatDate, formatTime, formatDuration } from '@/lib/utils/formatting';
 
 interface TaskDetailViewProps {
   selectedTask: string | null;
-  tasks: Task[];
+  tasks: TaskExecution[];
   workflowId?: string;
 }
 
@@ -27,12 +36,13 @@ export function TaskDetailView({ selectedTask, tasks, workflowId }: TaskDetailVi
   if (!task) return <EmptyState />;
 
   return (
-    <div className="p-4 space-y-4">
-      <TaskDetailHeader task={task} workflowId={workflowId} />
-      <TaskInformation task={task} workflowId={workflowId} />
-      <ExecutionLogs />
-      <ResultSummary />
-      <ActionButtons />
+    <div className="space-y-4">
+      <TaskOverview task={task} workflowId={workflowId} />
+      <Separator />
+      <InputDataSection task={task} />
+      <OutputDataSection task={task} />
+      <ExecutionTimeline task={task} />
+      <ActionButtons task={task} />
     </div>
   );
 }
@@ -55,96 +65,319 @@ function EmptyState() {
   );
 }
 
-function TaskDetailHeader({ task, workflowId }: { task: Task; workflowId?: string }) {
-  // Get status color for the dot indicator
+function TaskOverview({ task, workflowId }: { task: TaskExecution; workflowId?: string }) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500';
-      case 'interrupted': return 'bg-destructive';
-      case 'pending': return 'bg-blue-500';
+      case 'COMPLETED': return 'bg-green-500';
+      case 'INTERRUPT': 
+      case 'FAILED': return 'bg-destructive';
+      case 'IN_PROGRESS': return 'bg-blue-500';
+      case 'NOT_STARTED': return 'bg-muted';
       default: return 'bg-muted';
     }
   };
 
+  const getExecutionTime = () => {
+    if (task.execution_time_ms) {
+      return formatDuration(task.execution_time_ms);
+    }
+    if (task.started_at && task.completed_at) {
+      const start = new Date(task.started_at);
+      const end = new Date(task.completed_at);
+      return formatDuration(end.getTime() - start.getTime());
+    }
+    return null;
+  };
+
   return (
-    <div className="pb-3 border-b border-border flex justify-between items-start">
-      <div className="text-xs font-medium text-foreground flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${getStatusColor(task.status)}`} />
-        {task.name}
+    <div className="space-y-2">
+      <div className="flex justify-between items-start">
+        <div className="flex items-center gap-2">
+          <div className={cn("w-2 h-2 rounded-full", getStatusColor(task.status))} />
+          <h3 className="text-sm font-medium text-foreground">
+            {(task as any).agents?.name || 'Unknown Agent'}: {task.title}
+          </h3>
+        </div>
+        <TaskStatusDropdown 
+          taskId={task.id}
+          currentStatus={task.status}
+          workflowId={workflowId}
+          isCompact={true}
+        />
       </div>
       
-      <TaskStatusDropdown 
-        taskId={task.id}
-        currentStatus={task.status}
-        workflowId={workflowId}
-        isCompact={true}
-      />
+      <div className="text-xs text-muted-foreground flex items-center gap-4">
+        {task.started_at && (
+          <span>Started {formatDate(task.started_at, 'long')}</span>
+        )}
+        {task.completed_at && (
+          <span>• Completed {formatDate(task.completed_at, 'long')}</span>
+        )}
+        {getExecutionTime() && (
+          <span>• {getExecutionTime()} duration</span>
+        )}
+      </div>
     </div>
   );
 }
 
-function TaskInformation({ task, workflowId }: { task: Task; workflowId?: string }) {
+function InputDataSection({ task }: { task: TaskExecution }) {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(JSON.stringify(task.input_data, null, 2));
+    toast({
+      title: "Copied to clipboard",
+      description: "Input data copied successfully"
+    });
+  };
+
   return (
-    <div>
-      <div className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Task Information</div>
-      <div className="bg-muted border border-border p-3 space-y-3">
-        <div className="grid grid-cols-2 gap-4">
-          <DetailItem label="Agent" value={task.agent} />
-          <div>
-            <div className="text-xs text-muted-foreground mb-1">Status</div>
-            <TaskStatusDropdown 
-              taskId={task.id}
-              currentStatus={task.status}
-              workflowId={workflowId}
-              isCompact={true}
-            />
-          </div>
-          <DetailItem label="SLA" value={task.sla} />
-          <DetailItem label="Meta" value={task.meta} />
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Input
+        </h4>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          className="h-6 px-2"
+        >
+          <Copy className="w-3 h-3" />
+        </Button>
+      </div>
+      
+      <Card className="p-3">
+        <JsonViewer data={task.input_data} />
+      </Card>
+    </div>
+  );
+}
+
+function OutputDataSection({ task }: { task: TaskExecution }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState('');
+  const [hasChanges, setHasChanges] = useState(false);
+  
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => taskExecutionsApi.update(task.id, { output_data: data }),
+    onSuccess: () => {
+      toast({
+        title: "Output updated",
+        description: "Task output data has been saved successfully"
+      });
+      queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow'] });
+      setIsEditing(false);
+      setHasChanges(false);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive", 
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update output data"
+      });
+    }
+  });
+
+  const handleEdit = () => {
+    setEditedData(JSON.stringify(task.output_data || {}, null, 2));
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedData('');
+    setHasChanges(false);
+  };
+
+  const handleSave = () => {
+    try {
+      const parsedData = JSON.parse(editedData);
+      updateMutation.mutate(parsedData);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Invalid JSON",
+        description: "Please check the JSON syntax and try again"
+      });
+    }
+  };
+
+  const handleCopy = () => {
+    const dataToCopy = isEditing ? editedData : JSON.stringify(task.output_data, null, 2);
+    navigator.clipboard.writeText(dataToCopy);
+    toast({
+      title: "Copied to clipboard",
+      description: "Output data copied successfully"
+    });
+  };
+
+  const handleChange = (value: string) => {
+    setEditedData(value);
+    setHasChanges(true);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Output
+        </h4>
+        <div className="flex items-center gap-1">
+          {isEditing ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                disabled={updateMutation.isPending}
+                className="h-6 px-2"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSave}
+                disabled={!hasChanges || updateMutation.isPending}
+                className="h-6 px-2"
+              >
+                {updateMutation.isPending ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Save className="w-3 h-3" />
+                )}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              className="h-6 px-2"
+            >
+              <Edit3 className="w-3 h-3" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="h-6 px-2"
+          >
+            <Copy className="w-3 h-3" />
+          </Button>
         </div>
       </div>
+      
+      <Card className="p-3">
+        {isEditing ? (
+          <Textarea
+            value={editedData}
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full h-32 text-xs font-mono resize-none bg-transparent border-none outline-none"
+            placeholder="Enter JSON data..."
+          />
+        ) : (
+          <JsonViewer data={task.output_data} />
+        )}
+      </Card>
     </div>
   );
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function JsonViewer({ data }: { data: any }) {
+  if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+    return (
+      <div className="text-xs text-muted-foreground italic">
+        No data available
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="text-xs text-muted-foreground mb-1">{label}</div>
-      <div className="text-xs text-foreground font-medium">{value}</div>
-    </div>
+    <pre className="text-xs font-mono text-foreground whitespace-pre-wrap break-words">
+      {JSON.stringify(data, null, 2)}
+    </pre>
   );
 }
 
-function ExecutionLogs() {
+function ExecutionTimeline({ task }: { task: TaskExecution }) {
+  const timelineEvents = [];
+
+  if (task.created_at) {
+    timelineEvents.push({
+      time: task.created_at,
+      event: 'Task created',
+      type: 'info' as const
+    });
+  }
+
+  if (task.started_at) {
+    timelineEvents.push({
+      time: task.started_at,
+      event: 'Processing started',
+      type: 'info' as const
+    });
+  }
+
+  if (task.status === 'INTERRUPT' && task.error_message) {
+    timelineEvents.push({
+      time: task.created_at,
+      event: `⚠️ ${task.error_message}`,
+      type: 'warning' as const
+    });
+  }
+
+  if (task.completed_at) {
+    const isSuccess = task.status === 'COMPLETED';
+    timelineEvents.push({
+      time: task.completed_at,
+      event: isSuccess ? '✅ Completed successfully' : '❌ Task failed',
+      type: isSuccess ? 'success' : 'error' as const
+    });
+  }
+
+  if (timelineEvents.length === 0) {
+    return null;
+  }
+
   return (
-    <div>
-      <div className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Execution Logs</div>
-      <div className="bg-card border border-border p-3 font-mono text-xs text-muted-foreground max-h-32 overflow-y-auto">
-        <div className="space-y-1">
-          <div>[13:30] Received payoff statement via email</div>
-          <div>[13:31] Starting OCR processing on payoff_statement_fnb.pdf</div>
-          <div>[13:33] OCR completed - Processing 1 page document</div>
-          <div className="text-yellow-600 dark:text-yellow-400">[13:40] Extracting payoff amount - 67% confidence (LOW)</div>
-          <div className="text-destructive">[13:45] Document processing completed with manual review flag</div>
+    <div className="space-y-2">
+      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        Timeline
+      </h4>
+      <Card className="p-3">
+        <div className="space-y-2">
+          {timelineEvents.map((event, index) => (
+            <div key={index} className="flex items-start gap-3 text-xs">
+              <span className="text-muted-foreground font-mono min-w-0 flex-shrink-0">
+                {formatTime(event.time)}
+              </span>
+              <span className={cn(
+                "text-foreground",
+                event.type === 'warning' && "text-yellow-600 dark:text-yellow-400",
+                event.type === 'error' && "text-destructive"
+              )}>
+                {event.event}
+              </span>
+            </div>
+          ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
 
-function ResultSummary() {
-  return (
-    <div>
-      <div className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Result Summary</div>
-      <div className="bg-blue-50 border border-blue-200 p-3 text-xs text-foreground border-l-4 border-l-blue-500 dark:bg-blue-950 dark:border-blue-800 dark:border-l-blue-400">
-        Document processed successfully. Low confidence (67%) on payoff amount extraction: <span className="font-semibold">$247,856.32</span>. Manual verification recommended.
-      </div>
-    </div>
-  );
-}
+function ActionButtons({ task }: { task: TaskExecution }) {
+  const canRetry = task.status === 'FAILED' || task.status === 'INTERRUPT';
 
-function ActionButtons() {
+  if (!canRetry) {
+    return null;
+  }
+
   return (
     <div className="flex gap-2 pt-2">
       <Button variant="outline" size="sm">

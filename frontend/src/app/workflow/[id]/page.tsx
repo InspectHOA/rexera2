@@ -334,7 +334,7 @@ export default function WorkflowDetailPage() {
                 {rightPanelTab === 'task-details' && (
                   <TaskDetailView 
                     selectedTask={selectedTask} 
-                    tasks={tasks} 
+                    tasks={taskExecutionsData || []} 
                     workflowId={workflowTyped?.id}
                   />
                 )}
