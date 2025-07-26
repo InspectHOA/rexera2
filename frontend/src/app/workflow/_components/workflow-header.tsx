@@ -1,7 +1,10 @@
 import { ArrowLeft } from 'lucide-react';
+import { WorkflowStatusDropdown } from './workflow-status-dropdown';
 
 interface WorkflowHeaderProps {
   workflow: {
+    id?: string;
+    rawId?: string;
     title: string;
     subtitle: string;
     status: string;
@@ -39,9 +42,10 @@ export function WorkflowHeader({ workflow, onBackClick }: WorkflowHeaderProps) {
           <DateField label="Due" value={workflow.due} isUrgent />
           <DateField label="Closing" value={workflow.closing} />
         </div>
-        <span className="px-2 py-1 text-xs font-semibold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/20">
-          {workflow.status}
-        </span>
+        <WorkflowStatusDropdown 
+          workflowId={workflow.rawId}
+          currentStatus={workflow.status}
+        />
       </div>
     </header>
   );

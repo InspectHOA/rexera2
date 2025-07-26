@@ -57,12 +57,19 @@ export function useWorkflowTableState() {
 
     // Status filter - map frontend values to backend values
     if (filterStatus && filterStatus !== 'all') {
-      const statusMap: Record<string, string> = {
-        'urgent': 'BLOCKED,INTERRUPT', // Map to multiple statuses (note: workflows don't have INTERRUPT, but task executions do)
-        'progress': 'IN_PROGRESS',
-        'completed': 'COMPLETED'
-      };
-      filters.status = statusMap[filterStatus] || filterStatus;
+      // Handle urgent filter specially - no backend status filtering
+      if (filterStatus === 'urgent') {
+        // For urgent filter, don't add any status filter to backend
+        // Client-side will handle filtering for both BLOCKED workflows and workflows with INTERRUPT tasks
+      } else {
+        // Handle other status filters normally
+        const statusMap: Record<string, string> = {
+          'progress': 'IN_PROGRESS',
+          'completed': 'COMPLETED'
+        };
+        const mappedStatus = statusMap[filterStatus] || filterStatus;
+        filters.status = mappedStatus;
+      }
     }
 
     // Note: Search and interrupt filtering will need custom handling

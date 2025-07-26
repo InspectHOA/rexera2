@@ -9,7 +9,8 @@ import type { WorkflowData, TaskExecution, TransformedWorkflow } from '@/types/w
 export function useWorkflowTransformation(
   workflowData: WorkflowData[],
   filterInterrupts: string,
-  searchQuery: string
+  searchQuery: string,
+  filterStatus: string
 ) {
   const transformedWorkflows = useMemo(() => {
     return workflowData.map((workflow: WorkflowData) => {
@@ -47,9 +48,20 @@ export function useWorkflowTransformation(
     });
   }, [workflowData]);
 
-  // Apply remaining client-side filters (search and interrupts) until backend supports them
+  // Apply remaining client-side filters (search, interrupts, and urgent) until backend supports them
   const filteredWorkflows = useMemo(() => {
     return transformedWorkflows.filter((workflow: TransformedWorkflow) => {
+      // Urgent filter - comprehensive check for both BLOCKED workflows and workflows with INTERRUPT tasks
+      if (filterStatus === 'urgent') {
+        const isBlocked = workflow.statusRaw === 'BLOCKED';
+        const hasInterruptedTasks = workflow.interruptCount > 0;
+        
+        // For urgent filter: show if workflow is BLOCKED OR has interrupted tasks
+        if (!isBlocked && !hasInterruptedTasks) {
+          return false;
+        }
+      }
+
       // Interrupts filter (client-side until backend implementation)
       if (filterInterrupts) {
         if (filterInterrupts === 'has-interrupts' && workflow.interruptCount === 0) {
@@ -77,7 +89,7 @@ export function useWorkflowTransformation(
 
       return true;
     });
-  }, [transformedWorkflows, filterInterrupts, searchQuery]);
+  }, [transformedWorkflows, filterInterrupts, searchQuery, filterStatus]);
 
   return filteredWorkflows;
 }

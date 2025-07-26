@@ -37,7 +37,7 @@ export function WorkflowTable() {
 
   const { workflows: workflowData, loading, error, pagination } = useWorkflows(getBackendFilters());
 
-  const workflows = useWorkflowTransformation(Array.isArray(workflowData) ? workflowData : [], filterInterrupts, searchQuery);
+  const workflows = useWorkflowTransformation(Array.isArray(workflowData) ? workflowData : [], filterInterrupts, searchQuery, filterStatus);
 
   if (loading) {
     return <WorkflowTableSkeleton />;

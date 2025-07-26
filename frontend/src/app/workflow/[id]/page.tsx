@@ -36,6 +36,7 @@ interface Task {
 
 interface Workflow {
   id: string;
+  rawId?: string;
   title: string;
   subtitle: string;
   status: string;
@@ -95,9 +96,10 @@ export default function WorkflowDetailPage() {
   const workflowTyped = workflowData as WorkflowData | undefined;
   const workflow: Workflow | null = workflowTyped ? {
     id: formatWorkflowIdWithType(workflowTyped.id, workflowTyped.workflow_type),
+    rawId: workflowTyped.id, // Add the raw UUID for API calls
     title: workflowTyped.title || 'Workflow Details',
     subtitle: `${formatWorkflowIdWithType(workflowTyped.id, workflowTyped.workflow_type)} • ${getDisplayWorkflowType(workflowTyped.workflow_type || 'PAYOFF_REQUEST')} - ${workflowTyped.client?.name || 'Unknown Client'}`,
-    status: getDisplayStatus(workflowTyped.status || 'PENDING'),
+    status: workflowTyped.status || 'PENDING', // Use raw status for dropdown
     eta: formatDateTime(workflowTyped.due_date),
     due: formatDate(workflowTyped.due_date),
     closing: formatDate(workflowTyped.metadata?.closing_date || null),
@@ -120,13 +122,21 @@ export default function WorkflowDetailPage() {
 
   const tasks: Task[] = taskExecutionsData && taskExecutionsData.length > 0 ? taskExecutionsData.map((task: any) => ({
     id: task.id,
-    name: task.title,
+    name: cleanTaskName(task.title),
     agent: getAgentDisplay(task),
     status: getTaskStatus(task.status),
     meta: getTaskMeta(task),
     sla: getSlaStatus(task),
     conditional: task.metadata?.conditional || false
   })) : [];
+
+  function cleanTaskName(title: string) {
+    // Remove "Task 1 - ", "Task 2 - ", etc. from the beginning
+    let cleaned = title.replace(/^Task \d+\s*-\s*/, '');
+    // Remove "Agent " prefix (e.g., "Agent Nina: Research" → "Nina: Research")
+    cleaned = cleaned.replace(/^Agent\s+/, '');
+    return cleaned;
+  }
 
   function getDisplayWorkflowType(type: string) {
     const typeMap: Record<string, string> = {
@@ -160,23 +170,9 @@ export default function WorkflowDetailPage() {
   }
 
   function getAgentDisplay(task: any) {
-    if (task.executor_type === 'HIL') {
-      return 'HIL Monitor';
-    }
-    
-    // Try to get agent name from included agent data first (note: it's "agents" not "agent")
-    if (task.agents && task.agents.name) {
-      return task.agents.name;
-    }
-    
-    // Fallback to other possible locations for agent name
-    const agentName = task.agent_name ||
-                     task.metadata?.agent_name ||
-                     task.assigned_agent ||
-                     task.metadata?.assigned_agent ||
-                     'Agent';
-    
-    return agentName;
+    // Since we're not showing agent info separately anymore, 
+    // this function can be simplified or removed
+    return '';
   }
 
   function getTaskMeta(task: any) {
@@ -196,7 +192,7 @@ export default function WorkflowDetailPage() {
   }
 
   function getSlaStatus(task: any) {
-    if (!task.due_date) return 'SLA: TBD';
+    if (!task.due_date) return 'TBD';
     
     const due = new Date(task.due_date);
     const now = new Date();

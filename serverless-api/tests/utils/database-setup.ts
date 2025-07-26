@@ -125,7 +125,7 @@ export class TestDataManager {
       id: randomUUID(),
       email: `test-${Date.now()}@example.com`,
       full_name: 'Test User',
-      role: 'user',
+      role: 'HIL',
       user_type: 'hil_user'
     };
 
@@ -152,9 +152,7 @@ export class TestDataManager {
     const defaultClient = {
       id: randomUUID(),
       name: `Test Client ${Date.now()}`,
-      email: `client-${Date.now()}@example.com`,
-      phone: '555-0000',
-      type: 'individual'
+      domain: `testclient-${Date.now()}.example.com`
     };
 
     const client = { ...defaultClient, ...clientData };

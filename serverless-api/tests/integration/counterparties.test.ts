@@ -193,9 +193,12 @@ describe('Counterparties API Integration Tests', () => {
     });
 
     it('should include workflow relationships when requested', async () => {
-      // Create a workflow and relationship
+      // Create a counterparty and workflow for the relationship
+      const counterpartyResponse = await client.post('/api/counterparties', validCounterpartyFixtures.hoa);
+      const counterparty = counterpartyResponse.body.data;
+      testDataManager.trackCounterparty(counterparty.id);
+      
       const workflow = await testDataManager.createTestWorkflow();
-      const counterparty = testCounterparties[0];
       
       await testDataManager.createWorkflowCounterpartyRelationship(
         workflow.id, 
@@ -203,14 +206,14 @@ describe('Counterparties API Integration Tests', () => {
         'PENDING'
       );
 
-      const response = await client.get('/api/counterparties?include=workflows');
+      // Search specifically for our counterparty with include=workflows
+      const response = await client.get(`/api/counterparties/${counterparty.id}?include=workflows`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      
-      const cpWithWorkflows = response.body.data.find((cp: any) => cp.id === counterparty.id);
-      expect(cpWithWorkflows.workflows).toBeDefined();
-      expect(Array.isArray(cpWithWorkflows.workflows)).toBe(true);
+      expect(response.body.data.workflows).toBeDefined();
+      expect(Array.isArray(response.body.data.workflows)).toBe(true);
+      expect(response.body.data.workflows.length).toBeGreaterThan(0);
     });
 
     it('should handle invalid filter parameters', async () => {

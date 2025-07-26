@@ -24,6 +24,19 @@ const getTaskStatusColor = (status: string) => {
   }
 };
 
+const getTaskStatusStyle = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-950';
+    case 'interrupted':
+      return 'text-destructive bg-destructive/10';
+    case 'pending':
+      return 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-950';
+    default:
+      return 'text-muted-foreground bg-muted/50';
+  }
+};
+
 const getSlaStatusStyle = (sla: string) => {
   switch (sla) {
     case 'ON TIME':
@@ -31,9 +44,11 @@ const getSlaStatusStyle = (sla: string) => {
     case 'LATE':
       return 'text-destructive bg-destructive/10';
     case 'DUE SOON':
-      return 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-950';
+      return 'text-orange-700 bg-orange-100 dark:text-orange-300 dark:bg-orange-950';
+    case 'TBD':
+      return 'text-muted-foreground bg-muted/50';
     default:
-      return 'text-muted-foreground bg-transparent';
+      return 'text-muted-foreground bg-muted/50';
   }
 };
 
@@ -58,6 +73,24 @@ export function TaskList({ tasks, selectedTask, onTaskClick, progress }: TaskLis
   );
 }
 
+function renderTaskName(name: string) {
+  // Split on the first colon to separate agent name from task description
+  const colonIndex = name.indexOf(':');
+  if (colonIndex === -1) {
+    return <span className="text-foreground">{name}</span>;
+  }
+  
+  const agentName = name.substring(0, colonIndex);
+  const taskDescription = name.substring(colonIndex + 1).trim();
+  
+  return (
+    <>
+      <span className="text-foreground">{agentName}</span>
+      <span className="text-muted-foreground">: {taskDescription}</span>
+    </>
+  );
+}
+
 function TaskItem({ task, isSelected, onClick }: {
   task: Task;
   isSelected: boolean;
@@ -71,27 +104,31 @@ function TaskItem({ task, isSelected, onClick }: {
         ${isSelected
           ? 'bg-primary/10 border-primary'
           : task.conditional
-            ? 'bg-muted border-l-2 border-l-yellow-400 dark:border-l-yellow-500 hover:bg-muted/80 hover:border-primary'
+            ? 'bg-muted border-l-2 border-l-yellow-400 hover:bg-muted/80 hover:border-primary'
             : 'hover:bg-muted/50 hover:border-primary'
         }
       `}
     >
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getTaskStatusColor(task.status)}`} />
+      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getTaskStatusColor(task.status)}`} />
       
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <div className="text-xs font-medium text-foreground truncate">
-          {task.name}
-        </div>
-        <div className="text-xs text-muted-foreground truncate">
-          {task.agent} • {task.meta}
-        </div>
+      <div className="text-xs font-medium truncate flex-1 min-w-0">
+        {renderTaskName(task.name)}
       </div>
       
-      <div className={`
-        text-xs font-medium px-1 py-0.5 uppercase tracking-wide whitespace-nowrap flex-shrink-0 rounded text-center min-w-[3rem]
-        ${getSlaStatusStyle(task.sla)}
-      `}>
-        {task.sla}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div className={`
+          text-xs px-1.5 py-0.5 uppercase tracking-wide whitespace-nowrap rounded
+          ${getTaskStatusStyle(task.status)}
+        `}>
+          {task.status}
+        </div>
+        
+        <div className={`
+          text-xs px-1.5 py-0.5 uppercase tracking-wide whitespace-nowrap rounded
+          ${getSlaStatusStyle(task.sla)}
+        `}>
+          {task.sla}
+        </div>
       </div>
     </div>
   );

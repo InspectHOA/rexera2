@@ -33,6 +33,14 @@ counterparties.get('/', async (c) => {
     const supabase = createServerClient();
     const offset = (page - 1) * limit;
     
+    // Ensure pagination parameters are safe
+    if (offset < 0) {
+      return c.json({
+        success: false,
+        error: 'Invalid pagination parameters'
+      }, 400);
+    }
+    
     // Build query
     let query = supabase
       .from('counterparties')
@@ -50,12 +58,28 @@ counterparties.get('/', async (c) => {
     // Apply sorting
     query = query.order(sort, { ascending: order === 'asc' });
     
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
+    // Apply pagination - ensure range is valid
+    const rangeStart = Math.max(0, offset);
+    const rangeEnd = rangeStart + limit - 1;
+    query = query.range(rangeStart, rangeEnd);
     
     const { data, error, count } = await query;
     
     if (error) {
+      // Handle "Requested range not satisfiable" as empty result set for pagination beyond data
+      if (error.code === 'PGRST103') {
+        return c.json({
+          success: true,
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          }
+        });
+      }
+      
       console.error('Error fetching counterparties:', error);
       return c.json({
         success: false,
@@ -201,6 +225,16 @@ counterparties.get('/types', async (c) => {
 counterparties.get('/:id', async (c) => {
   try {
     const id = c.req.param('id');
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return c.json({
+        success: false,
+        error: 'Invalid UUID format'
+      }, 400);
+    }
+    
     const queryParams = c.req.query();
     const { include } = CounterpartyFiltersSchema.pick({ include: true }).parse(queryParams);
     
@@ -323,6 +357,16 @@ counterparties.post('/', async (c) => {
 counterparties.patch('/:id', async (c) => {
   try {
     const id = c.req.param('id');
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return c.json({
+        success: false,
+        error: 'Invalid UUID format'
+      }, 400);
+    }
+    
     const body = await c.req.json();
     
     const validatedData = UpdateCounterpartySchema.parse(body);
@@ -340,7 +384,8 @@ counterparties.patch('/:id', async (c) => {
       data = await updateCounterparty(id, updateData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('PGRST116')) {
+      // Check for "not found" error by code or message
+      if ((error as any)?.code === 'PGRST116' || errorMessage.includes('PGRST116')) {
         return c.json({
           success: false,
           error: 'Counterparty not found'
@@ -397,6 +442,15 @@ counterparties.delete('/:id', async (c) => {
   try {
     const user = c.get('user') as AuthUser;
     const id = c.req.param('id');
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return c.json({
+        success: false,
+        error: 'Invalid UUID format'
+      }, 400);
+    }
     
     const supabase = createServerClient();
     
