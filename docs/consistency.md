@@ -109,6 +109,28 @@ pnpm dlx shadcn@latest add button dialog input select tabs
 ### 19. Testing Standards
 **RULE**: Tests in `__tests__/` directories with `*.test.{ts,tsx}` naming. Use Jest + React Testing Library. Mock dependencies before imports, use `jest.clearAllMocks()` in `beforeEach`
 
+### 20. No Hardcoded Values
+**RULE**: Never hardcode business values, statuses, or mappings in components. All values must come from database, shared enums, or configuration files. Use `@rexera/shared` types and enums consistently.
+
+**Examples:**
+```tsx
+// ✅ Good: Using shared enums
+import { TaskStatus, TASK_STATUSES } from '@rexera/shared';
+const status = task.status as TaskStatus;
+
+// ✅ Good: Database-driven agent descriptions
+const agentName = task.agents?.name || 'Unknown Agent';
+
+// ❌ Bad: Hardcoded status mappings
+const agentDescriptionMap = {
+  'nina': 'Counterparty Management',
+  'rex': 'Browser Automation'
+};
+
+// ❌ Bad: Hardcoded status displays
+if (status === 'INTERRUPTED') return 'Task needs attention';
+```
+
 ## API Consistency Rules
 
 ### 1. Frontend API Client Organization

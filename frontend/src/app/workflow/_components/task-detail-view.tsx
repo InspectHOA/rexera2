@@ -1,20 +1,24 @@
 // Task detail view component
 
 import { Button } from '@/components/ui/button';
+import { TaskStatusDropdown } from './task-status-dropdown';
 
 interface Task {
   id: string;
   name: string;
   agent: string;
   status: string;
+  meta: string;
+  sla: string;
 }
 
 interface TaskDetailViewProps {
   selectedTask: string | null;
   tasks: Task[];
+  workflowId?: string;
 }
 
-export function TaskDetailView({ selectedTask, tasks }: TaskDetailViewProps) {
+export function TaskDetailView({ selectedTask, tasks, workflowId }: TaskDetailViewProps) {
   if (!selectedTask) {
     return <EmptyState />;
   }
@@ -24,8 +28,8 @@ export function TaskDetailView({ selectedTask, tasks }: TaskDetailViewProps) {
 
   return (
     <div className="p-4 space-y-4">
-      <TaskDetailHeader task={task} />
-      <TaskInformation task={task} />
+      <TaskDetailHeader task={task} workflowId={workflowId} />
+      <TaskInformation task={task} workflowId={workflowId} />
       <ExecutionLogs />
       <ResultSummary />
       <ActionButtons />
@@ -51,31 +55,52 @@ function EmptyState() {
   );
 }
 
-function TaskDetailHeader({ task }: { task: Task }) {
+function TaskDetailHeader({ task, workflowId }: { task: Task; workflowId?: string }) {
+  // Get status color for the dot indicator
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500';
+      case 'interrupted': return 'bg-destructive';
+      case 'pending': return 'bg-blue-500';
+      default: return 'bg-muted';
+    }
+  };
+
   return (
     <div className="pb-3 border-b border-border flex justify-between items-start">
       <div className="text-xs font-medium text-foreground flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-destructive" />
+        <div className={`w-2 h-2 rounded-full ${getStatusColor(task.status)}`} />
         {task.name}
       </div>
       
-      <span className="px-2 py-1 text-xs font-medium uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/20 rounded">
-        INTERRUPTED
-      </span>
+      <TaskStatusDropdown 
+        taskId={task.id}
+        currentStatus={task.status}
+        workflowId={workflowId}
+        isCompact={true}
+      />
     </div>
   );
 }
 
-function TaskInformation({ task }: { task: Task }) {
+function TaskInformation({ task, workflowId }: { task: Task; workflowId?: string }) {
   return (
     <div>
       <div className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Task Information</div>
       <div className="bg-muted border border-border p-3 space-y-3">
         <div className="grid grid-cols-2 gap-4">
           <DetailItem label="Agent" value={task.agent} />
-          <DetailItem label="Status" value="Interrupt" />
-          <DetailItem label="Completed" value="Dec 29, 1:45 PM" />
-          <DetailItem label="Duration" value="15 minutes" />
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Status</div>
+            <TaskStatusDropdown 
+              taskId={task.id}
+              currentStatus={task.status}
+              workflowId={workflowId}
+              isCompact={true}
+            />
+          </div>
+          <DetailItem label="SLA" value={task.sla} />
+          <DetailItem label="Meta" value={task.meta} />
         </div>
       </div>
     </div>

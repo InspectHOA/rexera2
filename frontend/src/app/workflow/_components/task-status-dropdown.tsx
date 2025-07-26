@@ -20,39 +20,41 @@ import {
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/provider';
-import { type WorkflowStatus } from '@rexera/shared';
+import { type TaskStatus } from '@rexera/shared';
 
-interface WorkflowStatusDropdownProps {
-  workflowId?: string;
+interface TaskStatusDropdownProps {
+  taskId?: string;
   currentStatus: string;
+  workflowId?: string;
+  isCompact?: boolean;
 }
 
-// Available workflow statuses
-const WORKFLOW_STATUSES: { value: WorkflowStatus; label: string; description: string }[] = [
+// Available task statuses from shared types
+const TASK_STATUSES: { value: TaskStatus; label: string; description: string }[] = [
   { 
     value: 'NOT_STARTED', 
     label: 'Not Started', 
-    description: 'Workflow has not been initiated yet' 
+    description: 'Task has not been initiated yet' 
   },
   { 
     value: 'IN_PROGRESS', 
     label: 'In Progress', 
-    description: 'Workflow is actively being processed' 
+    description: 'Task is actively being processed' 
   },
   { 
-    value: 'BLOCKED', 
-    label: 'Blocked', 
-    description: 'Workflow is blocked and requires attention' 
-  },
-  { 
-    value: 'WAITING_FOR_CLIENT', 
-    label: 'Waiting for Client', 
-    description: 'Workflow is waiting for client response or action' 
+    value: 'INTERRUPT', 
+    label: 'Interrupted', 
+    description: 'Task requires human review or approval' 
   },
   { 
     value: 'COMPLETED', 
     label: 'Completed', 
-    description: 'Workflow has been successfully completed' 
+    description: 'Task has been successfully completed' 
+  },
+  { 
+    value: 'FAILED', 
+    label: 'Failed', 
+    description: 'Task failed and cannot proceed' 
   }
 ];
 
@@ -63,42 +65,55 @@ function getStatusStyles(status: string) {
       return 'bg-gray-100 text-gray-700 border-gray-200';
     case 'IN_PROGRESS':
       return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'BLOCKED':
+    case 'INTERRUPT':
       return 'bg-red-100 text-red-700 border-red-200';
-    case 'WAITING_FOR_CLIENT':
-      return 'bg-orange-100 text-orange-700 border-orange-200';
     case 'COMPLETED':
       return 'bg-green-100 text-green-700 border-green-200';
+    case 'FAILED':
+      return 'bg-red-100 text-red-700 border-red-200';
     default:
       return 'bg-gray-100 text-gray-700 border-gray-200';
   }
 }
 
-export function WorkflowStatusDropdown({ workflowId, currentStatus }: WorkflowStatusDropdownProps) {
+export function TaskStatusDropdown({ taskId, currentStatus, workflowId, isCompact = false }: TaskStatusDropdownProps) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<WorkflowStatus | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatus | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const currentStatusInfo = WORKFLOW_STATUSES.find(s => s.value === currentStatus);
-  const selectedStatusInfo = WORKFLOW_STATUSES.find(s => s.value === selectedStatus);
+  // Convert display status back to database status
+  const getCurrentDbStatus = () => {
+    const statusMap: Record<string, TaskStatus> = {
+      'completed': 'COMPLETED',
+      'interrupted': 'INTERRUPT', 
+      'pending': 'NOT_STARTED', // Default for pending
+      'failed': 'FAILED'
+    };
+    
+    return statusMap[currentStatus] || currentStatus as TaskStatus;
+  };
+
+  const currentDbStatus = getCurrentDbStatus();
+  const currentStatusInfo = TASK_STATUSES.find(s => s.value === currentDbStatus);
+  const selectedStatusInfo = TASK_STATUSES.find(s => s.value === selectedStatus);
 
   const handleStatusChange = (newStatus: string) => {
-    if (newStatus === currentStatus || !workflowId) return;
+    if (newStatus === currentStatus || !taskId) return;
     
-    setSelectedStatus(newStatus as WorkflowStatus);
+    setSelectedStatus(newStatus as TaskStatus);
     setShowConfirmation(true);
   };
 
   const handleConfirmStatusChange = async () => {
-    if (!selectedStatus || !workflowId || isUpdating) return;
+    if (!selectedStatus || !taskId || isUpdating) return;
 
     setIsUpdating(true);
     
     try {
-      // Update workflow status via API
-      await api.workflows.updateWorkflow(workflowId, {
+      // Update task status via API
+      await api.taskExecutions.update(taskId, {
         status: selectedStatus
       });
 
@@ -107,10 +122,10 @@ export function WorkflowStatusDropdown({ workflowId, currentStatus }: WorkflowSt
         actor_type: 'human',
         actor_id: user?.id || 'unknown-user',
         actor_name: profile?.full_name || user?.email || 'Unknown User',
-        event_type: 'workflow_management',
+        event_type: 'task_execution',
         action: 'update',
-        resource_type: 'workflow',
-        resource_id: workflowId,
+        resource_type: 'task_execution',
+        resource_id: taskId,
         workflow_id: workflowId,
         event_data: {
           field: 'status',
@@ -121,13 +136,15 @@ export function WorkflowStatusDropdown({ workflowId, currentStatus }: WorkflowSt
       });
 
       // Invalidate queries to refresh data without full page reload
-      queryClient.invalidateQueries({ queryKey: ['workflow', workflowId] });
-      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      if (workflowId) {
+        queryClient.invalidateQueries({ queryKey: ['workflow', workflowId] });
+        queryClient.invalidateQueries({ queryKey: ['taskExecutions', { workflow_id: workflowId }] });
+      }
       
     } catch (error) {
-      console.error('Failed to update workflow status:', error);
+      console.error('Failed to update task status:', error);
       // TODO: Show proper error toast/notification
-      alert('Failed to update workflow status. Please try again.');
+      alert('Failed to update task status. Please try again.');
     } finally {
       setIsUpdating(false);
       setShowConfirmation(false);
@@ -140,25 +157,33 @@ export function WorkflowStatusDropdown({ workflowId, currentStatus }: WorkflowSt
     setSelectedStatus(null);
   };
 
-  // If no workflow ID, just show the status as text
-  if (!workflowId) {
+  // If no task ID, just show the status as text
+  if (!taskId) {
+    const className = isCompact 
+      ? `px-2 py-1 text-xs font-medium uppercase tracking-wider border ${getStatusStyles(currentStatus)}`
+      : `px-2 py-1 text-xs font-medium uppercase tracking-wider border ${getStatusStyles(currentStatus)}`;
+      
     return (
-      <span className={`px-2 py-1 text-xs font-semibold uppercase tracking-wider border ${getStatusStyles(currentStatus)}`}>
+      <span className={className}>
         {currentStatusInfo?.label || currentStatus}
       </span>
     );
   }
 
+  const triggerClassName = isCompact
+    ? `w-auto min-w-24 h-auto px-2 py-1 text-xs font-medium uppercase tracking-wider border hover:bg-opacity-80 transition-colors ${getStatusStyles(currentStatus)}`
+    : `w-auto min-w-32 h-auto px-2 py-1 text-xs font-medium uppercase tracking-wider border hover:bg-opacity-80 transition-colors ${getStatusStyles(currentStatus)}`;
+
   return (
     <>
-      <Select value={currentStatus} onValueChange={handleStatusChange}>
-        <SelectTrigger className={`w-auto min-w-32 h-auto px-2 py-1 text-xs font-semibold uppercase tracking-wider border hover:bg-opacity-80 transition-colors ${getStatusStyles(currentStatus)}`}>
+      <Select value={currentDbStatus} onValueChange={handleStatusChange}>
+        <SelectTrigger className={triggerClassName}>
           <SelectValue>
             {currentStatusInfo?.label || currentStatus}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {WORKFLOW_STATUSES.map((status) => (
+          {TASK_STATUSES.map((status) => (
             <SelectItem 
               key={status.value} 
               value={status.value}
@@ -176,7 +201,7 @@ export function WorkflowStatusDropdown({ workflowId, currentStatus }: WorkflowSt
           <DialogHeader>
             <DialogTitle>Confirm Status Change</DialogTitle>
             <DialogDescription>
-              Are you sure you want to change the workflow status from{' '}
+              Are you sure you want to change the task status from{' '}
               <span className="font-medium">{currentStatusInfo?.label}</span> to{' '}
               <span className="font-medium">{selectedStatusInfo?.label}</span>?
             </DialogDescription>

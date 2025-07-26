@@ -332,7 +332,11 @@ export default function WorkflowDetailPage() {
               {/* Right Panel Content */}
               <div className="flex-1 overflow-y-auto p-4">
                 {rightPanelTab === 'task-details' && (
-                  <TaskDetailView selectedTask={selectedTask} tasks={tasks} />
+                  <TaskDetailView 
+                    selectedTask={selectedTask} 
+                    tasks={tasks} 
+                    workflowId={workflowTyped?.id}
+                  />
                 )}
                 {rightPanelTab === 'agent-interface' && (
                   <AgentInterfaceView selectedTask={selectedTask} tasks={tasks} workflowId={params.id as string} />
