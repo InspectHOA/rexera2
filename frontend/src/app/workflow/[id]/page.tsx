@@ -170,9 +170,20 @@ export default function WorkflowDetailPage() {
   }
 
   function getAgentDisplay(task: any) {
-    // Since we're not showing agent info separately anymore, 
-    // this function can be simplified or removed
-    return '';
+    // Extract agent name from the agents relationship or task metadata
+    if (task.agents?.name) {
+      return task.agents.name.toLowerCase();
+    }
+    
+    // Fallback: extract from title if it contains agent name
+    const title = task.title || '';
+    if (title.includes('Mia') || title.includes('mia')) return 'mia';
+    if (title.includes('Nina') || title.includes('nina')) return 'nina';
+    if (title.includes('Iris') || title.includes('iris')) return 'iris';
+    if (title.includes('Ria') || title.includes('ria')) return 'ria';
+    if (title.includes('Rex') || title.includes('rex')) return 'rex';
+    
+    return 'unknown';
   }
 
   function getTaskMeta(task: any) {
