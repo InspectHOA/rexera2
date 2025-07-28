@@ -401,9 +401,9 @@ export const openApiComponents = {
         },
         status: {
           type: 'string',
-          enum: ['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED'],
+          enum: ['DRAFT', 'SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED'],
           nullable: true,
-          description: 'Communication status'
+          description: 'Communication status (includes client chat status values)'
         },
         metadata: { type: 'object', description: 'Additional communication data' },
         created_at: { type: 'string', format: 'date-time' },
@@ -432,6 +432,35 @@ export const openApiComponents = {
             duration_seconds: { type: 'integer', nullable: true },
             call_recording_url: { type: 'string', format: 'uri', nullable: true },
             transcript: { type: 'string', nullable: true },
+            created_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        client_chat_metadata: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            communication_id: { type: 'string', format: 'uuid' },
+            external_platform_type: { 
+              type: 'string', 
+              enum: ['qualia', 'gridbase', 'salesforce', 'custom'],
+              nullable: true,
+              description: 'External platform where the chat occurred'
+            },
+            external_platform_id: { 
+              type: 'string',
+              nullable: true,
+              description: 'Platform-specific identifier for this communication'
+            },
+            cc_recipients: { 
+              type: 'array', 
+              items: { type: 'string', format: 'email' },
+              description: 'Email addresses to CC on client chat communications'
+            },
+            bcc_recipients: { 
+              type: 'array', 
+              items: { type: 'string', format: 'email' },
+              description: 'Email addresses to BCC on client chat communications'
+            },
             created_at: { type: 'string', format: 'date-time' }
           }
         }
@@ -483,6 +512,30 @@ export const openApiComponents = {
             duration_seconds: { type: 'integer', minimum: 1 },
             call_recording_url: { type: 'string', format: 'uri' },
             transcript: { type: 'string' }
+          }
+        },
+        client_chat_metadata: {
+          type: 'object',
+          properties: {
+            external_platform_type: { 
+              type: 'string', 
+              enum: ['qualia', 'gridbase', 'salesforce', 'custom'],
+              description: 'External platform where the chat occurred'
+            },
+            external_platform_id: { 
+              type: 'string',
+              description: 'Platform-specific identifier for this communication'
+            },
+            cc_recipients: { 
+              type: 'array', 
+              items: { type: 'string', format: 'email' },
+              description: 'Email addresses to CC on client chat communications'
+            },
+            bcc_recipients: { 
+              type: 'array', 
+              items: { type: 'string', format: 'email' },
+              description: 'Email addresses to BCC on client chat communications'
+            }
           }
         }
       }

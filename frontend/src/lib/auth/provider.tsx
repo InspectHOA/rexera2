@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Add timeout to refresh operation
           const refreshPromise = supabase.auth.refreshSession();
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Refresh timeout')), 2000)
+            setTimeout(() => reject(new Error('Refresh timeout')), 20000)
           );
           
           const refreshResult = await Promise.race([refreshPromise, timeoutPromise]) as any;
