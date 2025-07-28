@@ -118,6 +118,8 @@ export {
   CommunicationTypeSchema,
   EmailDirectionSchema,
   EmailStatusSchema,
+  ClientChatStatusSchema,
+  ExternalPlatformTypeSchema,
   CallDirectionSchema
 } from './schemas/communications';
 
@@ -132,6 +134,8 @@ export type {
   CommunicationType,
   EmailDirection,
   EmailStatus,
+  ClientChatStatus,
+  ExternalPlatformType,
   CallDirection
 } from './schemas/communications';
 

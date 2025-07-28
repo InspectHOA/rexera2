@@ -576,7 +576,7 @@ export const openApiPaths = {
         {
           name: 'communication_type',
           in: 'query',
-          schema: { type: 'string', enum: ['email', 'phone', 'sms', 'internal_note'] },
+          schema: { type: 'string', enum: ['email', 'phone', 'sms', 'client_chat'] },
           description: 'Filter by communication type'
         },
         {
@@ -588,8 +588,8 @@ export const openApiPaths = {
         {
           name: 'status',
           in: 'query',
-          schema: { type: 'string', enum: ['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED'] },
-          description: 'Filter by status'
+          schema: { type: 'string', enum: ['DRAFT', 'SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED'] },
+          description: 'Filter by status (includes client chat status values)'
         },
         {
           name: 'page',
@@ -607,7 +607,7 @@ export const openApiPaths = {
           name: 'include',
           in: 'query',
           schema: { type: 'string' },
-          description: 'Comma-separated list of related data to include (email_metadata, phone_metadata, sender, workflow)'
+          description: 'Comma-separated list of related data to include (email_metadata, phone_metadata, client_chat_metadata, sender, workflow)'
         }
       ],
       responses: {
@@ -752,7 +752,7 @@ export const openApiPaths = {
               properties: {
                 status: {
                   type: 'string',
-                  enum: ['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED']
+                  enum: ['DRAFT', 'SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED']
                 },
                 metadata: { type: 'object' }
               }

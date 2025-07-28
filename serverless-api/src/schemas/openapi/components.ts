@@ -390,7 +390,7 @@ export const openApiComponents = {
         body: { type: 'string', nullable: true },
         communication_type: {
           type: 'string',
-          enum: ['email', 'phone', 'sms', 'internal_note'],
+          enum: ['email', 'phone', 'sms', 'client_chat'],
           description: 'Type of communication'
         },
         direction: {
@@ -448,7 +448,7 @@ export const openApiComponents = {
         body: { type: 'string', minLength: 1 },
         communication_type: {
           type: 'string',
-          enum: ['email', 'phone', 'sms', 'internal_note']
+          enum: ['email', 'phone', 'sms', 'client_chat']
         },
         direction: {
           type: 'string',

@@ -28,7 +28,7 @@ Key fields:
 - `recipient_email`: External recipient
 - `direction`: 'INBOUND' | 'OUTBOUND'
 - `status`: 'SENT' | 'DELIVERED' | 'READ' | 'BOUNCED' | 'FAILED'
-- `communication_type`: 'email' | 'sms' | 'phone_call'
+- `communication_type`: 'email' | 'phone' | 'sms' | 'client_chat'
 - `subject` / `body`: Email content
 - `metadata`: Additional context (attachments, etc.)
 

@@ -12,6 +12,8 @@ export const CommunicationTypeSchema = z.enum(['email', 'phone', 'sms', 'client_
 export const EmailDirectionSchema = z.enum(['INBOUND', 'OUTBOUND']);
 export const EmailStatusSchema = z.enum(['SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED']);
 export const CallDirectionSchema = z.enum(['INBOUND', 'OUTBOUND']);
+export const ClientChatStatusSchema = z.enum(['DRAFT', 'SENT', 'DELIVERED', 'READ', 'BOUNCED', 'FAILED']);
+export const ExternalPlatformTypeSchema = z.enum(['qualia', 'gridbase', 'salesforce', 'custom']);
 
 // =====================================================
 // CORE SCHEMAS
@@ -27,10 +29,12 @@ export const CommunicationSchema = z.object({
   body: z.string().nullable(),
   communication_type: CommunicationTypeSchema,
   direction: EmailDirectionSchema.nullable(),
-  status: EmailStatusSchema.nullable(),
+  status: z.union([EmailStatusSchema, ClientChatStatusSchema]).nullable(),
   metadata: z.record(z.any()).default({}),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
+  is_deleted: z.boolean().default(false),
+  deleted_at: z.string().datetime().nullable(),
   
   // Related data (when included)
   email_metadata: z.object({
@@ -53,7 +57,21 @@ export const CommunicationSchema = z.object({
     transcript: z.string().nullable(),
     created_at: z.string().datetime(),
   }).optional(),
+
+  client_chat_metadata: z.object({
+    id: z.string().uuid(),
+    communication_id: z.string().uuid(),
+    external_platform_type: ExternalPlatformTypeSchema.nullable(),
+    external_platform_id: z.string().nullable(),
+    cc_recipients: z.array(z.string().email()).default([]),
+    bcc_recipients: z.array(z.string().email()).default([]),
+    created_at: z.string().datetime(),
+  }).optional(),
+
 });
+
+
+
 
 // =====================================================
 // CREATE SCHEMAS
@@ -90,6 +108,14 @@ export const CreateCommunicationSchema = z.object({
     call_recording_url: z.string().url().optional(),
     transcript: z.string().optional(),
   }).optional(),
+  
+  // Client chat-specific fields
+  client_chat_metadata: z.object({
+    external_platform_type: ExternalPlatformTypeSchema.optional(),
+    external_platform_id: z.string().optional(),
+    cc_recipients: z.array(z.string().email()).default([]),
+    bcc_recipients: z.array(z.string().email()).default([]),
+  }).optional(),
 });
 
 // =====================================================
@@ -97,7 +123,7 @@ export const CreateCommunicationSchema = z.object({
 // =====================================================
 
 export const UpdateCommunicationSchema = z.object({
-  status: EmailStatusSchema.optional(),
+  status: z.union([EmailStatusSchema, ClientChatStatusSchema]).optional(),
   metadata: z.record(z.any()).optional(),
   
   // Allow updating specific metadata fields
@@ -111,6 +137,13 @@ export const UpdateCommunicationSchema = z.object({
     call_recording_url: z.string().url().optional(),
     transcript: z.string().optional(),
   }).optional(),
+  
+  client_chat_metadata: z.object({
+    external_platform_type: ExternalPlatformTypeSchema.optional(),
+    external_platform_id: z.string().optional(),
+    cc_recipients: z.array(z.string().email()).optional(),
+    bcc_recipients: z.array(z.string().email()).optional(),
+  }).optional(),
 });
 
 // =====================================================
@@ -122,7 +155,7 @@ export const CommunicationFiltersSchema = z.object({
   thread_id: z.string().uuid().optional(),
   communication_type: CommunicationTypeSchema.optional(),
   direction: EmailDirectionSchema.optional(),
-  status: EmailStatusSchema.optional(),
+  status: z.union([EmailStatusSchema, ClientChatStatusSchema]).optional(),
   sender_id: z.string().uuid().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -179,4 +212,6 @@ export type EmailThread = z.infer<typeof EmailThreadSchema>;
 export type CommunicationType = z.infer<typeof CommunicationTypeSchema>;
 export type EmailDirection = z.infer<typeof EmailDirectionSchema>;
 export type EmailStatus = z.infer<typeof EmailStatusSchema>;
+export type ClientChatStatus = z.infer<typeof ClientChatStatusSchema>;
+export type ExternalPlatformType = z.infer<typeof ExternalPlatformTypeSchema>;
 export type CallDirection = z.infer<typeof CallDirectionSchema>;
