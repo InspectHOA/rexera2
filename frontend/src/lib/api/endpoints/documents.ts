@@ -168,6 +168,42 @@ export const documentsApi = {
   },
 
   /**
+   * Create a new version of a document with file upload
+   */
+  async createVersionWithFile(id: string, file: File, changeSummary: string, metadata?: object): Promise<Document> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('change_summary', changeSummary);
+    if (metadata) {
+      formData.append('metadata', JSON.stringify(metadata));
+    }
+
+    const authToken = await getAuthToken();
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    const response = await fetch(`${getApiBaseUrl()}/documents/${id}/versions`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    const data: ApiResponse = await response.json();
+    if (!response.ok || !data.success) {
+      const errorData = data as ApiErrorResponse;
+      throw new ApiError(
+        errorData.error?.message || `HTTP ${response.status}`,
+        response.status,
+        errorData.error?.details ? { details: errorData.error.details } : {}
+      );
+    }
+
+    return data.data as Document;
+  },
+
+  /**
    * Upload a file and create document record
    */
   async upload(file: File, workflowId: string, documentType: 'WORKING' | 'DELIVERABLE' = 'WORKING'): Promise<{
