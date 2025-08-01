@@ -142,6 +142,7 @@ const mockWorkflowData: WorkflowData = {
   metadata: {
     borrower_name: 'John Doe',
     loan_number: 'LOAN123456',
+    ssn: '1234',
     closing_date: '2024-01-20T10:00:00Z'
   },
   client: {

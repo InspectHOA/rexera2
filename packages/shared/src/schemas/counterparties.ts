@@ -25,7 +25,7 @@ export const CounterpartyContactRoleSchema = z.enum([
 
 // Preferred contact method
 export const PreferredContactMethodSchema = z.enum([
-  'email', 'phone', 'mobile', 'fax', 'any'
+  'email', 'phone', 'mobile', 'fax', 'website', 'any'
 ]);
 
 // Counterparty schemas

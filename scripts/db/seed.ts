@@ -722,6 +722,7 @@ async function seedDatabase() {
       metadata: {
         property_address: `${300 + i * 50} ${streets[i - 1]}, Downtown ${i}, ST 3${String(i).padStart(4, '0')}`,
         loan_number: `${lenders[i - 1].split(' ')[0].toUpperCase().substring(0, 3)}${2024000000 + i * 123456}`,
+        ssn: String(1000 + (i * 111)).slice(-4),
         lender_name: lenders[i - 1],
         estimated_balance: 150000 + (i * 25000)
       },
@@ -746,7 +747,7 @@ async function seedDatabase() {
         status: status1,
         executor_type: 'AI',
         priority: priorities[i % priorities.length],
-        input_data: { lender_name: lenders[i - 1], loan_number: `${lenders[i - 1].split(' ')[0].toUpperCase().substring(0, 3)}${2024000000 + i * 123456}` },
+        input_data: { lender_name: lenders[i - 1], loan_number: `${lenders[i - 1].split(' ')[0].toUpperCase().substring(0, 3)}${2024000000 + i * 123456}`, ssn: String(1000 + (i * 111)).slice(-4) },
         output_data: status1 === 'COMPLETED' ? { 
           contact_email: `payoffs@${lenders[i - 1].toLowerCase().replace(' ', '').replace('&', 'and')}.com`, 
           phone: `1-800-555-${String(i * 100).padStart(4, '0')}`,
@@ -780,6 +781,7 @@ async function seedDatabase() {
           input_data: { 
             lender: lenders[i - 1],
             loan_number: `${lenders[i - 1].split(' ')[0].toUpperCase().substring(0, 3)}${2024000000 + i * 123456}`,
+            ssn: String(1000 + (i * 111)).slice(-4),
             requested_date: new Date(Date.now() + ((i + 5) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
           },
           output_data: status2 === 'COMPLETED' ? { 

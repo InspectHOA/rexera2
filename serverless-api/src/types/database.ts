@@ -230,7 +230,7 @@ export interface CounterpartyContactInsert {
   extension?: string;
   is_primary?: boolean;
   is_active?: boolean;
-  preferred_contact_method?: 'email' | 'phone' | 'mobile' | 'fax' | 'any';
+  preferred_contact_method?: 'email' | 'phone' | 'mobile' | 'fax' | 'website' | 'any';
   preferred_contact_time?: string;
   notes?: string;
 }
@@ -247,7 +247,7 @@ export interface CounterpartyContactUpdate {
   extension?: string;
   is_primary?: boolean;
   is_active?: boolean;
-  preferred_contact_method?: 'email' | 'phone' | 'mobile' | 'fax' | 'any';
+  preferred_contact_method?: 'email' | 'phone' | 'mobile' | 'fax' | 'website' | 'any';
   preferred_contact_time?: string;
   notes?: string;
   updated_at?: string;

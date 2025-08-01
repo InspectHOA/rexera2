@@ -891,7 +891,7 @@ export async function insertCounterpartyContact(contact: CounterpartyContactInse
   }
   
   if (contact.preferred_contact_method) {
-    const validMethods = ['email', 'phone', 'mobile', 'fax', 'any'];
+    const validMethods = ['email', 'phone', 'mobile', 'fax', 'website', 'any'];
     if (!validMethods.includes(contact.preferred_contact_method)) {
       throw new Error(`Invalid preferred contact method: ${contact.preferred_contact_method}`);
     }
@@ -941,7 +941,7 @@ export async function updateCounterpartyContact(id: string, updates: Counterpart
   }
   
   if (updates.preferred_contact_method) {
-    const validMethods = ['email', 'phone', 'mobile', 'fax', 'any'];
+    const validMethods = ['email', 'phone', 'mobile', 'fax', 'website', 'any'];
     if (!validMethods.includes(updates.preferred_contact_method)) {
       throw new Error(`Invalid preferred contact method: ${updates.preferred_contact_method}`);
     }

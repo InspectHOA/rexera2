@@ -99,6 +99,7 @@ const WORKFLOW_TYPES: Record<WorkflowType, WorkflowTypeInfo> = {
       { key: 'closing_date', label: 'Closing Date', type: 'date', placeholder: '', required: true, icon: Calendar },
       { key: 'borrower_name', label: 'Borrower Name', type: 'text', placeholder: 'John & Jane Smith', icon: User },
       { key: 'loan_number', label: 'Loan Number', type: 'text', placeholder: '1234567890', icon: FileText },
+      { key: 'ssn', label: 'SSN (Last 4 Digits)', type: 'text', placeholder: '1234', icon: FileText },
       { key: 'lender_name', label: 'Lender Name', type: 'text', placeholder: 'First National Bank', icon: Building },
       { key: 'payoff_amount_estimate', label: 'Est. Payoff Amount', type: 'number', placeholder: '250000', icon: DollarSign },
     ],
@@ -208,6 +209,14 @@ export function WorkflowCreationModal({ isOpen, onClose, onSuccess }: WorkflowCr
       
       if (field.required && !value?.trim()) {
         newErrors[`metadata.${field.key}`] = `${field.label} is required`;
+      }
+      
+      // Special validation for SSN field
+      if (field.key === 'ssn' && value?.trim()) {
+        const ssnValue = value.trim();
+        if (!/^\d{4}$/.test(ssnValue)) {
+          newErrors[`metadata.${field.key}`] = 'SSN must be exactly 4 digits';
+        }
       }
     });
     setErrors(newErrors);
