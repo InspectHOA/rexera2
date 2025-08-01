@@ -216,3 +216,39 @@ export interface UserPreferencesUpdate {
   email_notifications?: boolean;
   preferences?: Record<string, any>;
 }
+
+export interface CounterpartyContactInsert {
+  counterparty_id: string;
+  role: 'primary' | 'billing' | 'legal' | 'operations' | 'board_member' | 'property_manager' | 'loan_processor' | 'underwriter' | 'escrow_officer' | 'clerk' | 'assessor' | 'collector' | 'customer_service' | 'technical' | 'other';
+  name: string;
+  title?: string;
+  department?: string;
+  email?: string;
+  phone?: string;
+  mobile_phone?: string;
+  fax?: string;
+  extension?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
+  preferred_contact_method?: 'email' | 'phone' | 'mobile' | 'fax' | 'any';
+  preferred_contact_time?: string;
+  notes?: string;
+}
+
+export interface CounterpartyContactUpdate {
+  role?: 'primary' | 'billing' | 'legal' | 'operations' | 'board_member' | 'property_manager' | 'loan_processor' | 'underwriter' | 'escrow_officer' | 'clerk' | 'assessor' | 'collector' | 'customer_service' | 'technical' | 'other';
+  name?: string;
+  title?: string;
+  department?: string;
+  email?: string;
+  phone?: string;
+  mobile_phone?: string;
+  fax?: string;
+  extension?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
+  preferred_contact_method?: 'email' | 'phone' | 'mobile' | 'fax' | 'any';
+  preferred_contact_time?: string;
+  notes?: string;
+  updated_at?: string;
+}

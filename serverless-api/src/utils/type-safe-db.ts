@@ -23,7 +23,9 @@ import type {
   DocumentInsert,
   UserProfileInsert,
   UserPreferencesInsert,
-  UserPreferencesUpdate
+  UserPreferencesUpdate,
+  CounterpartyContactInsert,
+  CounterpartyContactUpdate
 } from '../types/database';
 
 export async function insertNotifications(notifications: HilNotificationInsert[]) {
@@ -863,4 +865,143 @@ export async function updateUserPreferences(userId: string, updates: UserPrefere
   }
   
   return data;
+}
+
+// Counterparty Contacts
+export async function insertCounterpartyContact(contact: CounterpartyContactInsert) {
+  const supabase = createServerClient();
+  
+  if (!contact.counterparty_id || !contact.role || !contact.name) {
+    throw new Error('Missing required counterparty contact fields: counterparty_id, role, name');
+  }
+  
+  // Validate at least one contact method is provided
+  if (!contact.email && !contact.phone && !contact.mobile_phone) {
+    throw new Error('At least one contact method (email, phone, or mobile_phone) is required');
+  }
+  
+  // Validate enum values
+  const validRoles = [
+    'primary', 'billing', 'legal', 'operations', 'board_member', 
+    'property_manager', 'loan_processor', 'underwriter', 'escrow_officer',
+    'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+  ];
+  if (!validRoles.includes(contact.role)) {
+    throw new Error(`Invalid contact role: ${contact.role}`);
+  }
+  
+  if (contact.preferred_contact_method) {
+    const validMethods = ['email', 'phone', 'mobile', 'fax', 'any'];
+    if (!validMethods.includes(contact.preferred_contact_method)) {
+      throw new Error(`Invalid preferred contact method: ${contact.preferred_contact_method}`);
+    }
+  }
+  
+  // If this is marked as primary, ensure no other primary exists
+  if (contact.is_primary) {
+    const { error: updateError } = await supabase
+      .from('counterparty_contacts')
+      .update({ is_primary: false })
+      .eq('counterparty_id', contact.counterparty_id)
+      .eq('is_primary', true);
+      
+    if (updateError) {
+      console.error('Error updating existing primary contact:', updateError);
+      throw updateError;
+    }
+  }
+  
+  const { data, error } = await supabase
+    .from('counterparty_contacts')
+    .insert(contact)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Database error inserting counterparty contact:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+export async function updateCounterpartyContact(id: string, updates: CounterpartyContactUpdate) {
+  const supabase = createServerClient();
+  
+  // Validate enum values if provided
+  if (updates.role) {
+    const validRoles = [
+      'primary', 'billing', 'legal', 'operations', 'board_member', 
+      'property_manager', 'loan_processor', 'underwriter', 'escrow_officer',
+      'clerk', 'assessor', 'collector', 'customer_service', 'technical', 'other'
+    ];
+    if (!validRoles.includes(updates.role)) {
+      throw new Error(`Invalid contact role: ${updates.role}`);
+    }
+  }
+  
+  if (updates.preferred_contact_method) {
+    const validMethods = ['email', 'phone', 'mobile', 'fax', 'any'];
+    if (!validMethods.includes(updates.preferred_contact_method)) {
+      throw new Error(`Invalid preferred contact method: ${updates.preferred_contact_method}`);
+    }
+  }
+  
+  // If updating to primary, ensure no other primary exists
+  if (updates.is_primary === true) {
+    // First get the counterparty_id for this contact
+    const { data: contactData, error: fetchError } = await supabase
+      .from('counterparty_contacts')
+      .select('counterparty_id')
+      .eq('id', id)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching contact:', fetchError);
+      throw fetchError;
+    }
+    
+    // Update other primary contacts
+    const { error: updateError } = await supabase
+      .from('counterparty_contacts')
+      .update({ is_primary: false })
+      .eq('counterparty_id', contactData.counterparty_id)
+      .eq('is_primary', true)
+      .neq('id', id);
+      
+    if (updateError) {
+      console.error('Error updating existing primary contact:', updateError);
+      throw updateError;
+    }
+  }
+  
+  const { data, error } = await supabase
+    .from('counterparty_contacts')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Database error updating counterparty contact:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+export async function deleteCounterpartyContact(id: string) {
+  const supabase = createServerClient();
+  
+  const { error } = await supabase
+    .from('counterparty_contacts')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Database error deleting counterparty contact:', error);
+    throw error;
+  }
+  
+  return true;
 }
