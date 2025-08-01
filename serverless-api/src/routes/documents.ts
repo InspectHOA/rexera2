@@ -13,6 +13,7 @@ import {
   CreateDocumentSchema,
   UpdateDocumentSchema,
   CreateDocumentVersionSchema,
+  CreateDocumentVersionWithFileSchema,
   type Document,
   type DocumentWithRelations
 } from '@rexera/shared';
@@ -572,6 +573,7 @@ documents.delete('/:id', async (c) => {
 /**
  * POST /api/documents/:id/versions
  * Create a new version of a document
+ * Supports both JSON (URL-based) and FormData (file upload) requests
  */
 documents.post('/:id/versions', async (c) => {
   try {
@@ -584,20 +586,10 @@ documents.post('/:id/versions', async (c) => {
         error: 'Authentication required',
       }, 401 as any);
     }
+
     const id = c.req.param('id');
-    const body = await c.req.json();
-
-    // Validate request body
-    const result = CreateDocumentVersionSchema.safeParse(body);
-    if (!result.success) {
-      return c.json({
-        success: false,
-        error: 'Invalid request body',
-        details: result.error.issues,
-      }, 400 as any);
-    }
-
-    const versionData = result.data;
+    const contentType = c.req.header('Content-Type') || '';
+    const isFileUpload = contentType.includes('multipart/form-data');
 
     // First, verify document exists and user has access
     let documentQuery = supabase
@@ -625,6 +617,100 @@ documents.post('/:id/versions', async (c) => {
       }, 404 as any);
     }
 
+    let versionData: {
+      url: string;
+      filename?: string;
+      file_size_bytes?: number;
+      mime_type?: string;
+      change_summary: string;
+      metadata: object;
+    };
+
+    if (isFileUpload) {
+      // Handle file upload
+      const formData = await c.req.formData();
+      const file = (formData as any).get('file') as File;
+      const changeSummary = (formData as any).get('change_summary') as string;
+      const metadataStr = (formData as any).get('metadata') as string;
+
+      if (!file || !changeSummary) {
+        return c.json({
+          success: false,
+          error: 'File and change_summary are required',
+        }, 400 as any);
+      }
+
+      // Validate FormData request body
+      const result = CreateDocumentVersionWithFileSchema.safeParse({
+        change_summary: changeSummary,
+        metadata: metadataStr,
+      });
+
+      if (!result.success) {
+        return c.json({
+          success: false,
+          error: 'Invalid request body',
+          details: result.error.issues,
+        }, 400 as any);
+      }
+
+      // Generate unique file path (same pattern as upload endpoint)
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const storagePath = `${existingDocument.workflow_id}/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('workflow-documents')
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        return c.json({
+          success: false,
+          error: 'File upload failed',
+          details: uploadError.message,
+        }, 500 as any);
+      }
+
+      // Get public URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('workflow-documents')
+        .getPublicUrl(storagePath);
+
+      versionData = {
+        url: urlData.publicUrl,
+        filename: file.name, // Use original filename
+        file_size_bytes: file.size,
+        mime_type: file.type,
+        change_summary: result.data.change_summary,
+        metadata: {
+          ...result.data.metadata,
+          original_name: file.name,
+          uploaded_at: new Date().toISOString(),
+          storage_path: storagePath,
+        },
+      };
+
+    } else {
+      // Handle JSON request (existing behavior)
+      const body = await c.req.json();
+
+      // Validate request body
+      const result = CreateDocumentVersionSchema.safeParse(body);
+      if (!result.success) {
+        return c.json({
+          success: false,
+          error: 'Invalid request body',
+          details: result.error.issues,
+        }, 400 as any);
+      }
+
+      versionData = result.data;
+    }
+
     // Update document with new version
     const { data: document, error } = await supabase
       .from('documents')
@@ -643,6 +729,13 @@ documents.post('/:id/versions', async (c) => {
       .single();
 
     if (error) {
+      // If database update fails and we uploaded a file, clean it up
+      if (isFileUpload && versionData.metadata && 'storage_path' in versionData.metadata) {
+        await supabase.storage
+          .from('workflow-documents')
+          .remove([versionData.metadata.storage_path as string]);
+      }
+
       console.error('Error creating document version:', error);
       return c.json({
         success: false,
@@ -668,7 +761,7 @@ documents.post('/:id/versions', async (c) => {
           old_version: existingDocument.version,
           new_version: document.version,
           change_summary: versionData.change_summary,
-          operation: 'create_version'
+          operation: isFileUpload ? 'create_version_with_file' : 'create_version'
         }
       });
     } catch (auditError) {
@@ -744,7 +837,7 @@ documents.post('/upload', async (c) => {
     const storagePath = `${workflowId}/${fileName}`;
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('workflow-documents')
       .upload(storagePath, file, {
         cacheControl: '3600',

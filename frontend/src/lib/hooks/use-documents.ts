@@ -143,11 +143,38 @@ export function useDocumentMutations() {
     },
   });
 
+  const createVersionWithFile = useMutation({
+    mutationFn: ({ id, file, changeSummary, metadata }: { 
+      id: string; 
+      file: File; 
+      changeSummary: string; 
+      metadata?: object 
+    }) => api.documents.createVersionWithFile(id, file, changeSummary, metadata),
+    onSuccess: (updatedDocument) => {
+      // Update the specific document in cache
+      queryClient.setQueryData(
+        documentKeys.detail(updatedDocument.id), 
+        updatedDocument
+      );
+
+      // Invalidate lists to refresh version info
+      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
+      
+      // Invalidate workflow-specific documents
+      if (updatedDocument.workflow_id) {
+        queryClient.invalidateQueries({ 
+          queryKey: documentKeys.byWorkflow(updatedDocument.workflow_id) 
+        });
+      }
+    },
+  });
+
   return {
     createDocument,
     updateDocument,
     deleteDocument,
     createVersion,
+    createVersionWithFile,
   };
 }
 

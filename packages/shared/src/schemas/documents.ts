@@ -87,6 +87,12 @@ export const CreateDocumentVersionSchema = z.object({
   metadata: z.record(z.any()).default({}),
 });
 
+// Create document version with file upload schema (for FormData requests)
+export const CreateDocumentVersionWithFileSchema = z.object({
+  change_summary: z.string().min(1, 'Change summary is required'),
+  metadata: z.string().optional().transform(val => val ? JSON.parse(val) : {}),
+});
+
 // Document with related data (for responses with includes)
 export const DocumentWithRelationsSchema = DocumentSchema.extend({
   workflow: z.object({
@@ -112,6 +118,7 @@ export type CreateDocument = z.infer<typeof CreateDocumentSchema>;
 export type UpdateDocument = z.infer<typeof UpdateDocumentSchema>;
 export type DocumentFilters = z.infer<typeof DocumentFiltersSchema>;
 export type CreateDocumentVersion = z.infer<typeof CreateDocumentVersionSchema>;
+export type CreateDocumentVersionWithFile = z.infer<typeof CreateDocumentVersionWithFileSchema>;
 export type DocumentWithRelations = z.infer<typeof DocumentWithRelationsSchema>;
 
 // Export document types and status enums

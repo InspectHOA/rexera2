@@ -1088,7 +1088,7 @@ export const openApiPaths = {
     post: {
       tags: ['Documents'],
       summary: 'Create document version',
-      description: 'Create a new version of an existing document',
+      description: 'Create a new version of an existing document. Supports both JSON (URL-based) and FormData (file upload) requests.',
       parameters: [
         {
           name: 'id',
@@ -1102,7 +1102,42 @@ export const openApiPaths = {
         required: true,
         content: {
           'application/json': {
-            schema: { $ref: '#/components/schemas/CreateDocumentVersion' }
+            schema: { $ref: '#/components/schemas/CreateDocumentVersion' },
+            example: {
+              url: 'https://storage.example.com/documents/updated-document.pdf',
+              filename: 'updated-document.pdf',
+              change_summary: 'Updated with corrections',
+              metadata: {
+                revision_notes: 'Fixed formatting issues'
+              }
+            }
+          },
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              required: ['file', 'change_summary'],
+              properties: {
+                file: {
+                  type: 'string',
+                  format: 'binary',
+                  description: 'The new file to upload'
+                },
+                change_summary: {
+                  type: 'string',
+                  minLength: 1,
+                  description: 'Description of changes in this version'
+                },
+                metadata: {
+                  type: 'string',
+                  description: 'JSON string of additional metadata'
+                }
+              }
+            },
+            example: {
+              file: '(binary file data)',
+              change_summary: 'OCR processing applied',
+              metadata: '{"ocr_processed": true, "confidence_score": 0.95}'
+            }
           }
         }
       },
@@ -1116,6 +1151,35 @@ export const openApiPaths = {
                 properties: {
                   success: { type: 'boolean', example: true },
                   data: { $ref: '#/components/schemas/Document' }
+                }
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: { type: 'string' },
+                  details: { type: 'array', items: { type: 'object' } }
+                }
+              }
+            }
+          }
+        },
+        '404': {
+          description: 'Document not found or access denied',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: { type: 'string', example: 'Document not found or access denied' }
                 }
               }
             }
